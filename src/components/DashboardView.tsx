@@ -174,7 +174,7 @@ export function DashboardView({
         const img = new Image();
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          const maxDim = 400;
+          const maxDim = 1600;
           let width = img.width;
           let height = img.height;
           if (width > height) {
@@ -187,7 +187,7 @@ export function DashboardView({
           const ctx = canvas.getContext('2d');
           if (ctx) {
             ctx.drawImage(img, 0, 0, width, height);
-            setUrlFoto(canvas.toDataURL('image/jpeg', 0.8));
+            setUrlFoto(canvas.toDataURL('image/jpeg', 0.92));
           }
         };
         img.src = event.target?.result as string;

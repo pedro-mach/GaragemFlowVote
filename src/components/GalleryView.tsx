@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { LogOut, Vote, AlertCircle, CheckCircle2, Trophy, Search, Gauge, Calendar, Ruler, Car, Shield } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { LogOut, Vote, AlertCircle, CheckCircle2, Trophy, Search, Gauge, Calendar, Ruler, Car, Shield, X, ZoomIn } from 'lucide-react';
 import type { Carro, Categoria, Evento, Voto, Eleitor } from '../data/mockData';
 
 interface GalleryViewProps {
@@ -27,6 +27,16 @@ export function GalleryView({
 }: GalleryViewProps) {
   const [activeCategoryId, setActiveCategoryId] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [zoomPhoto, setZoomPhoto] = useState<{ url: string; modelo: string; numero: string } | null>(null);
+
+  // Fechar lightbox com Esc
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setZoomPhoto(null);
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, []);
 
   const popularCategorias = categorias.filter((c) => c.tipo === 'popular' && !c.oculta);
 
@@ -354,13 +364,38 @@ export function GalleryView({
                   }}
                 >
                   {/* Foto */}
-                  <div style={{ position: 'relative', height: 200, background: '#0a0a0a', overflow: 'hidden' }}>
+                  <div
+                    style={{ position: 'relative', height: 200, background: '#0a0a0a', overflow: 'hidden', cursor: 'zoom-in' }}
+                    onClick={() => setZoomPhoto({ url: carro.url_foto, modelo: carro.modelo, numero: carro.numero_inscricao })}
+                    title="Clique para ampliar"
+                  >
                     <img
                       src={carro.url_foto}
                       alt={carro.modelo}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.2s ease' }}
                       loading="lazy"
+                      onMouseEnter={e => { (e.currentTarget as HTMLImageElement).style.transform = 'scale(1.04)'; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLImageElement).style.transform = 'scale(1)'; }}
                     />
+
+                    {/* Ícone zoom hint */}
+                    <div
+                      style={{
+                        position: 'absolute',
+                        bottom: 8,
+                        right: 8,
+                        background: 'rgba(0,0,0,0.65)',
+                        border: '1px solid rgba(255,192,0,0.4)',
+                        borderRadius: 2,
+                        padding: '4px 6px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        pointerEvents: 'none',
+                      }}
+                    >
+                      <ZoomIn size={12} color="#FFC000" />
+                    </div>
 
                     {/* Badge número */}
                     <div
@@ -595,6 +630,120 @@ export function GalleryView({
           ID: {user.id.slice(0, 8)}…
         </span>
       </div>
+      {/* ===== LIGHTBOX / ZOOM MODAL ===== */}
+      {zoomPhoto && (
+        <div
+          onClick={() => setZoomPhoto(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 1000,
+            background: 'rgba(0, 0, 0, 0.93)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+            backdropFilter: 'blur(4px)',
+          }}
+        >
+          {/* Cabeçalho */}
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              padding: '16px 20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              background: 'linear-gradient(to bottom, rgba(0,0,0,0.8), transparent)',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span
+                style={{
+                  fontFamily: "'Barlow Condensed', sans-serif",
+                  fontWeight: 700,
+                  fontSize: 13,
+                  color: '#FFC000',
+                  background: '#000000',
+                  border: '1px solid #FFC000',
+                  padding: '3px 10px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.1em',
+                }}
+              >
+                {zoomPhoto.numero}
+              </span>
+              <span
+                style={{
+                  fontFamily: "'Barlow Condensed', sans-serif",
+                  fontWeight: 700,
+                  fontSize: 18,
+                  color: '#FFFFFF',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                }}
+              >
+                {zoomPhoto.modelo}
+              </span>
+            </div>
+            <button
+              onClick={() => setZoomPhoto(null)}
+              style={{
+                background: 'rgba(255,255,255,0.1)',
+                border: '1px solid rgba(255,255,255,0.2)',
+                color: '#FFFFFF',
+                padding: '8px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'background 0.15s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.2)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
+              title="Fechar (Esc)"
+            >
+              <X size={20} />
+            </button>
+          </div>
+
+          {/* Imagem em tamanho real */}
+          <img
+            src={zoomPhoto.url}
+            alt={zoomPhoto.modelo}
+            onClick={e => e.stopPropagation()}
+            style={{
+              maxWidth: '100%',
+              maxHeight: 'calc(100vh - 100px)',
+              objectFit: 'contain',
+              display: 'block',
+              boxShadow: '0 0 60px rgba(0,0,0,0.8)',
+              border: '1px solid rgba(255,192,0,0.2)',
+            }}
+          />
+
+          {/* Dica fechar */}
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 16,
+              fontFamily: "'Barlow Condensed', sans-serif",
+              fontSize: 11,
+              color: 'rgba(255,255,255,0.35)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.14em',
+              pointerEvents: 'none',
+            }}
+          >
+            Clique fora ou pressione ESC para fechar
+          </div>
+        </div>
+      )}
 
     </div>
   );
