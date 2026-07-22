@@ -72,11 +72,11 @@ create policy "Acesso livre a categorias" on public.categorias for all using (tr
 create policy "Acesso livre a votos" on public.votos for all using (true) with check (true);
 
 -- 7. Categorias Iniciais Padrão
-insert into public.categorias (id, nome, tipo) values
-  ('22222222-2222-2222-2222-222222222222', 'Destaque Masculino', 'popular'),
-  ('33333333-3333-3333-3333-333333333333', 'Destaque Feminino', 'popular'),
-  ('44444444-4444-4444-4444-444444444444', 'Mais antigo', 'interna'),
-  ('55555555-5555-5555-5555-555555555555', 'Maior equipe uniformizada', 'interna'),
-  ('66666666-6666-6666-6666-666666666666', 'Maior rodagem', 'interna')
-on conflict (id) do update set nome = excluded.nome, tipo = excluded.tipo;
+insert into public.categorias (nome, tipo) values
+  ('Destaque Masculino', 'popular'),
+  ('Destaque Feminino', 'popular'),
+  ('Mais antigo', 'interna'),
+  ('Maior equipe uniformizada', 'interna'),
+  ('Maior rodagem', 'interna')
+on conflict (nome) do update set tipo = excluded.tipo;
 

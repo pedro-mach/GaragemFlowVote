@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, KeyRound, AlertTriangle, Car } from 'lucide-react';
+import { Shield, KeyRound, AlertTriangle, CheckCircle2 } from 'lucide-react';
 
 interface AuthViewProps {
   login: (cpf: string, birthdate: string) => Promise<void>;
@@ -14,12 +14,10 @@ export function AuthView({ login, loginAsOrganizer, isLoading, error }: AuthView
   const [lgpdConsent, setLgpdConsent] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  // Formata o CPF no formato 999.999.999-99 à medida que digita
   const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, ''); // Apenas números
+    let value = e.target.value.replace(/\D/g, '');
     if (value.length > 11) value = value.slice(0, 11);
 
-    // Aplica a máscara
     if (value.length > 9) {
       value = `${value.slice(0, 3)}.${value.slice(3, 6)}.${value.slice(6, 9)}-${value.slice(9)}`;
     } else if (value.length > 6) {
@@ -27,13 +25,22 @@ export function AuthView({ login, loginAsOrganizer, isLoading, error }: AuthView
     } else if (value.length > 3) {
       value = `${value.slice(0, 3)}.${value.slice(3)}`;
     }
-    
+
     setCpf(value);
     setFormError(null);
   };
 
   const handleBirthdateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setBirthdate(e.target.value);
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length > 8) value = value.slice(0, 8);
+
+    if (value.length > 4) {
+      value = `${value.slice(0, 2)}/${value.slice(2, 4)}/${value.slice(4)}`;
+    } else if (value.length > 2) {
+      value = `${value.slice(0, 2)}/${value.slice(2)}`;
+    }
+    
+    setBirthdate(value);
     setFormError(null);
   };
 
@@ -43,123 +50,334 @@ export function AuthView({ login, loginAsOrganizer, isLoading, error }: AuthView
 
     const cleanCpf = cpf.replace(/\D/g, '');
     if (cleanCpf.length !== 11) {
-      setFormError('Por favor, informe um CPF válido (11 dígitos).');
+      setFormError('Por favor, informe um CPF válido com 11 dígitos.');
       return;
     }
 
-    if (!birthdate) {
-      setFormError('Por favor, informe sua data de nascimento.');
+    if (birthdate.length !== 10) {
+      setFormError('Por favor, informe uma data de nascimento válida (DD/MM/AAAA).');
       return;
     }
+
+    const [day, month, year] = birthdate.split('/');
+    const formattedDate = `${year}-${month}-${day}`;
 
     if (!lgpdConsent) {
-      setFormError('Você precisa aceitar os termos de consentimento para prosseguir.');
+      setFormError('Você precisa concordar com os termos da LGPD para votar.');
       return;
     }
 
-    await login(cpf, birthdate);
+    await login(cpf, formattedDate);
   };
 
   return (
-    <div className="flex-1 flex flex-col justify-between py-4">
-      {/* Header Centralizado */}
-      <div className="text-center my-6 flex flex-col items-center">
-        <div className="w-16 h-16 rounded-full bg-surface border border-secondary flex items-center justify-center mb-3 shadow-md animate-pulse">
-          <Car className="w-8 h-8 text-primary" />
-        </div>
-        <h1 className="text-2xl font-bold tracking-tight text-white uppercase">
-          Garagem<span className="text-primary font-black">Flow</span>Vote
-        </h1>
-        <p className="text-xs text-text-secondary mt-1">
-          Votação de Eventos Automotivos em Tempo Real
-        </p>
-      </div>
+    <div className="w-full flex-1 flex flex-col justify-center py-6 lg:py-12">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
 
-      {/* Formulário Principal */}
-      <div className="bg-surface rounded-xl p-5 border border-[#2b2b2b] shadow-lg">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="cpf" className="block text-xs font-semibold text-text-secondary uppercase mb-1.5">
-              CPF do Eleitor
-            </label>
-            <input
-              id="cpf"
-              type="text"
-              inputMode="numeric"
-              placeholder="000.000.000-00"
-              value={cpf}
-              onChange={handleCpfChange}
-              disabled={isLoading}
-              className="w-full bg-[#121212] border border-[#333] focus:border-secondary focus:ring-1 focus:ring-secondary rounded-lg py-2.5 px-3.5 text-white placeholder-gray-600 outline-none text-sm transition-all"
-            />
-          </div>
+        {/* ===== LADO ESQUERDO — BRANDING ===== */}
+        <div className="lg:col-span-7 flex flex-col justify-center" style={{ gap: '32px' }}>
 
-          <div>
-            <label htmlFor="birthdate" className="block text-xs font-semibold text-text-secondary uppercase mb-1.5">
-              Data de Nascimento
-            </label>
-            <input
-              id="birthdate"
-              type="date"
-              value={birthdate}
-              onChange={handleBirthdateChange}
-              disabled={isLoading}
-              className="w-full bg-[#121212] border border-[#333] focus:border-secondary focus:ring-1 focus:ring-secondary rounded-lg py-2.5 px-3.5 text-white placeholder-gray-600 outline-none text-sm transition-all"
-            />
-          </div>
-
-          {/* Consentimento LGPD */}
-          <div className="flex items-start space-x-2 pt-2">
-            <input
-              id="lgpd"
-              type="checkbox"
-              checked={lgpdConsent}
-              onChange={(e) => {
-                setLgpdConsent(e.target.checked);
-                setFormError(null);
+          {/* Logo + Status */}
+          <div className="flex items-center gap-4">
+            <div
+              className="overflow-hidden shrink-0"
+              style={{
+                width: 64,
+                height: 64,
+                border: '1px solid rgba(255,192,0,0.3)',
+                background: '#181818',
               }}
-              disabled={isLoading}
-              className="mt-1 h-4 w-4 rounded bg-[#121212] border-[#333] text-primary focus:ring-0 focus:ring-offset-0"
-            />
-            <label htmlFor="lgpd" className="text-[11px] leading-4 text-gray-400 select-none">
-              Consinto com o tratamento dos dados informados exclusivamente para validação e auditoria desta votação, conforme a LGPD.
-            </label>
-          </div>
-
-          {/* Mensagens de Erro */}
-          {(error || formError) && (
-            <div className="bg-red-950/40 border border-red-500/40 rounded-lg p-3 flex items-start space-x-2">
-              <AlertTriangle className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-              <span className="text-xs text-red-200 leading-tight">
-                {formError || error}
+            >
+              <img
+                src="/Logo-evento.jpeg"
+                alt="Logo Garagem Flow"
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+              />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span className="live-dot" />
+              <span style={{
+                fontFamily: "'Barlow Condensed', sans-serif",
+                fontSize: 11,
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.18em',
+                color: '#FFC000',
+              }}>
+                Votação Automotiva ao Vivo
               </span>
             </div>
-          )}
+          </div>
 
-          {/* Ação Principal */}
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full bg-primary hover:bg-[#c9922f] active:scale-[0.98] text-white font-bold py-3 rounded-full shadow-lg shadow-primary/20 flex items-center justify-center space-x-2 text-sm transition-all"
-          >
-            <span>{isLoading ? 'Verificando...' : 'Entrar para Votar'}</span>
-          </button>
-        </form>
-      </div>
+          {/* Headline */}
+          <div>
+            <h1 className="display-hero" style={{ color: '#FFFFFF' }}>
+              GARAGEM{' '}
+              <span style={{ color: '#FFC000' }}>FLOW</span>{' '}
+              VOTE
+            </h1>
+            <p style={{
+              fontFamily: "'Barlow', sans-serif",
+              fontSize: 15,
+              color: '#7D7D7D',
+              marginTop: 16,
+              lineHeight: 1.6,
+              maxWidth: 480,
+              fontWeight: 400,
+            }}>
+              Plataforma oficial de votação em tempo real para eventos de carros modificados, antigos e de alta performance.
+            </p>
+          </div>
 
-      {/* Footer / Acesso Organizador */}
-      <div className="mt-8 text-center flex flex-col items-center space-y-2">
-        <button
-          onClick={loginAsOrganizer}
-          className="text-xs text-secondary hover:text-[#5e95b9] flex items-center space-x-1.5 transition-colors focus:outline-none"
-        >
-          <KeyRound className="w-3.5 h-3.5" />
-          <span>Painel do Organizador (Painel Privado)</span>
-        </button>
-        <div className="flex items-center space-x-1.5 text-[10px] text-gray-500">
-          <Shield className="w-3 h-3" />
-          <span>Votação Segura & Criptografada</span>
+          {/* Feature Pills */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-px" style={{ background: '#202020' }}>
+            {[
+              { label: 'Apuração ao Vivo', sub: 'Resultados imediatos' },
+              { label: 'Categorias Troféu', sub: 'Populares & técnicas' },
+              { label: 'Voto Auditado', sub: 'Por CPF' },
+            ].map((f) => (
+              <div
+                key={f.label}
+                style={{
+                  background: '#000000',
+                  padding: '16px 20px',
+                  borderTop: '2px solid #202020',
+                }}
+              >
+                <div style={{
+                  fontFamily: "'Barlow Condensed', sans-serif",
+                  fontWeight: 700,
+                  fontSize: 13,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.1em',
+                  color: '#FFFFFF',
+                }}>
+                  {f.label}
+                </div>
+                <div style={{
+                  fontFamily: "'Barlow', sans-serif",
+                  fontSize: 12,
+                  color: '#7D7D7D',
+                  marginTop: 4,
+                }}>
+                  {f.sub}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
+
+        {/* ===== LADO DIREITO — CARD DE LOGIN ===== */}
+        <div className="lg:col-span-5 w-full">
+          <div
+            style={{
+              background: '#181818',
+              border: '1px solid #313131',
+              borderTop: '2px solid #FFC000',
+              padding: '32px',
+              position: 'relative',
+            }}
+          >
+            {/* Header do Card */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: 28,
+                paddingBottom: 20,
+                borderBottom: '1px solid #202020',
+              }}
+            >
+              <div>
+                <h2 style={{
+                  fontFamily: "'Barlow Condensed', sans-serif",
+                  fontWeight: 700,
+                  fontSize: 20,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.1em',
+                  color: '#FFFFFF',
+                  margin: 0,
+                }}>
+                  Identificação do Eleitor
+                </h2>
+                <p style={{
+                  fontFamily: "'Barlow', sans-serif",
+                  fontSize: 13,
+                  color: '#7D7D7D',
+                  margin: '6px 0 0 0',
+                }}>
+                  Informe seus dados para liberar o voto
+                </p>
+              </div>
+              <Shield size={20} color="#FFC000" />
+            </div>
+
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              {/* CPF */}
+              <div>
+                <label
+                  htmlFor="cpf"
+                  className="label-ds"
+                  style={{ display: 'block', marginBottom: 8 }}
+                >
+                  CPF do Eleitor
+                </label>
+                <input
+                  id="cpf"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="000.000.000-00"
+                  value={cpf}
+                  onChange={handleCpfChange}
+                  disabled={isLoading}
+                  className="input-ds"
+                />
+              </div>
+
+              {/* Data de Nascimento */}
+              <div>
+                <label
+                  htmlFor="birthdate"
+                  className="label-ds"
+                  style={{ display: 'block', marginBottom: 8 }}
+                >
+                  Data de Nascimento
+                </label>
+                <input
+                  id="birthdate"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="DD/MM/AAAA"
+                  value={birthdate}
+                  onChange={handleBirthdateChange}
+                  disabled={isLoading}
+                  className="w-full h-12 bg-[#16161A] border border-white/10 focus:border-[#F5A623] focus:ring-1 focus:ring-[#F5A623] rounded-xl px-4 text-white placeholder-gray-500 outline-none text-sm transition-all font-mono tracking-wider"
+                />
+              </div>
+
+              {/* Checkbox LGPD */}
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                <input
+                  id="lgpd"
+                  type="checkbox"
+                  checked={lgpdConsent}
+                  onChange={(e) => {
+                    setLgpdConsent(e.target.checked);
+                    setFormError(null);
+                  }}
+                  disabled={isLoading}
+                  style={{
+                    marginTop: 2,
+                    accentColor: '#FFC000',
+                    width: 16,
+                    height: 16,
+                    flexShrink: 0,
+                    cursor: 'pointer',
+                  }}
+                />
+                <label
+                  htmlFor="lgpd"
+                  style={{
+                    fontFamily: "'Barlow', sans-serif",
+                    fontSize: 12,
+                    color: '#7D7D7D',
+                    lineHeight: 1.5,
+                    cursor: 'pointer',
+                    userSelect: 'none',
+                  }}
+                >
+                  Consinto com o tratamento dos dados exclusivamente para validação e auditoria desta votação (LGPD).
+                </label>
+              </div>
+
+              {/* Erro */}
+              {(error || formError) && (
+                <div
+                  style={{
+                    background: 'rgba(180,0,0,0.15)',
+                    border: '1px solid rgba(220,50,50,0.4)',
+                    padding: '12px 16px',
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: 10,
+                  }}
+                >
+                  <AlertTriangle size={16} color="#FFC000" style={{ flexShrink: 0, marginTop: 1 }} />
+                  <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: '#ffaaaa' }}>
+                    {formError || error}
+                  </span>
+                </div>
+              )}
+
+              {/* Botão CTA */}
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="btn-gold"
+                style={{ width: '100%', height: 52, fontSize: 15, gap: 10, marginTop: 4 }}
+              >
+                {isLoading ? (
+                  'Verificando...'
+                ) : (
+                  <>
+                    <span>ENTRAR PARA VOTAR</span>
+                    <CheckCircle2 size={18} color="#000000" />
+                  </>
+                )}
+              </button>
+            </form>
+
+            {/* Acesso Organizador */}
+            <div
+              style={{
+                marginTop: 24,
+                paddingTop: 20,
+                borderTop: '1px solid #202020',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <button
+                onClick={loginAsOrganizer}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  fontFamily: "'Barlow Condensed', sans-serif",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.08em',
+                  color: '#29ABE2',
+                  transition: 'color 0.15s',
+                  padding: 0,
+                }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#3860BE')}
+                onMouseLeave={e => (e.currentTarget.style.color = '#29ABE2')}
+              >
+                <KeyRound size={14} />
+                <span>Painel do Organizador (Privado)</span>
+              </button>
+
+              <span style={{
+                fontFamily: "'Barlow Condensed', sans-serif",
+                fontSize: 10,
+                textTransform: 'uppercase',
+                letterSpacing: '0.12em',
+                color: '#313131',
+              }}>
+                Votação Auditada
+              </span>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   );

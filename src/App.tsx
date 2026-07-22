@@ -28,7 +28,6 @@ function App() {
     toggleStatusVotacao,
   } = useCarros();
 
-  // O hook useVotos precisa do ID do eleitor logado e do ID do evento ativo
   const {
     userVotos,
     resultados,
@@ -44,7 +43,7 @@ function App() {
   // 1. Tela do Organizador (Painel Administrativo)
   if (isOrganizer) {
     return (
-      <Layout isMobileView={false}>
+      <Layout>
         <DashboardView
           evento={evento}
           carros={carros}
@@ -62,10 +61,10 @@ function App() {
     );
   }
 
-  // 2. Tela de Votação (Galeria de Carros - Mobile)
+  // 2. Tela de Votação (Galeria de Carros)
   if (user) {
     return (
-      <Layout isMobileView={true}>
+      <Layout>
         <GalleryView
           user={user}
           evento={evento}
@@ -81,9 +80,9 @@ function App() {
     );
   }
 
-  // 3. Tela de Autenticação / Login (Padrão - Mobile)
+  // 3. Tela de Autenticação / Login (Padrão)
   return (
-    <Layout isMobileView={true}>
+    <Layout>
       <AuthView
         login={login}
         loginAsOrganizer={loginAsOrganizer}

@@ -1,49 +1,252 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: #080808;
-  --color-surface: #141416;
-  --color-primary: #E5A93B;
-  --color-secondary: #0099FF;
+  /* === Lamborghini Design System — Fontes === */
+  --font-display: 'Barlow Condensed', 'Arial Narrow', Arial, sans-serif;
+  --font-body: 'Barlow', Arial, sans-serif;
+
+  /* === Lamborghini Design System — Cores Primárias === */
+  --color-gold: #FFC000;
+  --color-gold-dark: #917300;
+  --color-gold-text: #FFCE3E;
+
+  /* === Surfaces (escuros, sem tinting) === */
+  --color-black: #000000;
+  --color-iron: #181818;
+  --color-charcoal: #202020;
+  --color-shadow: #313131;
+
+  /* === Texto === */
+  --color-white: #FFFFFF;
+  --color-smoke: #F5F5F5;
+  --color-ash: #7D7D7D;
+  --color-steel: #969696;
+
+  /* === Semântico === */
+  --color-cyan: #29ABE2;
+  --color-link: #3860BE;
+  --color-teal: #1EAEDB;
+
+  /* === Compat com Tailwind === */
+  --color-background: #000000;
+  --color-surface: #181818;
+  --color-surface-elevated: #202020;
   --color-text-primary: #FFFFFF;
-  --color-text-secondary: #D1D1D6;
-  
-  --color-brand-gold: #E5A93B;
-  --color-garage-gray: #141416;
-  --color-deep-carbon: #080808;
-  --color-crown-blue: #0099FF;
-  --color-muted-silver: #D1D1D6;
+  --color-text-secondary: #7D7D7D;
+  --color-primary: #FFC000;
+  --color-border-dark: #202020;
 }
 
 @layer base {
+  * {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    border-radius: 0 !important;
+  }
+
   body {
-    background-color: var(--color-background);
-    color: var(--color-text-primary);
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    background-color: #000000;
+    color: #FFFFFF;
+    font-family: 'Barlow Condensed', 'Arial Narrow', Arial, sans-serif;
+    font-weight: 400;
     margin: 0;
     padding: 0;
     min-height: 100vh;
+    min-height: 100dvh;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+    letter-spacing: 0.02em;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Barlow Condensed', 'Arial Narrow', Arial, sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    line-height: 1.05;
   }
 }
 
-/* Custom Scrollbar for modern feel */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+/* ============================================
+   BOTÕES — Flat, 0px radius, sem gradiente
+   ============================================ */
+
+/* Botão CTA Gold (Principal) */
+.btn-gold {
+  background: #FFC000;
+  color: #000000;
+  border: none;
+  border-radius: 0 !important;
+  padding: 0 24px;
+  height: 48px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
-::-webkit-scrollbar-track {
-  background: #080808;
+.btn-gold:hover {
+  background: #917300;
 }
 
-::-webkit-scrollbar-thumb {
-  background: #141416;
-  border-radius: 3px;
-  border: 1px solid #0099FF;
+.btn-gold:disabled {
+  background: #313131;
+  color: #7D7D7D;
+  cursor: not-allowed;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #E5A93B;
+/* Botão Ghost (Secundário) */
+.btn-ghost {
+  background: transparent;
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 0 !important;
+  padding: 0 16px;
+  height: 48px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 400;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  cursor: pointer;
+  transition: background 0.15s ease, opacity 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-ghost:hover {
+  background: #1EAEDB;
+  opacity: 0.7;
+}
+
+/* ============================================
+   CARDS & SURFACES
+   ============================================ */
+
+.card-surface {
+  background: #181818;
+  border: 1px solid #202020;
+}
+
+.card-surface-elevated {
+  background: #202020;
+  border: 1px solid #313131;
+}
+
+/* ============================================
+   INPUTS — Flat, sem glow
+   ============================================ */
+
+.input-ds {
+  background: #181818;
+  border: 1px solid #313131;
+  border-radius: 0 !important;
+  color: #FFFFFF;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 15px;
+  letter-spacing: 0.06em;
+  padding: 0 16px;
+  height: 48px;
+  outline: none;
+  transition: border-color 0.15s ease;
+  width: 100%;
+}
+
+.input-ds:focus {
+  border-color: #FFC000;
+}
+
+.input-ds::placeholder {
+  color: #7D7D7D;
+}
+
+/* ============================================
+   TIPOGRAFIA UTILITÁRIOS
+   ============================================ */
+
+.display-hero {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(48px, 10vw, 96px);
+  font-weight: 700;
+  text-transform: uppercase;
+  line-height: 0.92;
+  letter-spacing: 0.02em;
+}
+
+.display-section {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(28px, 5vw, 54px);
+  font-weight: 700;
+  text-transform: uppercase;
+  line-height: 1.0;
+}
+
+.label-ds {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: #7D7D7D;
+}
+
+.badge-ds {
+  background: #969696;
+  color: #FFFFFF;
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border-radius: 2px !important;
+}
+
+/* ============================================
+   GOLD ACCENT LINE (Horizontal dividers)
+   ============================================ */
+
+.gold-line {
+  height: 1px;
+  background: #FFC000;
+  opacity: 0.4;
+}
+
+/* ============================================
+   SCROLLBAR
+   ============================================ */
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: #000000; }
+::-webkit-scrollbar-thumb { background: #313131; border-radius: 0; }
+::-webkit-scrollbar-thumb:hover { background: #FFC000; }
+
+/* ============================================
+   ANIMAÇÃO DE STATUS AO VIVO
+   ============================================ */
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  background: #FFC000;
+  border-radius: 50% !important;
+  display: inline-block;
+  animation: pulse-dot 1.4s ease-in-out infinite;
 }

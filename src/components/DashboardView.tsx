@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { ToggleLeft, ToggleRight, Car, BarChart3, ShieldCheck, Plus, LogOut, RefreshCw, Layers, Camera, Trash2 } from 'lucide-react';
+import {
+  ToggleLeft, ToggleRight, Car, BarChart3, ShieldCheck,
+  Plus, LogOut, RefreshCw, Layers, Camera, Trash2, Trophy, Award
+} from 'lucide-react';
 import type { Carro, Categoria, Evento } from '../data/mockData';
 
 interface DashboardViewProps {
@@ -28,6 +31,60 @@ interface DashboardViewProps {
 
 type TabType = 'status' | 'resultados' | 'carros' | 'validacao';
 
+// ─── Style helpers ─────────────────────────────────────────────────
+const S = {
+  label: {
+    fontFamily: "'Barlow Condensed', sans-serif",
+    fontSize: 11,
+    fontWeight: 600,
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.16em',
+    color: '#7D7D7D',
+    display: 'block',
+    marginBottom: 8,
+  },
+  input: {
+    width: '100%',
+    background: '#000000',
+    border: '1px solid #313131',
+    borderRadius: 0,
+    color: '#FFFFFF',
+    fontFamily: "'Barlow Condensed', sans-serif",
+    fontSize: 15,
+    letterSpacing: '0.04em',
+    padding: '0 12px',
+    height: 40,
+    outline: 'none',
+  },
+  metricCard: {
+    background: '#181818',
+    border: '1px solid #202020',
+    padding: '20px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  navBtn: (active: boolean) => ({
+    background: active ? '#FFC000' : 'transparent',
+    color: active ? '#000000' : '#7D7D7D',
+    border: active ? 'none' : 'none',
+    padding: '10px 14px',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    fontFamily: "'Barlow Condensed', sans-serif",
+    fontWeight: 700,
+    fontSize: 13,
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.08em',
+    width: '100%',
+    textAlign: 'left' as const,
+    transition: 'background 0.12s, color 0.12s',
+    whiteSpace: 'nowrap' as const,
+  }),
+};
+
 export function DashboardView({
   evento,
   carros,
@@ -43,8 +100,7 @@ export function DashboardView({
 }: DashboardViewProps) {
   const [activeTab, setActiveTab] = useState<TabType>('status');
   const [valTab, setValTab] = useState<'ano' | 'rodagem' | 'equipes'>('ano');
-  
-  // States para cadastro de carro
+
   const [numeroInscricao, setNumeroInscricao] = useState('');
   const [isManualInscricao, setIsManualInscricao] = useState(false);
   const [modelo, setModelo] = useState('');
@@ -55,11 +111,9 @@ export function DashboardView({
   const [urlFoto, setUrlFoto] = useState('');
   const [equipe, setEquipe] = useState('');
   const [kmRodado, setKmRodado] = useState('');
-  
   const [cadastroMsg, setCadastroMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // Calcula o próximo número de inscrição sugerido sequencialmente
   const getNextSuggestedInscricao = () => {
     const numbers = carros
       .map((c) => {
@@ -71,18 +125,12 @@ export function DashboardView({
     return `#${String(max + 1).padStart(3, '0')}`;
   };
 
-  // Mantém o número de inscrição atualizado automaticamente
   useEffect(() => {
-    if (!isManualInscricao) {
-      setNumeroInscricao(getNextSuggestedInscricao());
-    }
+    if (!isManualInscricao) setNumeroInscricao(getNextSuggestedInscricao());
   }, [carros, isManualInscricao]);
 
-  // Recarregar os resultados quando abre a aba correspondente
   useEffect(() => {
-    if (activeTab === 'resultados') {
-      fetchResultados();
-    }
+    if (activeTab === 'resultados') fetchResultados();
   }, [activeTab]);
 
   const handleCameraCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -92,30 +140,21 @@ export function DashboardView({
       reader.onload = (event) => {
         const img = new Image();
         img.onload = () => {
-          // Redimensionar e comprimir para manter string de base64 pequena (max 400px)
           const canvas = document.createElement('canvas');
           const maxDim = 400;
           let width = img.width;
           let height = img.height;
           if (width > height) {
-            if (width > maxDim) {
-              height = (height * maxDim) / width;
-              width = maxDim;
-            }
+            if (width > maxDim) { height = (height * maxDim) / width; width = maxDim; }
           } else {
-            if (height > maxDim) {
-              width = (width * maxDim) / height;
-              height = maxDim;
-            }
+            if (height > maxDim) { width = (width * maxDim) / height; height = maxDim; }
           }
           canvas.width = width;
           canvas.height = height;
           const ctx = canvas.getContext('2d');
           if (ctx) {
             ctx.drawImage(img, 0, 0, width, height);
-            // Salvar em JPEG com 80% de qualidade
-            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
-            setUrlFoto(compressedBase64);
+            setUrlFoto(canvas.toDataURL('image/jpeg', 0.8));
           }
         };
         img.src = event.target?.result as string;
@@ -131,32 +170,17 @@ export function DashboardView({
       setCadastroMsg({ type: 'error', text: 'Preencha todos os campos obrigatórios (*).' });
       return;
     }
-
     setSubmitting(true);
     try {
       await cadastrarCarro(
-        numeroInscricao,
-        modelo,
-        parseInt(ano),
-        parseInt(alturaMm),
-        nomeDono,
-        telefoneDono || undefined,
-        urlFoto || undefined,
-        equipe || undefined,
+        numeroInscricao, modelo, parseInt(ano), parseInt(alturaMm), nomeDono,
+        telefoneDono || undefined, urlFoto || undefined, equipe || undefined,
         kmRodado ? parseInt(kmRodado) : undefined
       );
       setCadastroMsg({ type: 'success', text: 'Carro cadastrado com sucesso!' });
-      
-      // Limpa formulário
-      setModelo('');
-      setAno('');
-      setAlturaMm('');
-      setNomeDono('');
-      setTelefoneDono('');
-      setUrlFoto('');
-      setEquipe('');
-      setKmRodado('');
-      setIsManualInscricao(false); // Volta a ser automático
+      setModelo(''); setAno(''); setAlturaMm(''); setNomeDono('');
+      setTelefoneDono(''); setUrlFoto(''); setEquipe(''); setKmRodado('');
+      setIsManualInscricao(false);
     } catch (err: any) {
       setCadastroMsg({ type: 'error', text: err.message || 'Erro ao cadastrar carro.' });
     } finally {
@@ -164,903 +188,612 @@ export function DashboardView({
     }
   };
 
-  // Lógica de validação interna: ordenar carros do mais antigo para o mais recente (ano ASC)
   const carrosValidadosAntigos = [...carros].sort((a, b) => a.ano - b.ano);
+  const votacaoAberta = evento?.status === 'aberto';
+
+  const navItems: { id: TabType; icon: React.ReactNode; label: string }[] = [
+    { id: 'status', icon: votacaoAberta ? <ToggleRight size={16} /> : <ToggleLeft size={16} />, label: 'Status da Votação' },
+    { id: 'resultados', icon: <BarChart3 size={16} />, label: 'Resultados Ao Vivo' },
+    { id: 'carros', icon: <Layers size={16} />, label: 'Gerenciar Veículos' },
+    { id: 'validacao', icon: <ShieldCheck size={16} />, label: 'Validação Interna' },
+  ];
 
   return (
     <>
-      {/* Sidebar - Desktop */}
-      <div className="w-full md:w-64 bg-surface border-r border-[#2b2b2b] p-5 flex flex-col justify-between">
+      {/* ===== SIDEBAR ===== */}
+      <div
+        style={{
+          background: '#181818',
+          borderRight: '1px solid #202020',
+          borderBottom: 'none',
+          padding: '0',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          flexShrink: 0,
+          width: 220,
+        }}
+        className="hidden md:flex"
+      >
+        {/* Logo */}
         <div>
-          {/* Logo */}
-          <div className="flex items-center space-x-2.5 mb-8">
-            <div className="w-10 h-10 rounded-lg bg-[#121212] border border-primary flex items-center justify-center">
-              <Car className="w-5 h-5 text-primary" />
+          <div style={{ padding: '20px 16px', borderBottom: '1px solid #202020', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 32, height: 32, background: '#202020', border: '1px solid rgba(255,192,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Car size={16} color="#FFC000" />
             </div>
             <div>
-              <h2 className="font-bold text-sm tracking-wider uppercase text-white leading-none">
-                Painel Organizador
-              </h2>
-              <span className="text-[10px] text-text-secondary">Garagem Flow</span>
+              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#FFC000', lineHeight: 1.1 }}>
+                Painel
+              </div>
+              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, color: '#7D7D7D', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
+                Organizador
+              </div>
             </div>
           </div>
 
-          {/* Links de Navegação */}
-          <nav className="space-y-1">
-            <button
-              onClick={() => setActiveTab('status')}
-              className={`w-full text-left px-3.5 py-3 rounded-lg text-xs font-bold transition-all flex items-center space-x-3 ${
-                activeTab === 'status'
-                  ? 'bg-primary text-white shadow-md shadow-primary/10'
-                  : 'text-gray-400 hover:text-white hover:bg-[#222]'
-              }`}
-            >
-              {evento?.status === 'aberto' ? (
-                <ToggleRight className="w-4 h-4" />
-              ) : (
-                <ToggleLeft className="w-4 h-4" />
-              )}
-              <span>Status da Votação</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('resultados')}
-              className={`w-full text-left px-3.5 py-3 rounded-lg text-xs font-bold transition-all flex items-center space-x-3 ${
-                activeTab === 'resultados'
-                  ? 'bg-primary text-white shadow-md shadow-primary/10'
-                  : 'text-gray-400 hover:text-white hover:bg-[#222]'
-              }`}
-            >
-              <BarChart3 className="w-4 h-4" />
-              <span>Resultados (Tempo Real)</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('carros')}
-              className={`w-full text-left px-3.5 py-3 rounded-lg text-xs font-bold transition-all flex items-center space-x-3 ${
-                activeTab === 'carros'
-                  ? 'bg-primary text-white shadow-md shadow-primary/10'
-                  : 'text-gray-400 hover:text-white hover:bg-[#222]'
-              }`}
-            >
-              <Layers className="w-4 h-4" />
-              <span>Gerenciar Carros</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('validacao')}
-              className={`w-full text-left px-3.5 py-3 rounded-lg text-xs font-bold transition-all flex items-center space-x-3 ${
-                activeTab === 'validacao'
-                  ? 'bg-primary text-white shadow-md shadow-primary/10'
-                  : 'text-gray-400 hover:text-white hover:bg-[#222]'
-              }`}
-            >
-              <ShieldCheck className="w-4 h-4" />
-              <span>Validação Interna</span>
-            </button>
+          {/* Nav */}
+          <nav style={{ padding: '8px 0' }}>
+            {navItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id)}
+                style={S.navBtn(activeTab === item.id)}
+                onMouseEnter={e => { if (activeTab !== item.id) e.currentTarget.style.color = '#FFFFFF'; }}
+                onMouseLeave={e => { if (activeTab !== item.id) e.currentTarget.style.color = '#7D7D7D'; }}
+              >
+                {item.icon}
+                <span>{item.label}</span>
+              </button>
+            ))}
           </nav>
         </div>
 
-        {/* Logout */}
+        {/* Sair */}
         <button
           onClick={logout}
-          className="mt-8 px-3.5 py-3 rounded-lg text-xs font-bold text-gray-400 hover:text-primary hover:bg-red-950/20 transition-all flex items-center space-x-3 border border-transparent hover:border-red-950/50"
+          style={{
+            ...S.navBtn(false),
+            borderTop: '1px solid #202020',
+            padding: '14px 16px',
+            color: '#7D7D7D',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.background = 'rgba(180,0,0,0.1)'; }}
+          onMouseLeave={e => { e.currentTarget.style.color = '#7D7D7D'; e.currentTarget.style.background = 'transparent'; }}
         >
-          <LogOut className="w-4 h-4" />
-          <span>Sair do Painel</span>
+          <LogOut size={16} />
+          <span>Encerrar Sessão</span>
         </button>
       </div>
 
-      {/* Main Content Area */}
-      <div className="flex-1 p-6 md:p-8 overflow-y-auto max-h-screen">
-        {/* Top Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-[#2b2b2b] pb-5 mb-8">
+      {/* Mobile Nav */}
+      <div
+        className="md:hidden no-scrollbar"
+        style={{ background: '#181818', borderBottom: '1px solid #202020', display: 'flex', overflowX: 'auto', gap: 2 }}
+      >
+        {navItems.map((item) => (
+          <button
+            key={item.id}
+            onClick={() => setActiveTab(item.id)}
+            style={{
+              ...S.navBtn(activeTab === item.id),
+              width: 'auto',
+              flexShrink: 0,
+              padding: '12px 14px',
+            }}
+          >
+            {item.icon}
+            <span>{item.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* ===== CONTEÚDO PRINCIPAL ===== */}
+      <div style={{ flex: 1, overflowY: 'auto', maxHeight: '100vh', background: '#000000' }}>
+
+        {/* Header */}
+        <div style={{ background: '#181818', borderBottom: '1px solid #202020', padding: '16px 24px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
           <div>
-            <h1 className="text-xl md:text-2xl font-black text-white tracking-tight uppercase">
-              {evento?.nome || 'Carregando Evento...'}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+              <span style={{
+                fontFamily: "'Barlow Condensed', sans-serif",
+                fontSize: 10,
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.16em',
+                color: '#FFC000',
+                background: 'rgba(255,192,0,0.08)',
+                border: '1px solid rgba(255,192,0,0.2)',
+                padding: '3px 10px',
+              }}>
+                Evento Ativo
+              </span>
+              <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#7D7D7D' }}>
+                {evento?.data}
+              </span>
+            </div>
+            <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 24, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#FFFFFF', margin: 0, lineHeight: 1 }}>
+              {evento?.nome || 'Carregando...'}
             </h1>
-            <p className="text-xs text-text-secondary mt-1">
-              Data do Evento: {evento?.data}
-            </p>
           </div>
-          
-          <div className="mt-4 sm:mt-0 flex items-center space-x-3">
-            <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
-              evento?.status === 'aberto' ? 'bg-green-950/50 border border-green-500/50 text-green-300' : 'bg-red-950/50 border border-primary/50 text-red-300'
-            }`}>
-              {evento?.status === 'aberto' ? 'Votação Ativa' : 'Votação Suspensa'}
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{
+              fontFamily: "'Barlow Condensed', sans-serif",
+              fontSize: 11,
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '0.12em',
+              color: votacaoAberta ? '#4ade80' : '#ef4444',
+              border: `1px solid ${votacaoAberta ? 'rgba(74,222,128,0.3)' : 'rgba(239,68,68,0.3)'}`,
+              padding: '5px 12px',
+            }}>
+              {votacaoAberta ? '● EM ANDAMENTO' : '○ ENCERRADA'}
             </span>
             <button
-              onClick={() => {
-                fetchResultados();
-              }}
-              className="p-2 rounded-lg bg-surface border border-[#333] hover:border-secondary text-gray-400 hover:text-white transition-colors"
-              title="Sincronizar dados"
+              onClick={() => fetchResultados()}
+              style={{ background: '#202020', border: '1px solid #313131', padding: '6px', cursor: 'pointer', display: 'flex', color: '#FFC000' }}
+              title="Atualizar"
             >
-              <RefreshCw className="w-4 h-4" />
+              <RefreshCw size={16} />
             </button>
           </div>
         </div>
 
+        {/* Erro Global */}
         {error && (
-          <div className="bg-red-950/30 border border-primary/40 text-red-200 text-xs px-4 py-3 rounded-lg mb-6">
-            {error}
+          <div style={{ background: 'rgba(180,0,0,0.12)', borderBottom: '1px solid rgba(200,50,50,0.3)', borderLeft: '3px solid #ef4444', padding: '12px 24px' }}>
+            <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: '#fca5a5' }}>{error}</span>
           </div>
         )}
 
-        {/* TAB: STATUS */}
-        {activeTab === 'status' && (
-          <div className="space-y-6">
-            <div className="bg-surface rounded-xl p-6 border border-[#2b2b2b]">
-              <h3 className="font-bold text-md text-white mb-2">Controles da Votação</h3>
-              <p className="text-xs text-gray-400 mb-6 max-w-xl">
-                Controle se os visitantes do evento podem enviar novos votos em tempo real. Fechar a votação congela os resultados imediatamente nas telas do público.
-              </p>
+        <div style={{ padding: '24px' }}>
 
-              <div className="flex items-center space-x-4">
+          {/* ══════ TAB: STATUS ══════ */}
+          {activeTab === 'status' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              {/* Controle */}
+              <div style={{ background: '#181818', border: '1px solid #202020', borderLeft: '3px solid #FFC000', padding: '24px' }}>
+                <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 18, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#FFFFFF', margin: '0 0 8px 0' }}>
+                  Controle Geral da Votação
+                </h3>
+                <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: '#7D7D7D', margin: '0 0 20px 0', lineHeight: 1.6, maxWidth: 520 }}>
+                  Alterne o status em tempo real. Fechar a votação bloqueia instantaneamente novas interações pelo celular dos visitantes.
+                </p>
                 <button
                   onClick={toggleStatusVotacao}
-                  className={`px-6 py-3.5 rounded-xl font-bold text-sm flex items-center space-x-3 transition-all ${
-                    evento?.status === 'aberto'
-                      ? 'bg-primary hover:bg-[#c9922f] text-white shadow-lg shadow-primary/20'
-                      : 'bg-green-600 hover:bg-green-500 text-white shadow-lg shadow-green-600/20'
-                  }`}
+                  style={{
+                    background: votacaoAberta ? '#b91c1c' : '#FFC000',
+                    color: votacaoAberta ? '#FFFFFF' : '#000000',
+                    border: 'none',
+                    padding: '0 24px',
+                    height: 48,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    fontFamily: "'Barlow Condensed', sans-serif",
+                    fontWeight: 700,
+                    fontSize: 15,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.1em',
+                    transition: 'background 0.15s',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = votacaoAberta ? '#991b1b' : '#917300'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = votacaoAberta ? '#b91c1c' : '#FFC000'; }}
                 >
-                  {evento?.status === 'aberto' ? (
-                    <>
-                      <ToggleRight className="w-5 h-5" />
-                      <span>Encerrar Votação</span>
-                    </>
+                  {votacaoAberta ? (
+                    <><ToggleRight size={20} /><span>Encerrar Votação Agora</span></>
                   ) : (
-                    <>
-                      <ToggleLeft className="w-5 h-5" />
-                      <span>Abrir Votação</span>
-                    </>
+                    <><ToggleLeft size={20} /><span>Abrir Votação para o Público</span></>
                   )}
                 </button>
               </div>
+
+              {/* Métricas */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 2 }}>
+                {[
+                  { label: 'Frota Inscrita', value: carros.length, icon: <Car size={24} color="#FFC000" /> },
+                  { label: 'Categorias', value: categorias.length, icon: <Trophy size={24} color="#FFC000" /> },
+                  { label: 'Status', value: votacaoAberta ? 'ABERTO' : 'FECHADO', icon: <Award size={24} color="#FFC000" /> },
+                ].map((m) => (
+                  <div key={m.label} style={S.metricCard}>
+                    <div>
+                      <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.16em', color: '#7D7D7D', marginBottom: 8 }}>
+                        {m.label}
+                      </div>
+                      <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 36, fontWeight: 700, color: '#FFFFFF', lineHeight: 1 }}>
+                        {m.value}
+                      </div>
+                    </div>
+                    <div style={{ background: '#202020', border: '1px solid #313131', padding: 12 }}>
+                      {m.icon}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
+          )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="bg-surface rounded-xl p-5 border border-[#2b2b2b]">
-                <span className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Total de Carros</span>
-                <p className="text-3xl font-black text-white mt-1">{carros.length}</p>
-              </div>
-              <div className="bg-surface rounded-xl p-5 border border-[#2b2b2b]">
-                <span className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Categorias</span>
-                <p className="text-3xl font-black text-white mt-1">{categorias.length}</p>
-              </div>
-              <div className="bg-surface rounded-xl p-5 border border-[#2b2b2b]">
-                <span className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Status Atual</span>
-                <p className={`text-lg font-black uppercase mt-2.5 ${evento?.status === 'aberto' ? 'text-green-400' : 'text-primary'}`}>
-                  {evento?.status === 'aberto' ? 'Aceitando Votos' : 'Votação Fechada'}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
+          {/* ══════ TAB: RESULTADOS ══════ */}
+          {activeTab === 'resultados' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 20, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#FFFFFF', margin: 0 }}>
+                Classificação por Votação Popular — Pódio Top 3
+              </h3>
 
-        {/* TAB: RESULTADOS */}
-        {activeTab === 'resultados' && (
-          <div className="space-y-6">
-            <h3 className="font-bold text-md text-white">Classificação por Categoria Votada (Top 3)</h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {categorias
-                .filter((c) => c.tipo === 'popular')
-                .map((cat) => {
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 2 }}>
+                {categorias.filter((c) => c.tipo === 'popular').map((cat) => {
                   const votosCat = resultados[cat.id] || [];
-                  // Calcular total de votos na categoria
                   const totalVotosCat = votosCat.reduce((sum, item) => sum + item.votosCount, 0);
 
                   return (
-                    <div key={cat.id} className="bg-surface rounded-xl p-5 border border-[#2b2b2b] flex flex-col justify-between">
-                      <div>
-                        <div className="flex items-center justify-between border-b border-[#2b2b2b] pb-3 mb-4">
-                          <h4 className="font-bold text-sm text-secondary uppercase tracking-wider">{cat.nome}</h4>
-                          <span className="text-[11px] font-semibold text-gray-400 bg-[#121212] px-2 py-0.5 rounded-full">
-                            {totalVotosCat} votos totais
-                          </span>
-                        </div>
+                    <div key={cat.id} style={{ background: '#181818', border: '1px solid #202020', padding: '20px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #202020', paddingBottom: 12, marginBottom: 16 }}>
+                        <h4 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#FFC000', margin: 0 }}>
+                          {cat.nome}
+                        </h4>
+                        <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, color: '#7D7D7D', background: '#202020', border: '1px solid #313131', padding: '4px 10px' }}>
+                          {totalVotosCat} votos
+                        </span>
+                      </div>
 
-                        <div className="space-y-4">
-                          {votosCat.length === 0 ? (
-                            <div className="text-center py-6 text-xs text-gray-500">
-                              Nenhum voto computado para esta categoria.
-                            </div>
-                          ) : (
-                            votosCat.slice(0, 3).map((item, index) => {
-                              const carro = carros.find((c) => c.id === item.carroId);
-                              const percent = totalVotosCat > 0 ? (item.votosCount / totalVotosCat) * 100 : 0;
-                              const medalColor = index === 0 ? 'text-amber-400' : index === 1 ? 'text-gray-400' : 'text-amber-700';
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {votosCat.length === 0 ? (
+                          <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: '#7D7D7D', textAlign: 'center', padding: '24px 0' }}>
+                            Nenhum voto registrado.
+                          </div>
+                        ) : (
+                          votosCat.slice(0, 3).map((item, index) => {
+                            const carro = carros.find((c) => c.id === item.carroId);
+                            const percent = totalVotosCat > 0 ? (item.votosCount / totalVotosCat) * 100 : 0;
+                            const medalColors = [
+                              { bg: '#FFC000', text: '#000000', label: '1º' },
+                              { bg: '#969696', text: '#000000', label: '2º' },
+                              { bg: '#5a3e00', text: '#FFCE3E', label: '3º' },
+                            ];
+                            const medal = medalColors[index];
 
-                              return (
-                                <div key={item.carroId} className="space-y-1.5">
-                                  <div className="flex items-center justify-between text-xs">
-                                    <div className="flex items-center space-x-2">
-                                      <span className={`font-black ${medalColor}`}>#{index + 1}</span>
-                                      <span className="font-bold text-white line-clamp-1">
-                                        {carro ? `${carro.modelo} (${carro.numero_inscricao})` : `ID Carro: ${item.carroId}`}
-                                      </span>
-                                    </div>
-                                    <span className="font-bold text-white shrink-0">
-                                      {item.votosCount} votos ({percent.toFixed(0)}%)
+                            return (
+                              <div key={item.carroId} style={{ background: '#000000', border: '1px solid #202020', padding: '12px 14px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <span style={{
+                                      background: medal.bg,
+                                      color: medal.text,
+                                      padding: '2px 8px',
+                                      fontFamily: "'Barlow Condensed', sans-serif",
+                                      fontWeight: 700,
+                                      fontSize: 11,
+                                      letterSpacing: '0.1em',
+                                    }}>
+                                      {medal.label}
+                                    </span>
+                                    <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 14, fontWeight: 600, color: '#FFFFFF' }}>
+                                      {carro ? `${carro.modelo} (${carro.numero_inscricao})` : `ID: ${item.carroId}`}
                                     </span>
                                   </div>
-                                  
-                                  {/* Barra de progresso */}
-                                  <div className="w-full bg-[#121212] h-2 rounded-full overflow-hidden border border-[#333]">
-                                    <div
-                                      className="bg-primary h-full rounded-full transition-all duration-500"
-                                      style={{ width: `${percent}%` }}
-                                    />
-                                  </div>
+                                  <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, fontWeight: 700, color: '#FFC000' }}>
+                                    {item.votosCount} ({percent.toFixed(0)}%)
+                                  </span>
                                 </div>
-                              );
-                            })
-                          )}
-                        </div>
+                                {/* Barra de progresso */}
+                                <div style={{ width: '100%', height: 3, background: '#202020', overflow: 'hidden' }}>
+                                  <div style={{ width: `${percent}%`, height: '100%', background: '#FFC000', transition: 'width 0.5s ease' }} />
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
                       </div>
                     </div>
                   );
                 })}
-            </div>
-
-            {/* Seção de Categorias Automáticas */}
-            <div className="mt-8 border-t border-[#2b2b2b] pt-6">
-              <h3 className="font-bold text-md text-white mb-4">Resultados das Categorias Automáticas / Quantidade</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                
-                {/* 1. Mais Antigo */}
-                {(() => {
-                  const oldestCars = [...carros]
-                    .filter((c) => c.ano)
-                    .sort((a, b) => a.ano - b.ano)
-                    .slice(0, 3);
-                  return (
-                    <div className="bg-surface rounded-xl p-5 border border-[#2b2b2b] flex flex-col justify-between">
-                      <div>
-                        <div className="flex items-center justify-between border-b border-[#2b2b2b] pb-3 mb-4">
-                          <h4 className="font-bold text-sm text-secondary uppercase tracking-wider">Mais antigo</h4>
-                          <span className="text-[10px] font-semibold text-primary bg-[#121212] px-2 py-0.5 rounded-full uppercase tracking-wider">
-                            Ano (Crescente)
-                          </span>
-                        </div>
-                        <div className="space-y-4">
-                          {oldestCars.length === 0 ? (
-                            <div className="text-center py-6 text-xs text-gray-500">
-                              Nenhum carro cadastrado.
-                            </div>
-                          ) : (
-                            oldestCars.map((carro, index) => {
-                              const medalColor = index === 0 ? 'text-amber-400' : index === 1 ? 'text-gray-400' : 'text-amber-700';
-                              return (
-                                <div key={carro.id} className="space-y-1">
-                                  <div className="flex items-center justify-between text-xs">
-                                    <div className="flex items-center space-x-2">
-                                      <span className={`font-black ${medalColor}`}>#{index + 1}</span>
-                                      <span className="font-bold text-white line-clamp-1">
-                                        {carro.modelo} ({carro.numero_inscricao})
-                                      </span>
-                                    </div>
-                                    <span className="font-bold text-white shrink-0">
-                                      {carro.ano}
-                                    </span>
-                                  </div>
-                                  <p className="text-[10px] text-text-secondary pl-5">
-                                    Dono(a): {carro.nome_dono}
-                                  </p>
-                                </div>
-                              );
-                            })
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                {/* 2. Maior rodagem */}
-                {(() => {
-                  const longestMilage = [...carros]
-                    .filter((c) => c.km_rodado !== undefined && c.km_rodado > 0)
-                    .sort((a, b) => (b.km_rodado || 0) - (a.km_rodado || 0))
-                    .slice(0, 3);
-                  return (
-                    <div className="bg-surface rounded-xl p-5 border border-[#2b2b2b] flex flex-col justify-between">
-                      <div>
-                        <div className="flex items-center justify-between border-b border-[#2b2b2b] pb-3 mb-4">
-                          <h4 className="font-bold text-sm text-secondary uppercase tracking-wider">Maior rodagem</h4>
-                          <span className="text-[10px] font-semibold text-primary bg-[#121212] px-2 py-0.5 rounded-full uppercase tracking-wider">
-                            KM (Decrescente)
-                          </span>
-                        </div>
-                        <div className="space-y-4">
-                          {longestMilage.length === 0 ? (
-                            <div className="text-center py-6 text-xs text-gray-500">
-                              Nenhum veículo com rodagem informada.
-                            </div>
-                          ) : (
-                            longestMilage.map((carro, index) => {
-                              const medalColor = index === 0 ? 'text-amber-400' : index === 1 ? 'text-gray-400' : 'text-amber-700';
-                              return (
-                                <div key={carro.id} className="space-y-1">
-                                  <div className="flex items-center justify-between text-xs">
-                                    <div className="flex items-center space-x-2">
-                                      <span className={`font-black ${medalColor}`}>#{index + 1}</span>
-                                      <span className="font-bold text-white line-clamp-1">
-                                        {carro.modelo} ({carro.numero_inscricao})
-                                      </span>
-                                    </div>
-                                    <span className="font-bold text-white shrink-0">
-                                      {carro.km_rodado} km
-                                    </span>
-                                  </div>
-                                  <p className="text-[10px] text-text-secondary pl-5">
-                                    Dono(a): {carro.nome_dono}
-                                  </p>
-                                </div>
-                              );
-                            })
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                {/* 3. Maior equipe uniformizada */}
-                {(() => {
-                  const teamCounts: Record<string, number> = {};
-                  carros.forEach((c) => {
-                    if (c.equipe && c.equipe.trim()) {
-                      const t = c.equipe.trim();
-                      teamCounts[t] = (teamCounts[t] || 0) + 1;
-                    }
-                  });
-                  const sortedTeams = Object.keys(teamCounts)
-                    .map((teamName) => ({ teamName, count: teamCounts[teamName] }))
-                    .sort((a, b) => b.count - a.count)
-                    .slice(0, 3);
-                  return (
-                    <div className="bg-surface rounded-xl p-5 border border-[#2b2b2b] flex flex-col justify-between">
-                      <div>
-                        <div className="flex items-center justify-between border-b border-[#2b2b2b] pb-3 mb-4">
-                          <h4 className="font-bold text-sm text-secondary uppercase tracking-wider">Maior equipe</h4>
-                          <span className="text-[10px] font-semibold text-primary bg-[#121212] px-2 py-0.5 rounded-full uppercase tracking-wider">
-                            Qtd Carros
-                          </span>
-                        </div>
-                        <div className="space-y-4">
-                          {sortedTeams.length === 0 ? (
-                            <div className="text-center py-6 text-xs text-gray-500">
-                              Nenhuma equipe registrada.
-                            </div>
-                          ) : (
-                            sortedTeams.map((team, index) => {
-                              const medalColor = index === 0 ? 'text-amber-400' : index === 1 ? 'text-gray-400' : 'text-amber-700';
-                              return (
-                                <div key={team.teamName} className="space-y-1">
-                                  <div className="flex items-center justify-between text-xs">
-                                    <div className="flex items-center space-x-2">
-                                      <span className={`font-black ${medalColor}`}>#{index + 1}</span>
-                                      <span className="font-bold text-white line-clamp-1">
-                                        {team.teamName}
-                                      </span>
-                                    </div>
-                                    <span className="font-bold text-white shrink-0">
-                                      {team.count} carros
-                                    </span>
-                                  </div>
-                                </div>
-                              );
-                            })
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
-
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* TAB: GERENCIAR CARROS */}
-        {activeTab === 'carros' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Form de Cadastro */}
-            <div className="bg-surface rounded-xl p-5 border border-[#2b2b2b] h-fit">
-              <h3 className="font-bold text-sm text-white border-b border-[#2b2b2b] pb-3 mb-4 uppercase tracking-wider flex items-center space-x-2">
-                <Plus className="w-4 h-4 text-primary" />
-                <span>Novo Carro</span>
-              </h3>
+          {/* ══════ TAB: GERENCIAR CARROS ══════ */}
+          {activeTab === 'carros' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 2 }} className="lg:grid-cols-3-dashboard">
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 2 }}>
 
-              <form onSubmit={handleCadastrarCarro} className="space-y-4">
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block text-xs font-semibold text-text-secondary uppercase">
-                      Número de Inscrição *
-                    </label>
-                    <span className="text-[10px] text-gray-500">
-                      {isManualInscricao ? 'Manual' : 'Automático'}
-                    </span>
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Ex: #024"
-                    value={numeroInscricao}
-                    onChange={(e) => {
-                      setNumeroInscricao(e.target.value);
-                      setIsManualInscricao(true); // O usuário digitou manualmente
-                    }}
-                    className="w-full bg-[#121212] border border-[#333] focus:border-secondary focus:ring-1 focus:ring-secondary rounded-lg py-2 px-3 text-white text-xs outline-none"
-                  />
-                  {isManualInscricao && (
-                    <button
-                      type="button"
-                      onClick={() => setIsManualInscricao(false)}
-                      className="text-[10px] text-secondary hover:underline mt-1 focus:outline-none"
-                    >
-                      Voltar para Automático
-                    </button>
-                  )}
-                </div>
+                {/* Form Cadastro */}
+                <div style={{ background: '#181818', border: '1px solid #202020', borderTop: '2px solid #FFC000', padding: '20px' }}>
+                  <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#FFFFFF', margin: '0 0 20px 0', display: 'flex', alignItems: 'center', gap: 8, paddingBottom: 16, borderBottom: '1px solid #202020' }}>
+                    <Plus size={16} color="#FFC000" />
+                    Novo Veículo Inscrito
+                  </h3>
 
-                <div>
-                  <label className="block text-xs font-semibold text-text-secondary uppercase mb-1">
-                    Modelo do Carro *
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Ex: VW Gol 1.8"
-                    value={modelo}
-                    onChange={(e) => setModelo(e.target.value)}
-                    className="w-full bg-[#121212] border border-[#333] focus:border-secondary focus:ring-1 focus:ring-secondary rounded-lg py-2 px-3 text-white text-xs outline-none"
-                  />
-                </div>
+                  <form onSubmit={handleCadastrarCarro} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                        <label style={S.label}>Inscrição *</label>
+                        <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, color: '#FFC000', letterSpacing: '0.1em' }}>
+                          {isManualInscricao ? 'MANUAL' : 'AUTO'}
+                        </span>
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="#024"
+                        value={numeroInscricao}
+                        onChange={(e) => { setNumeroInscricao(e.target.value); setIsManualInscricao(true); }}
+                        style={S.input}
+                        onFocus={e => { e.target.style.borderColor = '#FFC000'; }}
+                        onBlur={e => { e.target.style.borderColor = '#313131'; }}
+                      />
+                    </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-text-secondary uppercase mb-1">
-                      Ano *
-                    </label>
-                    <input
-                      type="number"
-                      placeholder="Ex: 1994"
-                      value={ano}
-                      onChange={(e) => setAno(e.target.value)}
-                      className="w-full bg-[#121212] border border-[#333] focus:border-secondary focus:ring-1 focus:ring-secondary rounded-lg py-2 px-3 text-white text-xs outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-text-secondary uppercase mb-1">
-                      Altura (mm) *
-                    </label>
-                    <input
-                      type="number"
-                      placeholder="Ex: 50"
-                      value={alturaMm}
-                      onChange={(e) => setAlturaMm(e.target.value)}
-                      className="w-full bg-[#121212] border border-[#333] focus:border-secondary focus:ring-1 focus:ring-secondary rounded-lg py-2 px-3 text-white text-xs outline-none"
-                    />
-                  </div>
-                </div>
+                    {[
+                      { label: 'Modelo *', value: modelo, setter: setModelo, placeholder: 'Ex: VW Gol 1.8', type: 'text' },
+                      { label: 'Nome do Dono(a) *', value: nomeDono, setter: setNomeDono, placeholder: 'Ex: Rodrigo Silva', type: 'text' },
+                    ].map((field) => (
+                      <div key={field.label}>
+                        <label style={S.label}>{field.label}</label>
+                        <input
+                          type={field.type}
+                          placeholder={field.placeholder}
+                          value={field.value}
+                          onChange={(e) => field.setter(e.target.value)}
+                          style={S.input}
+                          onFocus={e => { e.target.style.borderColor = '#FFC000'; }}
+                          onBlur={e => { e.target.style.borderColor = '#313131'; }}
+                        />
+                      </div>
+                    ))}
 
-                {/* Nome do Dono/a & Telefone */}
-                <div>
-                  <label className="block text-xs font-semibold text-text-secondary uppercase mb-1">
-                    Nome do Dono/a *
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Ex: Rodrigo Silva"
-                    value={nomeDono}
-                    onChange={(e) => setNomeDono(e.target.value)}
-                    className="w-full bg-[#121212] border border-[#333] focus:border-secondary focus:ring-1 focus:ring-secondary rounded-lg py-2 px-3 text-white text-xs outline-none"
-                  />
-                </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                      {[
+                        { label: 'Ano *', value: ano, setter: setAno, placeholder: '1994' },
+                        { label: 'Altura mm *', value: alturaMm, setter: setAlturaMm, placeholder: '50' },
+                        { label: 'Equipe', value: equipe, setter: setEquipe, placeholder: 'Flow Club' },
+                        { label: 'Km Rodados', value: kmRodado, setter: setKmRodado, placeholder: '150' },
+                      ].map((field) => (
+                        <div key={field.label}>
+                          <label style={S.label}>{field.label}</label>
+                          <input
+                            type="text"
+                            placeholder={field.placeholder}
+                            value={field.value}
+                            onChange={(e) => field.setter(e.target.value)}
+                            style={{ ...S.input, height: 36 }}
+                            onFocus={e => { e.target.style.borderColor = '#FFC000'; }}
+                            onBlur={e => { e.target.style.borderColor = '#313131'; }}
+                          />
+                        </div>
+                      ))}
+                    </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-text-secondary uppercase mb-1">
-                    Telefone do Dono (Org)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Ex: (11) 98888-8888"
-                    value={telefoneDono}
-                    onChange={(e) => setTelefoneDono(e.target.value)}
-                    className="w-full bg-[#121212] border border-[#333] focus:border-secondary focus:ring-1 focus:ring-secondary rounded-lg py-2 px-3 text-white text-xs outline-none"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-text-secondary uppercase mb-1">
-                      Equipe / Clube
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Ex: Flow Club"
-                      value={equipe}
-                      onChange={(e) => setEquipe(e.target.value)}
-                      className="w-full bg-[#121212] border border-[#333] focus:border-secondary focus:ring-1 focus:ring-secondary rounded-lg py-2 px-3 text-white text-xs outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-text-secondary uppercase mb-1">
-                      Km Rodados (Distância)
-                    </label>
-                    <input
-                      type="number"
-                      placeholder="Ex: 150"
-                      value={kmRodado}
-                      onChange={(e) => setKmRodado(e.target.value)}
-                      className="w-full bg-[#121212] border border-[#333] focus:border-secondary focus:ring-1 focus:ring-secondary rounded-lg py-2 px-3 text-white text-xs outline-none"
-                    />
-                  </div>
-                </div>
-
-                {/* Capturar Imagem com Câmera */}
-                <div className="space-y-2">
-                  <label className="block text-xs font-semibold text-text-secondary uppercase">
-                    Foto do Veículo
-                  </label>
-                  
-                  {urlFoto && (
-                    <div className="relative w-full h-32 rounded-lg overflow-hidden border border-[#2b2b2b] bg-[#121212]">
-                      <img src={urlFoto} alt="Preview do carro" className="w-full h-full object-cover" />
+                    {/* Foto */}
+                    <div>
+                      <label style={S.label}>Foto do Veículo</label>
+                      {urlFoto && (
+                        <div style={{ position: 'relative', width: '100%', height: 100, overflow: 'hidden', marginBottom: 8, background: '#000000' }}>
+                          <img src={urlFoto} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                          <button
+                            type="button"
+                            onClick={() => setUrlFoto('')}
+                            style={{ position: 'absolute', top: 6, right: 6, background: 'rgba(0,0,0,0.85)', border: '1px solid #313131', color: '#FFFFFF', padding: '3px 8px', cursor: 'pointer', fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif" }}
+                          >
+                            Remover
+                          </button>
+                        </div>
+                      )}
                       <button
                         type="button"
-                        onClick={() => setUrlFoto('')}
-                        className="absolute top-1.5 right-1.5 bg-black/80 hover:bg-black text-white font-bold p-1 rounded-full text-[10px]"
+                        onClick={() => document.getElementById('camera-file-input')?.click()}
+                        style={{ ...S.input, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer', background: '#202020', borderColor: '#313131', marginBottom: 6 }}
                       >
-                        Remover
+                        <Camera size={14} color="#FFC000" />
+                        <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                          Capturar Foto
+                        </span>
                       </button>
+                      <input id="camera-file-input" type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handleCameraCapture} />
+                      <input
+                        type="text"
+                        placeholder="Ou cole uma URL..."
+                        value={urlFoto.startsWith('data:image') ? '' : urlFoto}
+                        onChange={(e) => setUrlFoto(e.target.value)}
+                        style={{ ...S.input, height: 36 }}
+                        onFocus={e => { e.target.style.borderColor = '#FFC000'; }}
+                        onBlur={e => { e.target.style.borderColor = '#313131'; }}
+                      />
                     </div>
-                  )}
 
-                  <div className="flex space-x-2">
+                    {cadastroMsg && (
+                      <div style={{
+                        background: cadastroMsg.type === 'success' ? 'rgba(0,120,60,0.15)' : 'rgba(180,0,0,0.15)',
+                        border: `1px solid ${cadastroMsg.type === 'success' ? 'rgba(74,222,128,0.3)' : 'rgba(220,50,50,0.3)'}`,
+                        borderLeft: `3px solid ${cadastroMsg.type === 'success' ? '#4ade80' : '#ef4444'}`,
+                        padding: '10px 14px',
+                      }}>
+                        <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: cadastroMsg.type === 'success' ? '#86efac' : '#fca5a5' }}>
+                          {cadastroMsg.text}
+                        </span>
+                      </div>
+                    )}
+
                     <button
-                      type="button"
-                      onClick={() => document.getElementById('camera-file-input')?.click()}
-                      className="flex-1 bg-[#121212] hover:bg-[#1a1a1a] border border-[#333] hover:border-secondary text-white py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center space-x-1.5 transition-all"
+                      type="submit"
+                      disabled={submitting}
+                      className="btn-gold"
+                      style={{ width: '100%', height: 44, fontSize: 14, marginTop: 4 }}
                     >
-                      <Camera className="w-3.5 h-3.5 text-secondary" />
-                      <span>Abrir Câmera / Tirar Foto</span>
+                      {submitting ? 'Adicionando...' : 'Cadastrar Veículo'}
                     </button>
-                    <input
-                      id="camera-file-input"
-                      type="file"
-                      accept="image/*"
-                      capture="environment"
-                      className="hidden"
-                      onChange={handleCameraCapture}
-                    />
-                  </div>
-
-                  <input
-                    type="text"
-                    placeholder="Ou cole uma URL da foto..."
-                    value={urlFoto.startsWith('data:image') ? '' : urlFoto}
-                    onChange={(e) => setUrlFoto(e.target.value)}
-                    className="w-full bg-[#121212] border border-[#333] focus:border-secondary focus:ring-1 focus:ring-secondary rounded-lg py-2 px-3 text-white text-xs outline-none"
-                  />
+                  </form>
                 </div>
 
-                {cadastroMsg && (
-                  <div className={`p-2.5 rounded-lg text-xs font-semibold ${
-                    cadastroMsg.type === 'success' ? 'bg-green-950/40 text-green-300 border border-green-500/40' : 'bg-red-950/40 text-red-300 border border-primary/40'
-                  }`}>
-                    {cadastroMsg.text}
-                  </div>
-                )}
+                {/* Lista */}
+                <div style={{ background: '#181818', border: '1px solid #202020', padding: '20px', gridColumn: 'span 2' }} className="lg:col-span-2">
+                  <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#FFFFFF', margin: '0 0 16px 0', paddingBottom: 14, borderBottom: '1px solid #202020' }}>
+                    Veículos na Pista ({carros.length})
+                  </h3>
 
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="w-full bg-secondary hover:bg-[#39637e] text-white font-bold py-2 px-4 rounded-lg text-xs shadow-md transition-all active:scale-[0.98]"
-                >
-                  {submitting ? 'Salvando...' : 'Adicionar Carro'}
-                </button>
-              </form>
-            </div>
-
-            {/* Listagem de Carros cadastrados */}
-            <div className="lg:col-span-2 bg-surface rounded-xl p-5 border border-[#2b2b2b]">
-              <h3 className="font-bold text-sm text-white border-b border-[#2b2b2b] pb-3 mb-4 uppercase tracking-wider">
-                Lista de Carros Cadastrados ({carros.length})
-              </h3>
-
-              <div className="max-h-[500px] overflow-y-auto space-y-3 pr-2">
-                {carros.length === 0 ? (
-                  <p className="text-center text-xs text-gray-500 py-6">Nenhum carro cadastrado.</p>
-                ) : (
-                  carros.map((carro) => (
-                    <div key={carro.id} className="bg-[#121212] border border-[#282828] rounded-lg p-3 flex items-center justify-between space-x-4">
-                      <div className="flex items-center space-x-3 min-w-0">
-                        <img
-                          src={carro.url_foto}
-                          alt={carro.modelo}
-                          className="w-12 h-12 object-cover rounded-md border border-[#222] shrink-0"
-                        />
-                        <div className="min-w-0">
-                          <h4 className="font-bold text-xs text-white truncate">{carro.modelo}</h4>
-                          <div className="text-[10px] text-text-secondary mt-0.5 space-y-0.5">
-                            <div>
-                              Dono(a): <span className="text-white font-semibold">{carro.nome_dono}</span>
-                              {carro.equipe && (
-                                <> | Equipe: <span className="text-secondary">{carro.equipe}</span></>
-                              )}
-                              {carro.telefone_dono && (
-                                <> | Tel: <span className="text-gray-400">{carro.telefone_dono}</span></>
-                              )}
-                            </div>
-                            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                              <span className="bg-surface px-1.5 py-0.5 rounded text-white font-semibold">{carro.numero_inscricao}</span>
-                              <span>Ano: {carro.ano}</span>
-                              <span>•</span>
-                              <span>{carro.altura_mm} mm</span>
-                              {carro.km_rodado !== undefined && carro.km_rodado > 0 && (
-                                <>
-                                  <span>•</span>
-                                  <span className="text-secondary">{carro.km_rodado} km rodados</span>
-                                </>
-                              )}
+                  <div style={{ maxHeight: 500, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }} className="no-scrollbar">
+                    {carros.length === 0 ? (
+                      <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: '#7D7D7D', textAlign: 'center', padding: '32px 0', margin: 0 }}>
+                        Nenhum veículo cadastrado ainda.
+                      </p>
+                    ) : (
+                      carros.map((carro) => (
+                        <div
+                          key={carro.id}
+                          style={{ background: '#000000', border: '1px solid #202020', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+                            <img
+                              src={carro.url_foto}
+                              alt={carro.modelo}
+                              style={{ width: 52, height: 52, objectFit: 'cover', flexShrink: 0, display: 'block', border: '1px solid #202020' }}
+                            />
+                            <div style={{ minWidth: 0 }}>
+                              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 15, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#FFFFFF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                {carro.modelo}
+                              </div>
+                              <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#7D7D7D', marginTop: 3 }}>
+                                {carro.nome_dono}{carro.equipe ? ` · ${carro.equipe}` : ''}
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                                <span style={{ background: '#FFC000', color: '#000000', padding: '2px 8px', fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, fontWeight: 700 }}>
+                                  {carro.numero_inscricao}
+                                </span>
+                                <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, color: '#7D7D7D' }}>
+                                  {carro.ano} · {carro.altura_mm}mm
+                                </span>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </div>
 
-                      {/* Botão de Excluir Carro */}
-                      <button
-                        onClick={async () => {
-                          if (confirm(`Tem certeza que deseja excluir o carro "${carro.modelo}" (Inscrição: ${carro.numero_inscricao})?`)) {
-                            await deletarCarro(carro.id);
-                          }
-                        }}
-                        className="p-2 rounded bg-red-950/20 hover:bg-red-950/40 border border-red-900/40 text-primary hover:text-red-400 transition-colors focus:outline-none shrink-0"
-                        title="Excluir Carro"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))
-                )}
+                          <button
+                            onClick={async () => {
+                              if (confirm(`Excluir "${carro.modelo}" (${carro.numero_inscricao})?`)) {
+                                await deletarCarro(carro.id);
+                              }
+                            }}
+                            style={{ background: 'rgba(180,0,0,0.1)', border: '1px solid rgba(200,50,50,0.3)', color: '#ef4444', padding: 8, cursor: 'pointer', flexShrink: 0, display: 'flex', transition: 'background 0.12s' }}
+                            title="Excluir"
+                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(180,0,0,0.25)'; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(180,0,0,0.1)'; }}
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* TAB: VALIDAÇÃO INTERNA */}
-        {activeTab === 'validacao' && (
-          <div className="bg-surface rounded-xl p-6 border border-[#2b2b2b] space-y-6">
-            <div>
-              <h3 className="font-bold text-md text-white mb-2">Validação Interna de Frota e Equipes</h3>
-              <p className="text-xs text-gray-400">
-                Esta seção apresenta dados consolidados para auditoria dos organizadores e apuração dos troféus automáticos.
-              </p>
-            </div>
+          {/* ══════ TAB: VALIDAÇÃO ══════ */}
+          {activeTab === 'validacao' && (
+            <div style={{ background: '#181818', border: '1px solid #202020', padding: '24px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+              <div>
+                <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 20, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#FFFFFF', margin: '0 0 6px 0' }}>
+                  Validação Interna da Frota
+                </h3>
+                <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: '#7D7D7D', margin: 0 }}>
+                  Apurador automático para troféus de veículos antigos, maior rodagem e maiores equipes.
+                </p>
+              </div>
 
-            {/* Sub-abas de Validação */}
-            <div className="flex border-b border-[#2b2b2b]">
-              <button
-                onClick={() => setValTab('ano')}
-                className={`py-2.5 px-4 font-bold text-xs uppercase transition-colors border-b-2 outline-none ${
-                  valTab === 'ano'
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-gray-400 hover:text-white'
-                }`}
-              >
-                Frota por Ano (Antigos)
-              </button>
-              <button
-                onClick={() => setValTab('rodagem')}
-                className={`py-2.5 px-4 font-bold text-xs uppercase transition-colors border-b-2 outline-none ${
-                  valTab === 'rodagem'
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-gray-400 hover:text-white'
-                }`}
-              >
-                Frota por Rodagem (KM)
-              </button>
-              <button
-                onClick={() => setValTab('equipes')}
-                className={`py-2.5 px-4 font-bold text-xs uppercase transition-colors border-b-2 outline-none ${
-                  valTab === 'equipes'
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-gray-400 hover:text-white'
-                }`}
-              >
-                Equipes (Quantidade)
-              </button>
-            </div>
+              {/* Sub-tabs */}
+              <div style={{ display: 'flex', borderBottom: '1px solid #202020', gap: 0 }}>
+                {[
+                  { id: 'ano' as const, label: 'Mais Antigos' },
+                  { id: 'rodagem' as const, label: 'Maior Rodagem' },
+                  { id: 'equipes' as const, label: 'Maior Equipe' },
+                ].map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => setValTab(t.id)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      borderBottom: valTab === t.id ? '2px solid #FFC000' : '2px solid transparent',
+                      color: valTab === t.id ? '#FFC000' : '#7D7D7D',
+                      padding: '10px 18px',
+                      cursor: 'pointer',
+                      fontFamily: "'Barlow Condensed', sans-serif",
+                      fontWeight: 700,
+                      fontSize: 13,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.08em',
+                      transition: 'color 0.12s, border-color 0.12s',
+                    }}
+                    onMouseEnter={e => { if (valTab !== t.id) e.currentTarget.style.color = '#FFFFFF'; }}
+                    onMouseLeave={e => { if (valTab !== t.id) e.currentTarget.style.color = '#7D7D7D'; }}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
 
-            {/* TABELA 1: FROTAS POR ANO */}
-            {valTab === 'ano' && (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
+              {/* Tabelas */}
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: "'Barlow Condensed', sans-serif", fontSize: 14 }}>
                   <thead>
-                    <tr className="border-b border-[#2b2b2b] text-text-secondary">
-                      <th className="py-3 px-4 font-bold uppercase tracking-wider">Ordenação</th>
-                      <th className="py-3 px-4 font-bold uppercase tracking-wider">Inscrição</th>
-                      <th className="py-3 px-4 font-bold uppercase tracking-wider">Modelo</th>
-                      <th className="py-3 px-4 font-bold uppercase tracking-wider">Dono(a)</th>
-                      <th className="py-3 px-4 font-bold uppercase tracking-wider">Equipe</th>
-                      <th className="py-3 px-4 font-bold uppercase tracking-wider">Ano Fabricação</th>
-                      <th className="py-3 px-4 font-bold uppercase tracking-wider">Ações</th>
+                    <tr style={{ borderBottom: '1px solid #202020' }}>
+                      {['Posição', 'Inscrição', 'Modelo', 'Dono(a)',
+                        valTab === 'ano' ? 'Ano' : valTab === 'rodagem' ? 'KM Rodado' : 'Carros'].map((h) => (
+                        <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#7D7D7D', fontSize: 11 }}>
+                          {h}
+                        </th>
+                      ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#2b2b2b]">
-                    {carrosValidadosAntigos.map((carro, index) => {
-                      const isFirst = index === 0;
+                  <tbody>
+                    {valTab === 'ano' && carrosValidadosAntigos.map((carro, index) => (
+                      <tr key={carro.id} style={{ borderBottom: '1px solid #181818', background: index === 0 ? 'rgba(255,192,0,0.06)' : 'transparent' }}>
+                        <td style={{ padding: '12px 16px', color: index === 0 ? '#FFC000' : '#7D7D7D', fontWeight: 700 }}>
+                          {index === 0 ? '🏆 1º' : `${index + 1}º`}
+                        </td>
+                        <td style={{ padding: '12px 16px', color: '#FFC000', fontWeight: 700 }}>{carro.numero_inscricao}</td>
+                        <td style={{ padding: '12px 16px', color: '#FFFFFF' }}>{carro.modelo}</td>
+                        <td style={{ padding: '12px 16px', color: '#969696' }}>{carro.nome_dono}</td>
+                        <td style={{ padding: '12px 16px', color: index === 0 ? '#FFC000' : '#FFFFFF', fontWeight: 700 }}>{carro.ano}</td>
+                      </tr>
+                    ))}
+
+                    {valTab === 'rodagem' && [...carros].sort((a, b) => (b.km_rodado || 0) - (a.km_rodado || 0)).map((carro, index) => {
+                      const isFirst = index === 0 && (carro.km_rodado || 0) > 0;
                       return (
-                        <tr
-                          key={carro.id}
-                          className={`hover:bg-[#252525] transition-colors ${
-                            isFirst ? 'bg-primary/5 font-semibold text-primary' : 'text-white'
-                          }`}
-                        >
-                          <td className="py-3.5 px-4">
-                            {isFirst ? (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded bg-primary/20 text-primary border border-primary/30 font-black">
-                                MAIS ANTIGO
-                              </span>
-                            ) : (
-                              <span>{index + 1}º mais antigo</span>
-                            )}
+                        <tr key={carro.id} style={{ borderBottom: '1px solid #181818', background: isFirst ? 'rgba(255,192,0,0.06)' : 'transparent' }}>
+                          <td style={{ padding: '12px 16px', color: isFirst ? '#FFC000' : '#7D7D7D', fontWeight: 700 }}>
+                            {isFirst ? '🏆 1º' : `${index + 1}º`}
                           </td>
-                          <td className="py-3.5 px-4 font-bold">{carro.numero_inscricao}</td>
-                          <td className="py-3.5 px-4">{carro.modelo}</td>
-                          <td className="py-3.5 px-4">{carro.nome_dono}</td>
-                          <td className="py-3.5 px-4 font-semibold text-secondary">{carro.equipe || '-'}</td>
-                          <td className="py-3.5 px-4">{carro.ano}</td>
-                          <td className="py-3.5 px-4">
-                            <button
-                              onClick={async () => {
-                                if (confirm(`Tem certeza que deseja excluir o carro "${carro.modelo}"?`)) {
-                                  await deletarCarro(carro.id);
-                                }
-                              }}
-                              className="p-1.5 rounded bg-red-950/20 hover:bg-red-950/40 border border-red-900/40 text-primary hover:text-red-400 transition-colors focus:outline-none"
-                              title="Excluir Carro"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </td>
+                          <td style={{ padding: '12px 16px', color: '#FFC000', fontWeight: 700 }}>{carro.numero_inscricao}</td>
+                          <td style={{ padding: '12px 16px', color: '#FFFFFF' }}>{carro.modelo}</td>
+                          <td style={{ padding: '12px 16px', color: '#969696' }}>{carro.nome_dono}</td>
+                          <td style={{ padding: '12px 16px', color: isFirst ? '#FFC000' : '#FFFFFF', fontWeight: 700 }}>{carro.km_rodado || 0} km</td>
                         </tr>
                       );
                     })}
-                  </tbody>
-                </table>
-              </div>
-            )}
 
-            {/* TABELA 2: FROTAS POR RODAGEM */}
-            {valTab === 'rodagem' && (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="border-b border-[#2b2b2b] text-text-secondary">
-                      <th className="py-3 px-4 font-bold uppercase tracking-wider">Ordenação</th>
-                      <th className="py-3 px-4 font-bold uppercase tracking-wider">Inscrição</th>
-                      <th className="py-3 px-4 font-bold uppercase tracking-wider">Modelo</th>
-                      <th className="py-3 px-4 font-bold uppercase tracking-wider">Dono(a)</th>
-                      <th className="py-3 px-4 font-bold uppercase tracking-wider">Equipe</th>
-                      <th className="py-3 px-4 font-bold uppercase tracking-wider">Km Rodado</th>
-                      <th className="py-3 px-4 font-bold uppercase tracking-wider">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#2b2b2b]">
-                    {[...carros]
-                      .sort((a, b) => (b.km_rodado || 0) - (a.km_rodado || 0))
-                      .map((carro, index) => {
-                        const isFirst = index === 0 && (carro.km_rodado || 0) > 0;
-                        return (
-                          <tr
-                            key={carro.id}
-                            className={`hover:bg-[#252525] transition-colors ${
-                              isFirst ? 'bg-primary/5 font-semibold text-primary' : 'text-white'
-                            }`}
-                          >
-                            <td className="py-3.5 px-4">
-                              {isFirst ? (
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded bg-primary/20 text-primary border border-primary/30 font-black">
-                                  MAIOR RODAGEM
-                                </span>
-                              ) : (
-                                <span>{index + 1}º mais rodado</span>
-                              )}
-                            </td>
-                            <td className="py-3.5 px-4 font-bold">{carro.numero_inscricao}</td>
-                            <td className="py-3.5 px-4">{carro.modelo}</td>
-                            <td className="py-3.5 px-4">{carro.nome_dono}</td>
-                            <td className="py-3.5 px-4 font-semibold text-secondary">{carro.equipe || '-'}</td>
-                            <td className="py-3.5 px-4">{carro.km_rodado || 0} km</td>
-                            <td className="py-3.5 px-4">
-                              <button
-                                onClick={async () => {
-                                  if (confirm(`Tem certeza que deseja excluir o carro "${carro.modelo}"?`)) {
-                                    await deletarCarro(carro.id);
-                                  }
-                                }}
-                                className="p-1.5 rounded bg-red-950/20 hover:bg-red-950/40 border border-red-900/40 text-primary hover:text-red-400 transition-colors focus:outline-none"
-                                title="Excluir Carro"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {/* TABELA 3: EQUIPES POR QUANTIDADE */}
-            {valTab === 'equipes' && (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="border-b border-[#2b2b2b] text-text-secondary">
-                      <th className="py-3 px-4 font-bold uppercase tracking-wider">Ordenação</th>
-                      <th className="py-3 px-4 font-bold uppercase tracking-wider">Nome da Equipe</th>
-                      <th className="py-3 px-4 font-bold uppercase tracking-wider">Integrantes/Carros Inscritos</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#2b2b2b]">
-                    {(() => {
+                    {valTab === 'equipes' && (() => {
                       const teamCounts: Record<string, number> = {};
-                      carros.forEach((c) => {
-                        if (c.equipe && c.equipe.trim()) {
-                          const t = c.equipe.trim();
-                          teamCounts[t] = (teamCounts[t] || 0) + 1;
-                        }
-                      });
-                      const sortedTeams = Object.keys(teamCounts)
-                        .map((teamName) => ({ teamName, count: teamCounts[teamName] }))
-                        .sort((a, b) => b.count - a.count);
-
-                      return sortedTeams.length === 0 ? (
-                        <tr>
-                          <td colSpan={3} className="py-6 text-center text-gray-500">
-                            Nenhuma equipe com veículo cadastrado.
+                      carros.forEach((c) => { if (c.equipe?.trim()) { const t = c.equipe.trim(); teamCounts[t] = (teamCounts[t] || 0) + 1; } });
+                      return Object.entries(teamCounts).sort(([, a], [, b]) => b - a).map(([teamName, count], index) => (
+                        <tr key={teamName} style={{ borderBottom: '1px solid #181818', background: index === 0 ? 'rgba(255,192,0,0.06)' : 'transparent' }}>
+                          <td style={{ padding: '12px 16px', color: index === 0 ? '#FFC000' : '#7D7D7D', fontWeight: 700 }}>
+                            {index === 0 ? '🏆 1ª' : `${index + 1}ª`}
                           </td>
+                          <td style={{ padding: '12px 16px', color: '#FFC000', fontWeight: 700 }}>—</td>
+                          <td style={{ padding: '12px 16px', color: '#FFFFFF' }}>{teamName}</td>
+                          <td style={{ padding: '12px 16px', color: '#969696' }}>—</td>
+                          <td style={{ padding: '12px 16px', color: index === 0 ? '#FFC000' : '#FFFFFF', fontWeight: 700 }}>{count} carros</td>
                         </tr>
-                      ) : (
-                        sortedTeams.map((team, index) => {
-                          const isFirst = index === 0;
-                          return (
-                            <tr
-                              key={team.teamName}
-                              className={`hover:bg-[#252525] transition-colors ${
-                                isFirst ? 'bg-primary/5 font-semibold text-primary' : 'text-white'
-                              }`}
-                            >
-                              <td className="py-3.5 px-4">
-                                {isFirst ? (
-                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded bg-primary/20 text-primary border border-primary/30 font-black">
-                                    MAIOR EQUIPE
-                                  </span>
-                                ) : (
-                                  <span>{index + 1}ª equipe</span>
-                                )}
-                              </td>
-                              <td className="py-3.5 px-4 font-bold">{team.teamName}</td>
-                              <td className="py-3.5 px-4">{team.count} carros inscritos</td>
-                            </tr>
-                          );
-                        })
-                      );
+                      ));
                     })()}
                   </tbody>
                 </table>
               </div>
-            )}
-          </div>
-        )}
+            </div>
+          )}
+
+        </div>
       </div>
     </>
   );

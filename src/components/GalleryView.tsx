@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LogOut, Vote, AlertCircle, CheckCircle2, Trophy } from 'lucide-react';
+import { LogOut, Vote, AlertCircle, CheckCircle2, Trophy, Search, Gauge, Calendar, Ruler, Car, Shield } from 'lucide-react';
 import type { Carro, Categoria, Evento, Voto, Eleitor } from '../data/mockData';
 
 interface GalleryViewProps {
@@ -26,20 +26,29 @@ export function GalleryView({
   error: _error,
 }: GalleryViewProps) {
   const [activeCategoryId, setActiveCategoryId] = useState<string>('');
+  const [searchTerm, setSearchTerm] = useState<string>('');
 
   const popularCategorias = categorias.filter((c) => c.tipo === 'popular');
 
-  // Seta a primeira categoria como ativa quando carregada
   React.useEffect(() => {
     if (popularCategorias.length > 0 && !activeCategoryId) {
       setActiveCategoryId(popularCategorias[0].id);
     }
   }, [popularCategorias, activeCategoryId]);
 
-  // Filtra carros que pertencem ao evento ativo (caso de segurança)
-  const eventCarros = carros.filter((c) => !evento || c.evento_id === evento.id);
+  const eventCarros = carros
+    .filter((c) => !evento || c.evento_id === evento.id)
+    .filter((c) => {
+      if (!searchTerm.trim()) return true;
+      const term = searchTerm.toLowerCase().trim();
+      return (
+        c.modelo.toLowerCase().includes(term) ||
+        c.numero_inscricao.toLowerCase().includes(term) ||
+        c.nome_dono.toLowerCase().includes(term) ||
+        (c.equipe && c.equipe.toLowerCase().includes(term))
+      );
+    });
 
-  // Verifica se o usuário já votou nesta categoria ativa
   const votoNestaCategoria = userVotos.find(
     (v) => v.categoria_id === activeCategoryId
   );
@@ -49,45 +58,183 @@ export function GalleryView({
     try {
       await votar(carroId, activeCategoryId);
     } catch (e) {
-      // O erro já é tratado no hook useVotos e exposto no state
+      // Erro tratado no hook useVotos
     }
   };
 
+  const votacaoAberta = evento?.status === 'aberto';
+
   return (
-    <div className="flex-1 flex flex-col justify-between py-2 text-white">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-[#2b2b2b] pb-4 mb-4">
-        <div>
-          <span className="text-[10px] uppercase font-bold text-primary tracking-wider">
-            {evento?.status === 'aberto' ? '● Votação Aberta' : '○ Votação Fechada'}
-          </span>
-          <h2 className="text-md font-bold tracking-tight text-white line-clamp-1">
-            {evento?.nome || 'Carregando evento...'}
-          </h2>
+    <div className="w-full flex-1 flex flex-col" style={{ gap: 0 }}>
+
+      {/* ===== HEADER ===== */}
+      <div
+        style={{
+          background: '#181818',
+          borderBottom: '1px solid #202020',
+          padding: '16px 20px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 12,
+          marginBottom: 1,
+        }}
+      >
+        {/* Linha 1: Logo + Evento + Status */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div
+              style={{
+                width: 40,
+                height: 40,
+                background: '#202020',
+                border: '1px solid rgba(255,192,0,0.25)',
+                flexShrink: 0,
+                overflow: 'hidden',
+              }}
+            >
+              <img
+                src="/Logo-evento.jpeg"
+                alt="Logo do Evento"
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+              />
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <span
+                  style={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: '50%',
+                    background: votacaoAberta ? '#4ade80' : '#ef4444',
+                    display: 'inline-block',
+                    flexShrink: 0,
+                    animation: votacaoAberta ? 'pulse-dot 1.4s infinite' : 'none',
+                  }}
+                />
+                <span style={{
+                  fontFamily: "'Barlow Condensed', sans-serif",
+                  fontSize: 10,
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.18em',
+                  color: '#FFC000',
+                }}>
+                  {votacaoAberta ? 'Votação Popular Aberta' : 'Votação Encerrada'}
+                </span>
+              </div>
+              <h2 style={{
+                fontFamily: "'Barlow Condensed', sans-serif",
+                fontWeight: 700,
+                fontSize: 18,
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+                color: '#FFFFFF',
+                margin: 0,
+                lineHeight: 1,
+              }}>
+                {evento?.nome || 'Garagem Flow'}
+              </h2>
+            </div>
+          </div>
+
+          <button
+            onClick={logout}
+            className="btn-ghost"
+            style={{ height: 36, padding: '0 14px', fontSize: 12 }}
+            title="Sair"
+          >
+            <LogOut size={14} />
+            <span className="hidden sm:inline">SAIR</span>
+          </button>
         </div>
-        <button
-          onClick={logout}
-          className="p-2 rounded-lg bg-surface border border-[#333] hover:border-primary text-gray-400 hover:text-primary transition-colors focus:outline-none"
-          title="Sair"
-        >
-          <LogOut className="w-4 h-4" />
-        </button>
+
+        {/* Linha 2: Busca */}
+        <div style={{ position: 'relative' }}>
+          <Search
+            size={14}
+            color="#7D7D7D"
+            style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
+          />
+          <input
+            type="text"
+            placeholder="Buscar por nº (#042), modelo, dono..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="input-ds"
+            style={{ paddingLeft: 40, paddingRight: 36, height: 40, fontSize: 13 }}
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              style={{
+                position: 'absolute',
+                right: 12,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'none',
+                border: 'none',
+                color: '#7D7D7D',
+                cursor: 'pointer',
+                fontSize: 14,
+                padding: 0,
+              }}
+            >
+              ✕
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Alerta de Votação Fechada */}
-      {evento?.status === 'fechado' && (
-        <div className="bg-red-950/20 border border-red-500/30 text-red-400 text-xs font-semibold px-4 py-3 rounded-lg flex items-center space-x-2 mb-4 animate-pulse">
-          <AlertCircle className="w-4 h-4 shrink-0" />
-          <span>A votação deste evento foi encerrada pelos organizadores.</span>
+      {/* ===== ALERTA ENCERRADA ===== */}
+      {!votacaoAberta && (
+        <div
+          style={{
+            background: 'rgba(180,0,0,0.12)',
+            borderBottom: '1px solid rgba(200,50,50,0.3)',
+            borderLeft: '3px solid #ef4444',
+            padding: '12px 20px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+          }}
+        >
+          <AlertCircle size={15} color="#ef4444" style={{ flexShrink: 0 }} />
+          <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: '#fca5a5' }}>
+            A votação deste evento foi encerrada pelos organizadores.
+          </span>
         </div>
       )}
 
-      {/* Tabs de Categorias (Horizontal Scrollable) */}
-      <div className="mb-4">
-        <label className="text-[10px] font-bold text-text-secondary uppercase tracking-wider block mb-2">
-          Categorias
-        </label>
-        <div className="flex space-x-2 overflow-x-auto pb-2 scrollbar-none snap-x -mx-1 px-1">
+      {/* ===== TABS DE CATEGORIAS ===== */}
+      <div
+        style={{
+          background: '#181818',
+          borderBottom: '1px solid #202020',
+          padding: '12px 20px',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Trophy size={14} color="#FFC000" />
+            <span className="label-ds">Categorias de Votação</span>
+          </div>
+          <span style={{
+            fontFamily: "'Barlow Condensed', sans-serif",
+            fontSize: 12,
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            letterSpacing: '0.1em',
+            color: '#FFC000',
+            background: 'rgba(255,192,0,0.08)',
+            border: '1px solid rgba(255,192,0,0.2)',
+            padding: '4px 12px',
+          }}>
+            {userVotos.length} voto(s)
+          </span>
+        </div>
+
+        <div className="no-scrollbar" style={{ display: 'flex', gap: 2, overflowX: 'auto', paddingBottom: 2 }}>
           {popularCategorias.map((cat) => {
             const isSelected = cat.id === activeCategoryId;
             const jaVotou = userVotos.some((v) => v.categoria_id === cat.id);
@@ -95,15 +242,33 @@ export function GalleryView({
               <button
                 key={cat.id}
                 onClick={() => setActiveCategoryId(cat.id)}
-                className={`snap-start shrink-0 px-4 py-2 rounded-full text-xs font-bold transition-all focus:outline-none flex items-center space-x-1.5 border ${
-                  isSelected
-                    ? 'bg-secondary text-white border-secondary shadow-lg shadow-secondary/10'
-                    : 'bg-surface border-[#333] text-gray-400 hover:border-gray-500'
-                }`}
+                style={{
+                  flexShrink: 0,
+                  padding: '10px 18px',
+                  background: isSelected ? '#FFC000' : '#202020',
+                  color: isSelected ? '#000000' : '#FFFFFF',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  fontFamily: "'Barlow Condensed', sans-serif",
+                  fontWeight: 700,
+                  fontSize: 13,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.08em',
+                  transition: 'background 0.12s ease, color 0.12s ease',
+                }}
+                onMouseEnter={e => {
+                  if (!isSelected) e.currentTarget.style.background = '#313131';
+                }}
+                onMouseLeave={e => {
+                  if (!isSelected) e.currentTarget.style.background = '#202020';
+                }}
               >
                 <span>{cat.nome}</span>
                 {jaVotou && (
-                  <CheckCircle2 className="w-3.5 h-3.5 text-primary shrink-0" />
+                  <CheckCircle2 size={13} color={isSelected ? '#000000' : '#FFC000'} />
                 )}
               </button>
             );
@@ -111,127 +276,324 @@ export function GalleryView({
         </div>
       </div>
 
-      {/* Grid de Carros */}
-      <div className="flex-1 space-y-4 mb-6">
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-[11px] font-bold text-gray-400">
-            {eventCarros.length} Carros inscritos nesta categoria
-          </span>
-          {votoNestaCategoria && (
-            <span className="text-[11px] text-primary font-bold flex items-center space-x-1">
-              <CheckCircle2 className="w-3 h-3" />
-              <span>Você já votou!</span>
-            </span>
-          )}
-        </div>
-
-        <div className="grid grid-cols-1 gap-4">
-          {eventCarros.map((carro) => {
-            const isVotadoPorMim = votoNestaCategoria?.carro_id === carro.id;
-            const disabled =
-              evento?.status === 'fechado' ||
-              !!votoNestaCategoria ||
-              isLoading;
-
-            return (
-              <div
-                key={carro.id}
-                className={`bg-surface rounded-xl overflow-hidden border transition-all ${
-                  isVotadoPorMim
-                    ? 'border-primary/50 ring-1 ring-primary/30 shadow-lg shadow-primary/5'
-                    : 'border-[#2b2b2b] hover:border-[#3b3b3b]'
-                }`}
-              >
-                {/* Imagem do Carro com Badge do Numero de Inscrição */}
-                <div className="relative h-44 w-full bg-[#121212]">
-                  <img
-                    src={carro.url_foto}
-                    alt={carro.modelo}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
-                  <div className="absolute top-2 left-2 bg-primary text-white font-black text-xs px-2.5 py-1 rounded-md shadow-md">
-                    Inscrição: {carro.numero_inscricao}
-                  </div>
-                  
-                  {isVotadoPorMim && (
-                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-[1px]">
-                      <div className="bg-primary/95 text-white font-bold text-xs py-2 px-4 rounded-full flex items-center space-x-1.5 shadow-lg scale-105 transition-transform">
-                        <Trophy className="w-4 h-4" />
-                        <span>Seu Voto Nesta Categoria</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Detalhes do Carro */}
-                <div className="p-4 flex flex-col space-y-3">
-                  <div>
-                    <h3 className="font-bold text-sm text-white line-clamp-1">
-                      {carro.modelo}
-                    </h3>
-                    <p className="text-[11px] text-secondary font-semibold mt-0.5">
-                      Dono(a): {carro.nome_dono}{carro.equipe ? ` | Equipe: ${carro.equipe}` : ''}
-                    </p>
-                    <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-text-secondary mt-1.5">
-                      <span>Ano: <strong className="text-white">{carro.ano}</strong></span>
-                      <span className="text-gray-600">|</span>
-                      <span>Altura: <strong className="text-white">{carro.altura_mm} mm</strong></span>
-                      {carro.km_rodado !== undefined && carro.km_rodado > 0 ? (
-                        <>
-                          <span className="text-gray-600">|</span>
-                          <span>Rodagem: <strong className="text-white">{carro.km_rodado} km</strong></span>
-                        </>
-                      ) : null}
-                    </div>
-                  </div>
-
-                  {/* Ação de Votar */}
-                  <button
-                    onClick={() => handleVoto(carro.id)}
-                    disabled={disabled}
-                    className={`w-full font-bold py-2 rounded-full text-xs transition-all flex items-center justify-center space-x-1.5 ${
-                      isVotadoPorMim
-                        ? 'bg-primary text-white cursor-default shadow-md shadow-primary/20'
-                        : votoNestaCategoria
-                        ? 'bg-[#1a1a1a] text-gray-600 border border-[#2b2b2b] cursor-not-allowed'
-                        : evento?.status === 'fechado'
-                        ? 'bg-[#161616] text-gray-500 border border-[#2b2b2b] cursor-not-allowed'
-                        : 'bg-transparent hover:bg-primary/5 active:scale-[0.98] border border-primary text-primary hover:text-white transition-all duration-200'
-                    }`}
-                  >
-                    {isVotadoPorMim ? (
-                      <>
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>Votado!</span>
-                      </>
-                    ) : votoNestaCategoria ? (
-                      <span>Votação Concluída nesta categoria</span>
-                    ) : evento?.status === 'fechado' ? (
-                      <span>Votação Encerrada</span>
-                    ) : (
-                      <>
-                        <Vote className="w-3.5 h-3.5" />
-                        <span>Votar neste carro</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Informações do Eleitor Rodapé */}
-      <div className="bg-[#181818] p-3 rounded-lg border border-[#262626] text-center">
-        <span className="text-[10px] text-gray-500">
-          Eleitor identificado sob sessão:
+      {/* ===== STATUS BAR ===== */}
+      <div
+        style={{
+          padding: '10px 20px',
+          background: '#000000',
+          borderBottom: '1px solid #181818',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        <span className="label-ds">
+          {eventCarros.length} veículo(s)
         </span>
-        <div className="text-[10px] font-mono text-text-secondary font-semibold mt-0.5">
-          {user.id}
-        </div>
+        {votoNestaCategoria && (
+          <span style={{
+            fontFamily: "'Barlow Condensed', sans-serif",
+            fontSize: 12,
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            letterSpacing: '0.1em',
+            color: '#FFC000',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+          }}>
+            <CheckCircle2 size={13} />
+            Voto registrado nesta categoria
+          </span>
+        )}
       </div>
+
+      {/* ===== GRID DE CARROS ===== */}
+      <div style={{ padding: '20px 0', flex: 1 }}>
+        {eventCarros.length === 0 ? (
+          <div
+            style={{
+              background: '#181818',
+              border: '1px solid #202020',
+              padding: '48px 24px',
+              textAlign: 'center',
+              margin: '0 0',
+            }}
+          >
+            <Car size={36} color="#313131" style={{ margin: '0 auto 12px' }} />
+            <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 14, color: '#7D7D7D', margin: 0 }}>
+              Nenhum veículo encontrado.
+            </p>
+          </div>
+        ) : (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+              gap: 2,
+            }}
+          >
+            {eventCarros.map((carro) => {
+              const isVotadoPorMim = votoNestaCategoria?.carro_id === carro.id;
+              const disabled = !votacaoAberta || !!votoNestaCategoria || isLoading;
+
+              return (
+                <div
+                  key={carro.id}
+                  style={{
+                    background: isVotadoPorMim ? '#181818' : '#181818',
+                    border: isVotadoPorMim
+                      ? '1px solid #FFC000'
+                      : '1px solid #202020',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    transition: 'border-color 0.15s ease',
+                    outline: isVotadoPorMim ? '1px solid rgba(255,192,0,0.3)' : 'none',
+                    outlineOffset: '-1px',
+                    position: 'relative',
+                  }}
+                >
+                  {/* Foto */}
+                  <div style={{ position: 'relative', height: 200, background: '#0a0a0a', overflow: 'hidden' }}>
+                    <img
+                      src={carro.url_foto}
+                      alt={carro.modelo}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                      loading="lazy"
+                    />
+
+                    {/* Badge número */}
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        background: '#000000',
+                        borderBottom: '1px solid #FFC000',
+                        borderRight: '1px solid #FFC000',
+                        padding: '6px 12px',
+                        fontFamily: "'Barlow Condensed', sans-serif",
+                        fontSize: 11,
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.12em',
+                        color: '#FFC000',
+                      }}
+                    >
+                      {carro.numero_inscricao}
+                    </div>
+
+                    {/* Overlay "Votado" */}
+                    {isVotadoPorMim && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          background: 'rgba(0,0,0,0.75)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <div
+                          style={{
+                            background: '#FFC000',
+                            color: '#000000',
+                            padding: '10px 20px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 8,
+                            fontFamily: "'Barlow Condensed', sans-serif",
+                            fontWeight: 700,
+                            fontSize: 14,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.1em',
+                          }}
+                        >
+                          <Trophy size={18} color="#000000" />
+                          Seu Voto Registrado
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Info */}
+                  <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <div>
+                      <h3 style={{
+                        fontFamily: "'Barlow Condensed', sans-serif",
+                        fontWeight: 700,
+                        fontSize: 20,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        color: '#FFFFFF',
+                        margin: '0 0 4px 0',
+                        lineHeight: 1.1,
+                      }}>
+                        {carro.modelo}
+                      </h3>
+                      <p style={{
+                        fontFamily: "'Barlow', sans-serif",
+                        fontSize: 12,
+                        color: '#7D7D7D',
+                        margin: 0,
+                      }}>
+                        {carro.nome_dono}{carro.equipe ? ` · ${carro.equipe}` : ''}
+                      </p>
+                    </div>
+
+                    {/* Specs */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                      <span
+                        style={{
+                          background: '#202020',
+                          border: '1px solid #313131',
+                          padding: '4px 10px',
+                          fontFamily: "'Barlow Condensed', sans-serif",
+                          fontSize: 11,
+                          color: '#969696',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 5,
+                        }}
+                      >
+                        <Calendar size={11} color="#FFC000" />
+                        {carro.ano}
+                      </span>
+                      <span
+                        style={{
+                          background: '#202020',
+                          border: '1px solid #313131',
+                          padding: '4px 10px',
+                          fontFamily: "'Barlow Condensed', sans-serif",
+                          fontSize: 11,
+                          color: '#969696',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 5,
+                        }}
+                      >
+                        <Ruler size={11} color="#FFC000" />
+                        {carro.altura_mm}mm
+                      </span>
+                      {carro.km_rodado !== undefined && carro.km_rodado > 0 && (
+                        <span
+                          style={{
+                            background: '#202020',
+                            border: '1px solid #313131',
+                            padding: '4px 10px',
+                            fontFamily: "'Barlow Condensed', sans-serif",
+                            fontSize: 11,
+                            color: '#969696',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 5,
+                          }}
+                        >
+                          <Gauge size={11} color="#FFC000" />
+                          {carro.km_rodado}km
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Botão de Voto */}
+                    <button
+                      onClick={() => handleVoto(carro.id)}
+                      disabled={disabled}
+                      style={{
+                        width: '100%',
+                        height: 44,
+                        background: isVotadoPorMim
+                          ? '#FFC000'
+                          : votoNestaCategoria || !votacaoAberta
+                            ? '#181818'
+                            : 'transparent',
+                        color: isVotadoPorMim
+                          ? '#000000'
+                          : votoNestaCategoria || !votacaoAberta
+                            ? '#313131'
+                            : '#FFC000',
+                        border: isVotadoPorMim
+                          ? 'none'
+                          : votoNestaCategoria || !votacaoAberta
+                            ? '1px solid #313131'
+                            : '1px solid #FFC000',
+                        cursor: disabled ? 'not-allowed' : 'pointer',
+                        fontFamily: "'Barlow Condensed', sans-serif",
+                        fontWeight: 700,
+                        fontSize: 13,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.12em',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 8,
+                        transition: 'background 0.15s ease, color 0.15s ease',
+                        marginTop: 'auto',
+                      }}
+                      onMouseEnter={e => {
+                        if (!disabled && !isVotadoPorMim) {
+                          e.currentTarget.style.background = '#FFC000';
+                          e.currentTarget.style.color = '#000000';
+                        }
+                      }}
+                      onMouseLeave={e => {
+                        if (!disabled && !isVotadoPorMim) {
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.color = '#FFC000';
+                        }
+                      }}
+                    >
+                      {isVotadoPorMim ? (
+                        <>
+                          <CheckCircle2 size={15} color="#000000" />
+                          <span>VOTADO</span>
+                        </>
+                      ) : votoNestaCategoria ? (
+                        <span>Voto já registrado</span>
+                      ) : !votacaoAberta ? (
+                        <span>Votação Encerrada</span>
+                      ) : (
+                        <>
+                          <Vote size={15} />
+                          <span>VOTAR NESTE VEÍCULO</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ===== FOOTER ===== */}
+      <div
+        style={{
+          background: '#181818',
+          borderTop: '1px solid #202020',
+          padding: '12px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Shield size={14} color="#FFC000" />
+          <span className="label-ds">Sessão auditada de votação popular</span>
+        </div>
+        <span style={{
+          fontFamily: "'Barlow Condensed', sans-serif",
+          fontSize: 11,
+          color: '#313131',
+          textTransform: 'uppercase',
+          letterSpacing: '0.1em',
+        }}>
+          ID: {user.id.slice(0, 8)}…
+        </span>
+      </div>
+
     </div>
   );
 }
