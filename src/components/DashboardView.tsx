@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   ToggleLeft, ToggleRight, Car, BarChart3, ShieldCheck,
   Plus, LogOut, RefreshCw, Layers, Camera, Trash2, Trophy, Award,
-  Edit2, Eye, EyeOff, Check, Tag, X, Menu
+  Edit2, Eye, EyeOff, Check, Tag, X, Menu, Users
 } from 'lucide-react';
 import type { Carro, Categoria, Evento } from '../data/mockData';
 
@@ -11,6 +11,8 @@ interface DashboardViewProps {
   carros: Carro[];
   categorias: Categoria[];
   resultados: Record<string, { carroId: string; votosCount: number }[]>;
+  totalUsuarios?: number;
+  totalVotos?: number;
   isLoading: boolean;
   error: string | null;
   atualizarNomeEvento?: (novoNome: string) => Promise<void>;
@@ -96,6 +98,8 @@ export function DashboardView({
   carros,
   categorias,
   resultados,
+  totalUsuarios = 0,
+  totalVotos = 0,
   isLoading: _isLoading,
   error,
   atualizarNomeEvento,
@@ -389,70 +393,70 @@ export function DashboardView({
 
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-                <span style={{
-                  fontFamily: "'Barlow Condensed', sans-serif",
-                  fontSize: 10,
-                  fontWeight: 600,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.16em',
-                  color: '#FFC000',
-                  background: 'rgba(255,192,0,0.08)',
-                  border: '1px solid rgba(255,192,0,0.2)',
-                  padding: '3px 10px',
-                }}>
-                  Evento Ativo
-                </span>
-                <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#7D7D7D' }}>
-                  {evento?.data}
-                </span>
-              </div>
+                  <span style={{
+                    fontFamily: "'Barlow Condensed', sans-serif",
+                    fontSize: 10,
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.16em',
+                    color: '#FFC000',
+                    background: 'rgba(255,192,0,0.08)',
+                    border: '1px solid rgba(255,192,0,0.2)',
+                    padding: '3px 10px',
+                  }}>
+                    Evento Ativo
+                  </span>
+                  <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#7D7D7D' }}>
+                    {evento?.data}
+                  </span>
+                </div>
 
-              {/* Nome do Evento (Visualizar ou Editar) */}
-              {isEditingEventName ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
-                  <input
-                    type="text"
-                    value={eventTempName}
-                    onChange={(e) => setEventTempName(e.target.value)}
-                    style={{ ...S.input, height: 36, fontSize: 18, width: 280 }}
-                    autoFocus
-                  />
-                  <button
-                    onClick={handleSaveEventName}
-                    style={{ background: '#FFC000', color: '#000000', border: 'none', padding: '8px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700 }}
-                  >
-                    <Check size={14} /> Salvar
-                  </button>
-                  <button
-                    onClick={() => setIsEditingEventName(false)}
-                    style={{ background: '#202020', color: '#FFFFFF', border: '1px solid #313131', padding: '8px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontFamily: "'Barlow Condensed', sans-serif" }}
-                  >
-                    <X size={14} /> Cancelar
-                  </button>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 24, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#FFFFFF', margin: 0, lineHeight: 1 }}>
-                    {evento?.nome || 'Carregando...'}
-                  </h1>
-                  {atualizarNomeEvento && (
+                {/* Nome do Evento (Visualizar ou Editar) */}
+                {isEditingEventName ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                    <input
+                      type="text"
+                      value={eventTempName}
+                      onChange={(e) => setEventTempName(e.target.value)}
+                      style={{ ...S.input, height: 36, fontSize: 18, width: 280 }}
+                      autoFocus
+                    />
                     <button
-                      onClick={() => {
-                        setEventTempName(evento?.nome || '');
-                        setIsEditingEventName(true);
-                      }}
-                      style={{ background: 'none', border: 'none', color: '#7D7D7D', cursor: 'pointer', padding: 4, display: 'flex', transition: 'color 0.12s' }}
-                      title="Editar Nome do Evento"
-                      onMouseEnter={e => e.currentTarget.style.color = '#FFC000'}
-                      onMouseLeave={e => e.currentTarget.style.color = '#7D7D7D'}
+                      onClick={handleSaveEventName}
+                      style={{ background: '#FFC000', color: '#000000', border: 'none', padding: '8px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700 }}
                     >
-                      <Edit2 size={15} />
+                      <Check size={14} /> Salvar
                     </button>
-                  )}
-                </div>
-              )}
+                    <button
+                      onClick={() => setIsEditingEventName(false)}
+                      style={{ background: '#202020', color: '#FFFFFF', border: '1px solid #313131', padding: '8px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontFamily: "'Barlow Condensed', sans-serif" }}
+                    >
+                      <X size={14} /> Cancelar
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 24, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#FFFFFF', margin: 0, lineHeight: 1 }}>
+                      {evento?.nome || 'Carregando...'}
+                    </h1>
+                    {atualizarNomeEvento && (
+                      <button
+                        onClick={() => {
+                          setEventTempName(evento?.nome || '');
+                          setIsEditingEventName(true);
+                        }}
+                        style={{ background: 'none', border: 'none', color: '#7D7D7D', cursor: 'pointer', padding: 4, display: 'flex', transition: 'color 0.12s' }}
+                        title="Editar Nome do Evento"
+                        onMouseEnter={e => e.currentTarget.style.color = '#FFC000'}
+                        onMouseLeave={e => e.currentTarget.style.color = '#7D7D7D'}
+                      >
+                        <Edit2 size={15} />
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{
@@ -528,22 +532,24 @@ export function DashboardView({
                 </div>
 
                 {/* Métricas */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 2 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
                   {[
                     { label: 'Frota Inscrita', value: carros.length, icon: <Car size={24} color="#FFC000" /> },
                     { label: 'Categorias', value: categorias.length, icon: <Trophy size={24} color="#FFC000" /> },
-                    { label: 'Status', value: votacaoAberta ? 'ABERTO' : 'FECHADO', icon: <Award size={24} color="#FFC000" /> },
+                    { label: 'Usuários Cadastrados', value: totalUsuarios, icon: <Users size={24} color="#FFC000" /> },
+                    { label: 'Votos Computados', value: totalVotos, icon: <BarChart3 size={24} color="#FFC000" /> },
+                    { label: 'Status da Votação', value: votacaoAberta ? 'ABERTO' : 'FECHADO', icon: <Award size={24} color="#FFC000" /> },
                   ].map((m) => (
                     <div key={m.label} style={S.metricCard}>
                       <div>
                         <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.16em', color: '#7D7D7D', marginBottom: 8 }}>
                           {m.label}
                         </div>
-                        <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 36, fontWeight: 700, color: '#FFFFFF', lineHeight: 1 }}>
+                        <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 32, fontWeight: 700, color: '#FFFFFF', lineHeight: 1 }}>
                           {m.value}
                         </div>
                       </div>
-                      <div style={{ background: '#202020', border: '1px solid #313131', padding: 12 }}>
+                      <div style={{ background: '#202020', border: '1px solid #313131', padding: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         {m.icon}
                       </div>
                     </div>
@@ -556,7 +562,7 @@ export function DashboardView({
             {activeTab === 'resultados' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 20, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#FFFFFF', margin: 0 }}>
-                  Classificação por Votação Popular — Pódio Top 3
+                  Classificação por Votação Popular
                 </h3>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 2 }}>
@@ -762,7 +768,7 @@ export function DashboardView({
                 {/* Lista */}
                 <div style={{ background: '#181818', border: '1px solid #202020', padding: '20px' }}>
                   <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#FFFFFF', margin: '0 0 16px 0', paddingBottom: 14, borderBottom: '1px solid #202020' }}>
-                    Veículos na Pista ({carros.length})
+                    Veículos Cadastrados({carros.length})
                   </h3>
 
                   <div style={{ maxHeight: 500, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }} className="no-scrollbar">
@@ -1067,10 +1073,10 @@ export function DashboardView({
                       <tr style={{ borderBottom: '1px solid #202020' }}>
                         {['Posição', 'Inscrição', 'Modelo', 'Dono(a)',
                           valTab === 'ano' ? 'Ano' : valTab === 'rodagem' ? 'KM Rodado' : 'Carros'].map((h) => (
-                          <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#7D7D7D', fontSize: 11 }}>
-                            {h}
-                          </th>
-                        ))}
+                            <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#7D7D7D', fontSize: 11 }}>
+                              {h}
+                            </th>
+                          ))}
                       </tr>
                     </thead>
                     <tbody>

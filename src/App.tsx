@@ -36,6 +36,8 @@ function App() {
   const {
     userVotos,
     resultados,
+    totalUsuarios,
+    totalVotos,
     isLoading: votingLoading,
     error: votingError,
     votar,
@@ -53,6 +55,8 @@ function App() {
         carros={carros}
         categorias={categorias}
         resultados={resultados}
+        totalUsuarios={totalUsuarios}
+        totalVotos={totalVotos}
         isLoading={globalLoading || votingLoading}
         error={globalError}
         atualizarNomeEvento={atualizarNomeEvento}

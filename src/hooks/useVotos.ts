@@ -6,6 +6,8 @@ import { getMockVotos, saveMockVoto } from '../data/mockData';
 export function useVotos(eleitorId?: string, eventoId?: string) {
   const [userVotos, setUserVotos] = useState<Voto[]>([]);
   const [resultados, setResultados] = useState<Record<string, { carroId: string; votosCount: number }[]>>({});
+  const [totalUsuarios, setTotalUsuarios] = useState<number>(0);
+  const [totalVotos, setTotalVotos] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,10 +43,19 @@ export function useVotos(eleitorId?: string, eventoId?: string) {
         // Obter contagem de votos do Supabase
         const { data, error: votesError } = await supabase
           .from('votos')
-          .select('carro_id, categoria_id')
+          .select('carro_id, categoria_id, eleitor_id')
           .eq('evento_id', eventoId);
 
         if (votesError) throw votesError;
+
+        // Obter contagem total de eleitores cadastrados
+        const { count: eleitoresCount } = await supabase
+          .from('eleitores')
+          .select('*', { count: 'exact', head: true });
+
+        const uniqueVotersInVotes = new Set(data?.map((v: { eleitor_id: string }) => v.eleitor_id)).size;
+        setTotalUsuarios(eleitoresCount ?? uniqueVotersInVotes);
+        setTotalVotos(data?.length || 0);
 
         // Agrupar votos
         const counts: Record<string, Record<string, number>> = {};
@@ -67,6 +78,11 @@ export function useVotos(eleitorId?: string, eventoId?: string) {
         // Fluxo offline / Mock
         const allVotes = getMockVotos();
         const eventVotes = allVotes.filter((v) => v.evento_id === eventoId);
+        const localDb = JSON.parse(localStorage.getItem('garagemflow_db_eleitores') || '[]');
+        const uniqueVoters = new Set(eventVotes.map((v) => v.eleitor_id)).size;
+
+        setTotalUsuarios(Math.max(localDb.length, uniqueVoters));
+        setTotalVotos(eventVotes.length);
 
         const counts: Record<string, Record<string, number>> = {};
         eventVotes.forEach((v) => {
@@ -129,6 +145,7 @@ export function useVotos(eleitorId?: string, eventoId?: string) {
       }
       // Atualiza os votos do usuário localmente
       await fetchUserVotos();
+      await fetchResultados();
     } catch (err: any) {
       console.error('Erro ao votar:', err);
       setError(err.message || 'Erro ao salvar o seu voto.');
@@ -142,9 +159,17 @@ export function useVotos(eleitorId?: string, eventoId?: string) {
     }
   }, [eleitorId, eventoId]);
 
+  useEffect(() => {
+    if (eventoId) {
+      fetchResultados();
+    }
+  }, [eventoId]);
+
   return {
     userVotos,
     resultados,
+    totalUsuarios,
+    totalVotos,
     isLoading,
     error,
     votar,
