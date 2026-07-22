@@ -25,7 +25,8 @@ interface DashboardViewProps {
     telefoneDono?: string,
     urlFoto?: string,
     equipe?: string,
-    kmRodado?: number
+    kmRodado?: number,
+    genero?: 'M' | 'F'
   ) => Promise<void>;
   deletarCarro: (id: string) => Promise<void>;
   cadastrarCategoria?: (nome: string, tipo: 'popular' | 'interna') => Promise<void>;
@@ -128,6 +129,7 @@ export function DashboardView({
   const [ano, setAno] = useState('');
   const [alturaMm, setAlturaMm] = useState('');
   const [nomeDono, setNomeDono] = useState('');
+  const [genero, setGenero] = useState<'M'|'F'>('M');
   const [telefoneDono, setTelefoneDono] = useState('');
   const [urlFoto, setUrlFoto] = useState('');
   const [equipe, setEquipe] = useState('');
@@ -217,10 +219,11 @@ export function DashboardView({
         telefoneDono || undefined,
         urlFoto || undefined,
         equipe || undefined,
-        kmRodado ? parseInt(kmRodado, 10) : undefined
+        kmRodado ? parseInt(kmRodado, 10) : undefined,
+        genero
       );
       setCadastroMsg({ type: 'success', text: 'Carro cadastrado com sucesso!' });
-      setModelo(''); setAno(''); setAlturaMm(''); setNomeDono('');
+      setModelo(''); setAno(''); setAlturaMm(''); setNomeDono(''); setGenero('M');
       setTelefoneDono(''); setUrlFoto(''); setEquipe(''); setKmRodado('');
       setIsManualInscricao(false);
     } catch (err: any) {
@@ -667,18 +670,38 @@ export function DashboardView({
                     {[
                       { label: 'Modelo (opcional)', value: modelo, setter: setModelo, placeholder: 'Ex: VW Gol 1.8 (opcional)', type: 'text' },
                       { label: 'Nome do Dono(a) (opcional)', value: nomeDono, setter: setNomeDono, placeholder: 'Ex: Rodrigo Silva (opcional)', type: 'text' },
-                    ].map((field) => (
+                      { label: 'Gênero do Dono(a)', value: genero, setter: setGenero, type: 'radio', options: [{ label: 'Masculino', value: 'M' }, { label: 'Feminino', value: 'F' }] },
+                      { label: 'Telefone (opcional)', value: telefoneDono, setter: setTelefoneDono, placeholder: 'Ex: (11) 99999-9999', type: 'text' },
+                    ].map((field: any) => (
                       <div key={field.label}>
                         <label style={S.label}>{field.label}</label>
-                        <input
-                          type={field.type}
-                          placeholder={field.placeholder}
-                          value={field.value}
-                          onChange={(e) => field.setter(e.target.value)}
-                          style={S.input}
-                          onFocus={e => { e.target.style.borderColor = '#FFC000'; }}
-                          onBlur={e => { e.target.style.borderColor = '#313131'; }}
-                        />
+                        {field.type === 'radio' ? (
+                          <div style={{ display: 'flex', gap: '16px', marginTop: '8px' }}>
+                            {field.options.map((opt: any) => (
+                              <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#FFF', fontSize: '14px', cursor: 'pointer' }}>
+                                <input
+                                  type="radio"
+                                  name="genero"
+                                  value={opt.value}
+                                  checked={field.value === opt.value}
+                                  onChange={(e) => field.setter(e.target.value)}
+                                  style={{ accentColor: '#FFC000', width: '16px', height: '16px' }}
+                                />
+                                {opt.label}
+                              </label>
+                            ))}
+                          </div>
+                        ) : (
+                          <input
+                            type={field.type}
+                            placeholder={field.placeholder}
+                            value={field.value}
+                            onChange={(e) => field.setter(e.target.value)}
+                            style={S.input}
+                            onFocus={e => { e.target.style.borderColor = '#FFC000'; }}
+                            onBlur={e => { e.target.style.borderColor = '#313131'; }}
+                          />
+                        )}
                       </div>
                     ))}
 

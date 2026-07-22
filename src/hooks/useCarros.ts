@@ -137,7 +137,8 @@ export function useCarros() {
     telefoneDono?: string,
     urlFoto?: string,
     equipe?: string,
-    kmRodado?: number
+    kmRodado?: number,
+    genero?: 'M' | 'F'
   ) => {
     if (!evento) return;
     setIsLoading(true);
@@ -160,6 +161,7 @@ export function useCarros() {
             url_foto: fotoUrl,
             equipe: equipe || null,
             km_rodado: kmRodado || 0,
+            genero: genero || null,
           });
         if (insertError) throw insertError;
       } else {
@@ -176,6 +178,7 @@ export function useCarros() {
           url_foto: fotoUrl,
           equipe: equipe || undefined,
           km_rodado: kmRodado || 0,
+          genero: genero,
         };
         currentCarros.push(newCarro);
         localStorage.setItem('garagemflow_db_carros', JSON.stringify(currentCarros));

@@ -28,6 +28,7 @@ export function GalleryView({
   const [activeCategoryId, setActiveCategoryId] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [zoomPhoto, setZoomPhoto] = useState<{ url: string; modelo: string; numero: string } | null>(null);
+  const [visibleCount, setVisibleCount] = useState(10);
 
   // Fechar lightbox com Esc
   useEffect(() => {
@@ -46,8 +47,21 @@ export function GalleryView({
     }
   }, [popularCategorias, activeCategoryId]);
 
+  useEffect(() => {
+    setVisibleCount(10);
+  }, [activeCategoryId, searchTerm]);
+
   const eventCarros = carros
     .filter((c) => !evento || c.evento_id === evento.id)
+    .filter((c) => {
+      const catObj = categorias.find((cat) => cat.id === activeCategoryId);
+      if (catObj) {
+        const catName = catObj.nome.toLowerCase();
+        if (catName.includes('masculino') && c.genero !== 'M') return false;
+        if (catName.includes('feminino') && c.genero !== 'F') return false;
+      }
+      return true;
+    })
     .filter((c) => {
       if (!searchTerm.trim()) return true;
       const term = searchTerm.toLowerCase().trim();
@@ -343,7 +357,7 @@ export function GalleryView({
               gap: 2,
             }}
           >
-            {eventCarros.map((carro) => {
+            {eventCarros.slice(0, visibleCount).map((carro) => {
               const isVotadoPorMim = votoNestaCategoria?.carro_id === carro.id;
               const disabled = !votacaoAberta || !!votoNestaCategoria || isLoading;
 
@@ -601,6 +615,30 @@ export function GalleryView({
                 </div>
               );
             })}
+          </div>
+        )}
+        {visibleCount < eventCarros.length && (
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 24 }}>
+            <button
+              onClick={() => setVisibleCount((prev) => prev + 10)}
+              style={{
+                background: '#202020',
+                color: '#FFC000',
+                border: '1px solid #313131',
+                padding: '12px 32px',
+                fontFamily: "'Barlow Condensed', sans-serif",
+                fontWeight: 600,
+                fontSize: 14,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                cursor: 'pointer',
+                transition: 'background 0.2s',
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = '#313131'}
+              onMouseLeave={e => e.currentTarget.style.background = '#202020'}
+            >
+              Ver Mais Carros ({eventCarros.length - visibleCount} restantes)
+            </button>
           </div>
         )}
       </div>

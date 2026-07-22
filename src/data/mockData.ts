@@ -27,6 +27,7 @@ export interface Carro {
   telefone_dono?: string;
   equipe?: string;
   km_rodado?: number;
+  genero?: 'M' | 'F';
 }
 
 export interface Voto {
