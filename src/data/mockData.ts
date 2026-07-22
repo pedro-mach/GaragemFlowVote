@@ -12,6 +12,7 @@ export interface Categoria {
   id: string;
   nome: string;
   tipo: 'popular' | 'interna';
+  oculta?: boolean;
 }
 
 export interface Carro {
@@ -20,7 +21,7 @@ export interface Carro {
   numero_inscricao: string;
   modelo: string;
   ano: number;
-  altura_mm: number;
+  altura_mm?: number;
   url_foto: string;
   nome_dono: string;
   telefone_dono?: string;
@@ -52,8 +53,14 @@ export const mockEvento: Evento = {
   status: 'aberto',
 };
 
-// Categorias
-export const mockCategorias: Categoria[] = [];
+// Categorias Padrão
+export const mockCategorias: Categoria[] = [
+  { id: 'cat-1', nome: 'Destaque Masculino', tipo: 'popular', oculta: false },
+  { id: 'cat-2', nome: 'Destaque Feminino', tipo: 'popular', oculta: false },
+  { id: 'cat-3', nome: 'Mais antigo', tipo: 'interna', oculta: false },
+  { id: 'cat-4', nome: 'Maior equipe uniformizada', tipo: 'interna', oculta: false },
+  { id: 'cat-5', nome: 'Maior rodagem', tipo: 'interna', oculta: false },
+];
 
 // Carros
 export const mockCarros: Carro[] = [];;

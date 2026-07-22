@@ -28,7 +28,7 @@ export function GalleryView({
   const [activeCategoryId, setActiveCategoryId] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState<string>('');
 
-  const popularCategorias = categorias.filter((c) => c.tipo === 'popular');
+  const popularCategorias = categorias.filter((c) => c.tipo === 'popular' && !c.oculta);
 
   React.useEffect(() => {
     if (popularCategorias.length > 0 && !activeCategoryId) {
@@ -460,22 +460,24 @@ export function GalleryView({
                         <Calendar size={11} color="#FFC000" />
                         {carro.ano}
                       </span>
-                      <span
-                        style={{
-                          background: '#202020',
-                          border: '1px solid #313131',
-                          padding: '4px 10px',
-                          fontFamily: "'Barlow Condensed', sans-serif",
-                          fontSize: 11,
-                          color: '#969696',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 5,
-                        }}
-                      >
-                        <Ruler size={11} color="#FFC000" />
-                        {carro.altura_mm}mm
-                      </span>
+                      {carro.altura_mm !== undefined && carro.altura_mm > 0 && (
+                        <span
+                          style={{
+                            background: '#202020',
+                            border: '1px solid #313131',
+                            padding: '4px 10px',
+                            fontFamily: "'Barlow Condensed', sans-serif",
+                            fontSize: 11,
+                            color: '#969696',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 5,
+                          }}
+                        >
+                          <Ruler size={11} color="#FFC000" />
+                          {carro.altura_mm}mm
+                        </span>
+                      )}
                       {carro.km_rodado !== undefined && carro.km_rodado > 0 && (
                         <span
                           style={{

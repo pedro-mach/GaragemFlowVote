@@ -23,8 +23,13 @@ function App() {
     categorias,
     isLoading: dataLoading,
     error: dataError,
+    atualizarNomeEvento,
     cadastrarCarro,
     deletarCarro,
+    cadastrarCategoria,
+    editarCategoria,
+    toggleOcultarCategoria,
+    deletarCategoria,
     toggleStatusVotacao,
   } = useCarros();
 
@@ -43,21 +48,24 @@ function App() {
   // 1. Tela do Organizador (Painel Administrativo)
   if (isOrganizer) {
     return (
-      <Layout>
-        <DashboardView
-          evento={evento}
-          carros={carros}
-          categorias={categorias}
-          resultados={resultados}
-          isLoading={globalLoading || votingLoading}
-          error={globalError}
-          cadastrarCarro={cadastrarCarro}
-          deletarCarro={deletarCarro}
-          toggleStatusVotacao={toggleStatusVotacao}
-          fetchResultados={fetchResultados}
-          logout={logout}
-        />
-      </Layout>
+      <DashboardView
+        evento={evento}
+        carros={carros}
+        categorias={categorias}
+        resultados={resultados}
+        isLoading={globalLoading || votingLoading}
+        error={globalError}
+        atualizarNomeEvento={atualizarNomeEvento}
+        cadastrarCarro={cadastrarCarro}
+        deletarCarro={deletarCarro}
+        cadastrarCategoria={cadastrarCategoria}
+        editarCategoria={editarCategoria}
+        toggleOcultarCategoria={toggleOcultarCategoria}
+        deletarCategoria={deletarCategoria}
+        toggleStatusVotacao={toggleStatusVotacao}
+        fetchResultados={fetchResultados}
+        logout={logout}
+      />
     );
   }
 

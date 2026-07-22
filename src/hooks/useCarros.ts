@@ -15,7 +15,7 @@ export function useCarros() {
     setError(null);
     try {
       if (isSupabaseConfigured && supabase) {
-        // 1. Buscar evento ativo (status = 'aberto' ou o primeiro disponível)
+        // 1. Buscar evento ativo
         const { data: eventosData, error: evError } = await supabase
           .from('eventos')
           .select('*')
@@ -25,11 +25,10 @@ export function useCarros() {
         
         let activeEvent = eventosData?.find((e) => e.status === 'aberto') || eventosData?.[0] || null;
 
-        // Se não houver nenhum evento, criamos um de teste para não quebrar a UI
         if (!activeEvent) {
           const { data: newEv, error: newEvError } = await supabase
             .from('eventos')
-            .insert({ nome: 'Evento Padrão 2026', data: new Date().toISOString().split('T')[0], status: 'aberto' })
+            .insert({ nome: 'Garagem Flow Meet 2026', data: new Date().toISOString().split('T')[0], status: 'aberto' })
             .select()
             .single();
           if (newEvError) throw newEvError;
@@ -45,7 +44,17 @@ export function useCarros() {
           .order('nome');
 
         if (catError) throw catError;
-        setCategorias(catData || []);
+
+        // Mesclar com estado de ocultação salvo localmente se necessário
+        const storedCatState = localStorage.getItem('garagemflow_categorias_ocultas');
+        const ocultasMap: Record<string, boolean> = storedCatState ? JSON.parse(storedCatState) : {};
+
+        const formattedCats = (catData || []).map((c) => ({
+          ...c,
+          oculta: ocultasMap[c.id] ?? c.oculta ?? false,
+        }));
+
+        setCategorias(formattedCats);
 
         // 3. Buscar carros do evento ativo
         if (activeEvent) {
@@ -60,7 +69,6 @@ export function useCarros() {
         }
       } else {
         // Fluxo offline / Mock
-        // Evento
         const localEvento = localStorage.getItem('garagemflow_evento');
         if (localEvento) {
           setEvento(JSON.parse(localEvento));
@@ -69,10 +77,14 @@ export function useCarros() {
           setEvento(mockEvento);
         }
 
-        // Categorias
-        setCategorias(mockCategorias);
+        const localCategorias = localStorage.getItem('garagemflow_categorias');
+        if (localCategorias) {
+          setCategorias(JSON.parse(localCategorias));
+        } else {
+          localStorage.setItem('garagemflow_categorias', JSON.stringify(mockCategorias));
+          setCategorias(mockCategorias);
+        }
 
-        // Carros
         const localCarros = localStorage.getItem('garagemflow_db_carros');
         if (localCarros) {
           setCarros(JSON.parse(localCarros));
@@ -93,12 +105,35 @@ export function useCarros() {
     fetchDados();
   }, []);
 
+  const atualizarNomeEvento = async (novoNome: string) => {
+    if (!evento || !novoNome.trim()) return;
+    setIsLoading(true);
+    try {
+      if (isSupabaseConfigured && supabase) {
+        const { error: updateError } = await supabase
+          .from('eventos')
+          .update({ nome: novoNome.trim() })
+          .eq('id', evento.id);
+        if (updateError) throw updateError;
+      } else {
+        const novoEvento = { ...evento, nome: novoNome.trim() };
+        localStorage.setItem('garagemflow_evento', JSON.stringify(novoEvento));
+      }
+      await fetchDados();
+    } catch (err: any) {
+      console.error('Erro ao atualizar nome do evento:', err);
+      setError(err.message || 'Erro ao atualizar nome do evento.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const cadastrarCarro = async (
     numeroInscricao: string,
     modelo: string,
     ano: number,
-    alturaMm: number,
-    nomeDono: string,
+    alturaMm?: number,
+    nomeDono?: string,
     telefoneDono?: string,
     urlFoto?: string,
     equipe?: string,
@@ -108,6 +143,9 @@ export function useCarros() {
     setIsLoading(true);
     try {
       const fotoUrl = urlFoto || 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?q=80&w=600';
+      const alturaValue = alturaMm ?? 0;
+      const donoValue = nomeDono || 'Não informado';
+
       if (isSupabaseConfigured && supabase) {
         const { error: insertError } = await supabase
           .from('carros')
@@ -116,8 +154,8 @@ export function useCarros() {
             numero_inscricao: numeroInscricao,
             modelo,
             ano,
-            altura_mm: alturaMm,
-            nome_dono: nomeDono,
+            altura_mm: alturaValue,
+            nome_dono: donoValue,
             telefone_dono: telefoneDono,
             url_foto: fotoUrl,
             equipe: equipe || null,
@@ -132,8 +170,8 @@ export function useCarros() {
           numero_inscricao: numeroInscricao,
           modelo,
           ano,
-          altura_mm: alturaMm,
-          nome_dono: nomeDono,
+          altura_mm: alturaValue,
+          nome_dono: donoValue,
           telefone_dono: telefoneDono,
           url_foto: fotoUrl,
           equipe: equipe || undefined,
@@ -174,6 +212,105 @@ export function useCarros() {
     }
   };
 
+  const cadastrarCategoria = async (nome: string, tipo: 'popular' | 'interna' = 'popular') => {
+    if (!nome.trim()) return;
+    setIsLoading(true);
+    try {
+      if (isSupabaseConfigured && supabase) {
+        const { error: insertError } = await supabase
+          .from('categorias')
+          .insert({ nome: nome.trim(), tipo });
+        if (insertError) throw insertError;
+      } else {
+        const currentCats = [...categorias];
+        const newCat: Categoria = {
+          id: `cat-${Math.random().toString(36).substr(2, 9)}`,
+          nome: nome.trim(),
+          tipo,
+          oculta: false,
+        };
+        currentCats.push(newCat);
+        localStorage.setItem('garagemflow_categorias', JSON.stringify(currentCats));
+      }
+      await fetchDados();
+    } catch (err: any) {
+      console.error('Erro ao cadastrar categoria:', err);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const editarCategoria = async (id: string, novoNome: string) => {
+    if (!novoNome.trim()) return;
+    setIsLoading(true);
+    try {
+      if (isSupabaseConfigured && supabase) {
+        const { error: updateError } = await supabase
+          .from('categorias')
+          .update({ nome: novoNome.trim() })
+          .eq('id', id);
+        if (updateError) throw updateError;
+      } else {
+        const currentCats = categorias.map((c) => (c.id === id ? { ...c, nome: novoNome.trim() } : c));
+        localStorage.setItem('garagemflow_categorias', JSON.stringify(currentCats));
+      }
+      await fetchDados();
+    } catch (err: any) {
+      console.error('Erro ao editar categoria:', err);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const toggleOcultarCategoria = async (id: string) => {
+    setIsLoading(true);
+    try {
+      const cat = categorias.find((c) => c.id === id);
+      if (!cat) return;
+      const novoOculta = !cat.oculta;
+
+      // Salvar estado localmente para persistência
+      const storedCatState = localStorage.getItem('garagemflow_categorias_ocultas');
+      const ocultasMap: Record<string, boolean> = storedCatState ? JSON.parse(storedCatState) : {};
+      ocultasMap[id] = novoOculta;
+      localStorage.setItem('garagemflow_categorias_ocultas', JSON.stringify(ocultasMap));
+
+      if (!isSupabaseConfigured || !supabase) {
+        const currentCats = categorias.map((c) => (c.id === id ? { ...c, oculta: novoOculta } : c));
+        localStorage.setItem('garagemflow_categorias', JSON.stringify(currentCats));
+      }
+      await fetchDados();
+    } catch (err: any) {
+      console.error('Erro ao ocultar/exibir categoria:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const deletarCategoria = async (id: string) => {
+    setIsLoading(true);
+    try {
+      if (isSupabaseConfigured && supabase) {
+        const { error: deleteError } = await supabase
+          .from('categorias')
+          .delete()
+          .eq('id', id);
+        if (deleteError) throw deleteError;
+      } else {
+        const currentCats = categorias.filter((c) => c.id !== id);
+        localStorage.setItem('garagemflow_categorias', JSON.stringify(currentCats));
+      }
+      await fetchDados();
+    } catch (err: any) {
+      console.error('Erro ao deletar categoria:', err);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const toggleStatusVotacao = async () => {
     if (!evento) return;
     setIsLoading(true);
@@ -205,8 +342,13 @@ export function useCarros() {
     isLoading,
     error,
     refresh: fetchDados,
+    atualizarNomeEvento,
     cadastrarCarro,
     deletarCarro,
+    cadastrarCategoria,
+    editarCategoria,
+    toggleOcultarCategoria,
+    deletarCategoria,
     toggleStatusVotacao,
   };
 }
