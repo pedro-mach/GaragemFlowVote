@@ -196,23 +196,24 @@ export function DashboardView({
     e.preventDefault();
     setCadastroMsg(null);
 
-    // Altura NÃO é obrigatória!
-    if (!numeroInscricao || !modelo || !ano || !nomeDono) {
-      setCadastroMsg({ type: 'error', text: 'Preencha os campos obrigatórios: Inscrição, Modelo, Ano e Nome do Dono.' });
-      return;
-    }
     setSubmitting(true);
     try {
+      const finalInscricao = numeroInscricao.trim() || getNextSuggestedInscricao();
+      const finalModelo = modelo.trim() || 'Sem modelo';
+      const finalNomeDono = nomeDono.trim() || 'Não informado';
+      const parsedAno = ano.trim() ? parseInt(ano.trim(), 10) : new Date().getFullYear();
+      const finalAno = isNaN(parsedAno) ? new Date().getFullYear() : parsedAno;
+
       await cadastrarCarro(
-        numeroInscricao,
-        modelo,
-        parseInt(ano),
-        alturaMm ? parseInt(alturaMm) : undefined,
-        nomeDono,
+        finalInscricao,
+        finalModelo,
+        finalAno,
+        alturaMm ? parseInt(alturaMm, 10) : undefined,
+        finalNomeDono,
         telefoneDono || undefined,
         urlFoto || undefined,
         equipe || undefined,
-        kmRodado ? parseInt(kmRodado) : undefined
+        kmRodado ? parseInt(kmRodado, 10) : undefined
       );
       setCadastroMsg({ type: 'success', text: 'Carro cadastrado com sucesso!' });
       setModelo(''); setAno(''); setAlturaMm(''); setNomeDono('');
@@ -641,14 +642,14 @@ export function DashboardView({
                   <form onSubmit={handleCadastrarCarro} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                        <label style={S.label}>Inscrição *</label>
+                        <label style={S.label}>Inscrição (opcional)</label>
                         <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, color: '#FFC000', letterSpacing: '0.1em' }}>
                           {isManualInscricao ? 'MANUAL' : 'AUTO'}
                         </span>
                       </div>
                       <input
                         type="text"
-                        placeholder="#024"
+                        placeholder="#024 (opcional)"
                         value={numeroInscricao}
                         onChange={(e) => { setNumeroInscricao(e.target.value); setIsManualInscricao(true); }}
                         style={S.input}
@@ -658,8 +659,8 @@ export function DashboardView({
                     </div>
 
                     {[
-                      { label: 'Modelo *', value: modelo, setter: setModelo, placeholder: 'Ex: VW Gol 1.8', type: 'text' },
-                      { label: 'Nome do Dono(a) *', value: nomeDono, setter: setNomeDono, placeholder: 'Ex: Rodrigo Silva', type: 'text' },
+                      { label: 'Modelo (opcional)', value: modelo, setter: setModelo, placeholder: 'Ex: VW Gol 1.8 (opcional)', type: 'text' },
+                      { label: 'Nome do Dono(a) (opcional)', value: nomeDono, setter: setNomeDono, placeholder: 'Ex: Rodrigo Silva (opcional)', type: 'text' },
                     ].map((field) => (
                       <div key={field.label}>
                         <label style={S.label}>{field.label}</label>
@@ -677,10 +678,10 @@ export function DashboardView({
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                       {[
-                        { label: 'Ano *', value: ano, setter: setAno, placeholder: '1994' },
+                        { label: 'Ano (opcional)', value: ano, setter: setAno, placeholder: 'Ex: 1994 (opcional)' },
                         { label: 'Altura mm (opcional)', value: alturaMm, setter: setAlturaMm, placeholder: 'Ex: 50 (opcional)' },
-                        { label: 'Equipe', value: equipe, setter: setEquipe, placeholder: 'Flow Club' },
-                        { label: 'Km Rodados', value: kmRodado, setter: setKmRodado, placeholder: '150' },
+                        { label: 'Equipe (opcional)', value: equipe, setter: setEquipe, placeholder: 'Ex: Flow Club (opcional)' },
+                        { label: 'Km Rodados (opcional)', value: kmRodado, setter: setKmRodado, placeholder: 'Ex: 150 (opcional)' },
                       ].map((field) => (
                         <div key={field.label}>
                           <label style={S.label}>{field.label}</label>
@@ -832,7 +833,7 @@ export function DashboardView({
 
                   <form onSubmit={handleAddCategoria} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                     <div>
-                      <label style={S.label}>Nome da Categoria *</label>
+                      <label style={S.label}>Nome da Categoria (opcional)</label>
                       <input
                         type="text"
                         placeholder="Ex: Melhor Som, Destaque da Noite..."
