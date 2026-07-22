@@ -100,7 +100,9 @@ export function useCarros() {
     alturaMm: number,
     nomeDono: string,
     telefoneDono?: string,
-    urlFoto?: string
+    urlFoto?: string,
+    equipe?: string,
+    kmRodado?: number
   ) => {
     if (!evento) return;
     setIsLoading(true);
@@ -118,6 +120,8 @@ export function useCarros() {
             nome_dono: nomeDono,
             telefone_dono: telefoneDono,
             url_foto: fotoUrl,
+            equipe: equipe || null,
+            km_rodado: kmRodado || 0,
           });
         if (insertError) throw insertError;
       } else {
@@ -132,6 +136,8 @@ export function useCarros() {
           nome_dono: nomeDono,
           telefone_dono: telefoneDono,
           url_foto: fotoUrl,
+          equipe: equipe || undefined,
+          km_rodado: kmRodado || 0,
         };
         currentCarros.push(newCarro);
         localStorage.setItem('garagemflow_db_carros', JSON.stringify(currentCarros));

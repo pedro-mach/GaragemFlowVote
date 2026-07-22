@@ -16,7 +16,9 @@ interface DashboardViewProps {
     alturaMm: number,
     nomeDono: string,
     telefoneDono?: string,
-    urlFoto?: string
+    urlFoto?: string,
+    equipe?: string,
+    kmRodado?: number
   ) => Promise<void>;
   deletarCarro: (id: string) => Promise<void>;
   toggleStatusVotacao: () => Promise<void>;
@@ -40,6 +42,7 @@ export function DashboardView({
   logout,
 }: DashboardViewProps) {
   const [activeTab, setActiveTab] = useState<TabType>('status');
+  const [valTab, setValTab] = useState<'ano' | 'rodagem' | 'equipes'>('ano');
   
   // States para cadastro de carro
   const [numeroInscricao, setNumeroInscricao] = useState('');
@@ -50,6 +53,8 @@ export function DashboardView({
   const [nomeDono, setNomeDono] = useState('');
   const [telefoneDono, setTelefoneDono] = useState('');
   const [urlFoto, setUrlFoto] = useState('');
+  const [equipe, setEquipe] = useState('');
+  const [kmRodado, setKmRodado] = useState('');
   
   const [cadastroMsg, setCadastroMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -136,7 +141,9 @@ export function DashboardView({
         parseInt(alturaMm),
         nomeDono,
         telefoneDono || undefined,
-        urlFoto || undefined
+        urlFoto || undefined,
+        equipe || undefined,
+        kmRodado ? parseInt(kmRodado) : undefined
       );
       setCadastroMsg({ type: 'success', text: 'Carro cadastrado com sucesso!' });
       
@@ -147,6 +154,8 @@ export function DashboardView({
       setNomeDono('');
       setTelefoneDono('');
       setUrlFoto('');
+      setEquipe('');
+      setKmRodado('');
       setIsManualInscricao(false); // Volta a ser automático
     } catch (err: any) {
       setCadastroMsg({ type: 'error', text: err.message || 'Erro ao cadastrar carro.' });
@@ -334,65 +343,226 @@ export function DashboardView({
         {/* TAB: RESULTADOS */}
         {activeTab === 'resultados' && (
           <div className="space-y-6">
-            <h3 className="font-bold text-md text-white">Classificação por Categoria (Top 3)</h3>
+            <h3 className="font-bold text-md text-white">Classificação por Categoria Votada (Top 3)</h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {categorias.map((cat) => {
-                const votosCat = resultados[cat.id] || [];
-                // Calcular total de votos na categoria
-                const totalVotosCat = votosCat.reduce((sum, item) => sum + item.votosCount, 0);
+              {categorias
+                .filter((c) => c.tipo === 'popular')
+                .map((cat) => {
+                  const votosCat = resultados[cat.id] || [];
+                  // Calcular total de votos na categoria
+                  const totalVotosCat = votosCat.reduce((sum, item) => sum + item.votosCount, 0);
 
-                return (
-                  <div key={cat.id} className="bg-surface rounded-xl p-5 border border-[#2b2b2b] flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center justify-between border-b border-[#2b2b2b] pb-3 mb-4">
-                        <h4 className="font-bold text-sm text-secondary uppercase tracking-wider">{cat.nome}</h4>
-                        <span className="text-[11px] font-semibold text-gray-400 bg-[#121212] px-2 py-0.5 rounded-full">
-                          {totalVotosCat} votos totais
-                        </span>
-                      </div>
+                  return (
+                    <div key={cat.id} className="bg-surface rounded-xl p-5 border border-[#2b2b2b] flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center justify-between border-b border-[#2b2b2b] pb-3 mb-4">
+                          <h4 className="font-bold text-sm text-secondary uppercase tracking-wider">{cat.nome}</h4>
+                          <span className="text-[11px] font-semibold text-gray-400 bg-[#121212] px-2 py-0.5 rounded-full">
+                            {totalVotosCat} votos totais
+                          </span>
+                        </div>
 
-                      <div className="space-y-4">
-                        {votosCat.length === 0 ? (
-                          <div className="text-center py-6 text-xs text-gray-500">
-                            Nenhum voto computado para esta categoria.
-                          </div>
-                        ) : (
-                          votosCat.slice(0, 3).map((item, index) => {
-                            const carro = carros.find((c) => c.id === item.carroId);
-                            const percent = totalVotosCat > 0 ? (item.votosCount / totalVotosCat) * 100 : 0;
-                            const medalColor = index === 0 ? 'text-amber-400' : index === 1 ? 'text-gray-400' : 'text-amber-700';
+                        <div className="space-y-4">
+                          {votosCat.length === 0 ? (
+                            <div className="text-center py-6 text-xs text-gray-500">
+                              Nenhum voto computado para esta categoria.
+                            </div>
+                          ) : (
+                            votosCat.slice(0, 3).map((item, index) => {
+                              const carro = carros.find((c) => c.id === item.carroId);
+                              const percent = totalVotosCat > 0 ? (item.votosCount / totalVotosCat) * 100 : 0;
+                              const medalColor = index === 0 ? 'text-amber-400' : index === 1 ? 'text-gray-400' : 'text-amber-700';
 
-                            return (
-                              <div key={item.carroId} className="space-y-1.5">
-                                <div className="flex items-center justify-between text-xs">
-                                  <div className="flex items-center space-x-2">
-                                    <span className={`font-black ${medalColor}`}>#{index + 1}</span>
-                                    <span className="font-bold text-white line-clamp-1">
-                                      {carro ? `${carro.modelo} (${carro.numero_inscricao})` : `ID Carro: ${item.carroId}`}
+                              return (
+                                <div key={item.carroId} className="space-y-1.5">
+                                  <div className="flex items-center justify-between text-xs">
+                                    <div className="flex items-center space-x-2">
+                                      <span className={`font-black ${medalColor}`}>#{index + 1}</span>
+                                      <span className="font-bold text-white line-clamp-1">
+                                        {carro ? `${carro.modelo} (${carro.numero_inscricao})` : `ID Carro: ${item.carroId}`}
+                                      </span>
+                                    </div>
+                                    <span className="font-bold text-white shrink-0">
+                                      {item.votosCount} votos ({percent.toFixed(0)}%)
                                     </span>
                                   </div>
-                                  <span className="font-bold text-white shrink-0">
-                                    {item.votosCount} votos ({percent.toFixed(0)}%)
-                                  </span>
+                                  
+                                  {/* Barra de progresso */}
+                                  <div className="w-full bg-[#121212] h-2 rounded-full overflow-hidden border border-[#333]">
+                                    <div
+                                      className="bg-primary h-full rounded-full transition-all duration-500"
+                                      style={{ width: `${percent}%` }}
+                                    />
+                                  </div>
                                 </div>
-                                
-                                {/* Barra de progresso */}
-                                <div className="w-full bg-[#121212] h-2 rounded-full overflow-hidden border border-[#333]">
-                                  <div
-                                    className="bg-primary h-full rounded-full transition-all duration-500"
-                                    style={{ width: `${percent}%` }}
-                                  />
-                                </div>
-                              </div>
-                            );
-                          })
-                        )}
+                              );
+                            })
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+            </div>
+
+            {/* Seção de Categorias Automáticas */}
+            <div className="mt-8 border-t border-[#2b2b2b] pt-6">
+              <h3 className="font-bold text-md text-white mb-4">Resultados das Categorias Automáticas / Quantidade</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                
+                {/* 1. Mais Antigo */}
+                {(() => {
+                  const oldestCars = [...carros]
+                    .filter((c) => c.ano)
+                    .sort((a, b) => a.ano - b.ano)
+                    .slice(0, 3);
+                  return (
+                    <div className="bg-surface rounded-xl p-5 border border-[#2b2b2b] flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center justify-between border-b border-[#2b2b2b] pb-3 mb-4">
+                          <h4 className="font-bold text-sm text-secondary uppercase tracking-wider">Mais antigo</h4>
+                          <span className="text-[10px] font-semibold text-primary bg-[#121212] px-2 py-0.5 rounded-full uppercase tracking-wider">
+                            Ano (Crescente)
+                          </span>
+                        </div>
+                        <div className="space-y-4">
+                          {oldestCars.length === 0 ? (
+                            <div className="text-center py-6 text-xs text-gray-500">
+                              Nenhum carro cadastrado.
+                            </div>
+                          ) : (
+                            oldestCars.map((carro, index) => {
+                              const medalColor = index === 0 ? 'text-amber-400' : index === 1 ? 'text-gray-400' : 'text-amber-700';
+                              return (
+                                <div key={carro.id} className="space-y-1">
+                                  <div className="flex items-center justify-between text-xs">
+                                    <div className="flex items-center space-x-2">
+                                      <span className={`font-black ${medalColor}`}>#{index + 1}</span>
+                                      <span className="font-bold text-white line-clamp-1">
+                                        {carro.modelo} ({carro.numero_inscricao})
+                                      </span>
+                                    </div>
+                                    <span className="font-bold text-white shrink-0">
+                                      {carro.ano}
+                                    </span>
+                                  </div>
+                                  <p className="text-[10px] text-text-secondary pl-5">
+                                    Dono(a): {carro.nome_dono}
+                                  </p>
+                                </div>
+                              );
+                            })
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* 2. Maior rodagem */}
+                {(() => {
+                  const longestMilage = [...carros]
+                    .filter((c) => c.km_rodado !== undefined && c.km_rodado > 0)
+                    .sort((a, b) => (b.km_rodado || 0) - (a.km_rodado || 0))
+                    .slice(0, 3);
+                  return (
+                    <div className="bg-surface rounded-xl p-5 border border-[#2b2b2b] flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center justify-between border-b border-[#2b2b2b] pb-3 mb-4">
+                          <h4 className="font-bold text-sm text-secondary uppercase tracking-wider">Maior rodagem</h4>
+                          <span className="text-[10px] font-semibold text-primary bg-[#121212] px-2 py-0.5 rounded-full uppercase tracking-wider">
+                            KM (Decrescente)
+                          </span>
+                        </div>
+                        <div className="space-y-4">
+                          {longestMilage.length === 0 ? (
+                            <div className="text-center py-6 text-xs text-gray-500">
+                              Nenhum veículo com rodagem informada.
+                            </div>
+                          ) : (
+                            longestMilage.map((carro, index) => {
+                              const medalColor = index === 0 ? 'text-amber-400' : index === 1 ? 'text-gray-400' : 'text-amber-700';
+                              return (
+                                <div key={carro.id} className="space-y-1">
+                                  <div className="flex items-center justify-between text-xs">
+                                    <div className="flex items-center space-x-2">
+                                      <span className={`font-black ${medalColor}`}>#{index + 1}</span>
+                                      <span className="font-bold text-white line-clamp-1">
+                                        {carro.modelo} ({carro.numero_inscricao})
+                                      </span>
+                                    </div>
+                                    <span className="font-bold text-white shrink-0">
+                                      {carro.km_rodado} km
+                                    </span>
+                                  </div>
+                                  <p className="text-[10px] text-text-secondary pl-5">
+                                    Dono(a): {carro.nome_dono}
+                                  </p>
+                                </div>
+                              );
+                            })
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* 3. Maior equipe uniformizada */}
+                {(() => {
+                  const teamCounts: Record<string, number> = {};
+                  carros.forEach((c) => {
+                    if (c.equipe && c.equipe.trim()) {
+                      const t = c.equipe.trim();
+                      teamCounts[t] = (teamCounts[t] || 0) + 1;
+                    }
+                  });
+                  const sortedTeams = Object.keys(teamCounts)
+                    .map((teamName) => ({ teamName, count: teamCounts[teamName] }))
+                    .sort((a, b) => b.count - a.count)
+                    .slice(0, 3);
+                  return (
+                    <div className="bg-surface rounded-xl p-5 border border-[#2b2b2b] flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center justify-between border-b border-[#2b2b2b] pb-3 mb-4">
+                          <h4 className="font-bold text-sm text-secondary uppercase tracking-wider">Maior equipe</h4>
+                          <span className="text-[10px] font-semibold text-primary bg-[#121212] px-2 py-0.5 rounded-full uppercase tracking-wider">
+                            Qtd Carros
+                          </span>
+                        </div>
+                        <div className="space-y-4">
+                          {sortedTeams.length === 0 ? (
+                            <div className="text-center py-6 text-xs text-gray-500">
+                              Nenhuma equipe registrada.
+                            </div>
+                          ) : (
+                            sortedTeams.map((team, index) => {
+                              const medalColor = index === 0 ? 'text-amber-400' : index === 1 ? 'text-gray-400' : 'text-amber-700';
+                              return (
+                                <div key={team.teamName} className="space-y-1">
+                                  <div className="flex items-center justify-between text-xs">
+                                    <div className="flex items-center space-x-2">
+                                      <span className={`font-black ${medalColor}`}>#{index + 1}</span>
+                                      <span className="font-bold text-white line-clamp-1">
+                                        {team.teamName}
+                                      </span>
+                                    </div>
+                                    <span className="font-bold text-white shrink-0">
+                                      {team.count} carros
+                                    </span>
+                                  </div>
+                                </div>
+                              );
+                            })
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+              </div>
             </div>
           </div>
         )}
@@ -505,6 +675,33 @@ export function DashboardView({
                   />
                 </div>
 
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-text-secondary uppercase mb-1">
+                      Equipe / Clube
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ex: Flow Club"
+                      value={equipe}
+                      onChange={(e) => setEquipe(e.target.value)}
+                      className="w-full bg-[#121212] border border-[#333] focus:border-secondary focus:ring-1 focus:ring-secondary rounded-lg py-2 px-3 text-white text-xs outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-text-secondary uppercase mb-1">
+                      Km Rodados (Distância)
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="Ex: 150"
+                      value={kmRodado}
+                      onChange={(e) => setKmRodado(e.target.value)}
+                      className="w-full bg-[#121212] border border-[#333] focus:border-secondary focus:ring-1 focus:ring-secondary rounded-lg py-2 px-3 text-white text-xs outline-none"
+                    />
+                  </div>
+                </div>
+
                 {/* Capturar Imagem com Câmera */}
                 <div className="space-y-2">
                   <label className="block text-xs font-semibold text-text-secondary uppercase">
@@ -593,15 +790,24 @@ export function DashboardView({
                           <div className="text-[10px] text-text-secondary mt-0.5 space-y-0.5">
                             <div>
                               Dono(a): <span className="text-white font-semibold">{carro.nome_dono}</span>
+                              {carro.equipe && (
+                                <> | Equipe: <span className="text-secondary">{carro.equipe}</span></>
+                              )}
                               {carro.telefone_dono && (
-                                <> | Tel: <span className="text-secondary">{carro.telefone_dono}</span></>
+                                <> | Tel: <span className="text-gray-400">{carro.telefone_dono}</span></>
                               )}
                             </div>
-                            <div className="flex items-center space-x-2">
+                            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                               <span className="bg-surface px-1.5 py-0.5 rounded text-white font-semibold">{carro.numero_inscricao}</span>
                               <span>Ano: {carro.ano}</span>
                               <span>•</span>
                               <span>{carro.altura_mm} mm</span>
+                              {carro.km_rodado !== undefined && carro.km_rodado > 0 && (
+                                <>
+                                  <span>•</span>
+                                  <span className="text-secondary">{carro.km_rodado} km rodados</span>
+                                </>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -627,72 +833,232 @@ export function DashboardView({
           </div>
         )}
 
-        {/* TAB: VALIDAÇÃO INTERNA (Carro Mais Antigo Cadastrado) */}
+        {/* TAB: VALIDAÇÃO INTERNA */}
         {activeTab === 'validacao' && (
-          <div className="bg-surface rounded-xl p-6 border border-[#2b2b2b]">
-            <h3 className="font-bold text-md text-white mb-2">Validação Interna de Frota</h3>
-            <p className="text-xs text-gray-400 mb-6">
-              Esta seção apresenta os carros ordenados do ano de fabricação **mais antigo** para o mais recente. Muito útil para auditoria do organizador e validação de relatórios de frota e inscrições.
-            </p>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="border-b border-[#2b2b2b] text-text-secondary">
-                    <th className="py-3 px-4 font-bold uppercase tracking-wider">Ordenação</th>
-                    <th className="py-3 px-4 font-bold uppercase tracking-wider">Inscrição</th>
-                    <th className="py-3 px-4 font-bold uppercase tracking-wider">Modelo</th>
-                    <th className="py-3 px-4 font-bold uppercase tracking-wider">Dono(a)</th>
-                    <th className="py-3 px-4 font-bold uppercase tracking-wider">Telefone (Org)</th>
-                    <th className="py-3 px-4 font-bold uppercase tracking-wider">Ano Fabricação</th>
-                    <th className="py-3 px-4 font-bold uppercase tracking-wider">Altura</th>
-                    <th className="py-3 px-4 font-bold uppercase tracking-wider">Ações</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#2b2b2b]">
-                  {carrosValidadosAntigos.map((carro, index) => {
-                    const isFirst = index === 0;
-                    return (
-                      <tr
-                        key={carro.id}
-                        className={`hover:bg-[#252525] transition-colors ${
-                          isFirst ? 'bg-primary/5 font-semibold text-primary' : 'text-white'
-                        }`}
-                      >
-                        <td className="py-3.5 px-4">
-                          {isFirst ? (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded bg-primary/20 text-primary border border-primary/30 font-black">
-                              MAIS ANTIGO
-                            </span>
-                          ) : (
-                            <span>{index + 1}º mais antigo</span>
-                          )}
-                        </td>
-                        <td className="py-3.5 px-4 font-bold">{carro.numero_inscricao}</td>
-                        <td className="py-3.5 px-4">{carro.modelo}</td>
-                        <td className="py-3.5 px-4">{carro.nome_dono}</td>
-                        <td className="py-3.5 px-4 font-mono text-secondary">{carro.telefone_dono || '-'}</td>
-                        <td className="py-3.5 px-4">{carro.ano}</td>
-                        <td className="py-3.5 px-4">{carro.altura_mm} mm</td>
-                        <td className="py-3.5 px-4">
-                          <button
-                            onClick={async () => {
-                              if (confirm(`Tem certeza que deseja excluir o carro "${carro.modelo}"?`)) {
-                                await deletarCarro(carro.id);
-                              }
-                            }}
-                            className="p-1.5 rounded bg-red-950/20 hover:bg-red-950/40 border border-red-900/40 text-primary hover:text-red-400 transition-colors focus:outline-none"
-                            title="Excluir Carro"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+          <div className="bg-surface rounded-xl p-6 border border-[#2b2b2b] space-y-6">
+            <div>
+              <h3 className="font-bold text-md text-white mb-2">Validação Interna de Frota e Equipes</h3>
+              <p className="text-xs text-gray-400">
+                Esta seção apresenta dados consolidados para auditoria dos organizadores e apuração dos troféus automáticos.
+              </p>
             </div>
+
+            {/* Sub-abas de Validação */}
+            <div className="flex border-b border-[#2b2b2b]">
+              <button
+                onClick={() => setValTab('ano')}
+                className={`py-2.5 px-4 font-bold text-xs uppercase transition-colors border-b-2 outline-none ${
+                  valTab === 'ano'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-gray-400 hover:text-white'
+                }`}
+              >
+                Frota por Ano (Antigos)
+              </button>
+              <button
+                onClick={() => setValTab('rodagem')}
+                className={`py-2.5 px-4 font-bold text-xs uppercase transition-colors border-b-2 outline-none ${
+                  valTab === 'rodagem'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-gray-400 hover:text-white'
+                }`}
+              >
+                Frota por Rodagem (KM)
+              </button>
+              <button
+                onClick={() => setValTab('equipes')}
+                className={`py-2.5 px-4 font-bold text-xs uppercase transition-colors border-b-2 outline-none ${
+                  valTab === 'equipes'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-gray-400 hover:text-white'
+                }`}
+              >
+                Equipes (Quantidade)
+              </button>
+            </div>
+
+            {/* TABELA 1: FROTAS POR ANO */}
+            {valTab === 'ano' && (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="border-b border-[#2b2b2b] text-text-secondary">
+                      <th className="py-3 px-4 font-bold uppercase tracking-wider">Ordenação</th>
+                      <th className="py-3 px-4 font-bold uppercase tracking-wider">Inscrição</th>
+                      <th className="py-3 px-4 font-bold uppercase tracking-wider">Modelo</th>
+                      <th className="py-3 px-4 font-bold uppercase tracking-wider">Dono(a)</th>
+                      <th className="py-3 px-4 font-bold uppercase tracking-wider">Equipe</th>
+                      <th className="py-3 px-4 font-bold uppercase tracking-wider">Ano Fabricação</th>
+                      <th className="py-3 px-4 font-bold uppercase tracking-wider">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#2b2b2b]">
+                    {carrosValidadosAntigos.map((carro, index) => {
+                      const isFirst = index === 0;
+                      return (
+                        <tr
+                          key={carro.id}
+                          className={`hover:bg-[#252525] transition-colors ${
+                            isFirst ? 'bg-primary/5 font-semibold text-primary' : 'text-white'
+                          }`}
+                        >
+                          <td className="py-3.5 px-4">
+                            {isFirst ? (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded bg-primary/20 text-primary border border-primary/30 font-black">
+                                MAIS ANTIGO
+                              </span>
+                            ) : (
+                              <span>{index + 1}º mais antigo</span>
+                            )}
+                          </td>
+                          <td className="py-3.5 px-4 font-bold">{carro.numero_inscricao}</td>
+                          <td className="py-3.5 px-4">{carro.modelo}</td>
+                          <td className="py-3.5 px-4">{carro.nome_dono}</td>
+                          <td className="py-3.5 px-4 font-semibold text-secondary">{carro.equipe || '-'}</td>
+                          <td className="py-3.5 px-4">{carro.ano}</td>
+                          <td className="py-3.5 px-4">
+                            <button
+                              onClick={async () => {
+                                if (confirm(`Tem certeza que deseja excluir o carro "${carro.modelo}"?`)) {
+                                  await deletarCarro(carro.id);
+                                }
+                              }}
+                              className="p-1.5 rounded bg-red-950/20 hover:bg-red-950/40 border border-red-900/40 text-primary hover:text-red-400 transition-colors focus:outline-none"
+                              title="Excluir Carro"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* TABELA 2: FROTAS POR RODAGEM */}
+            {valTab === 'rodagem' && (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="border-b border-[#2b2b2b] text-text-secondary">
+                      <th className="py-3 px-4 font-bold uppercase tracking-wider">Ordenação</th>
+                      <th className="py-3 px-4 font-bold uppercase tracking-wider">Inscrição</th>
+                      <th className="py-3 px-4 font-bold uppercase tracking-wider">Modelo</th>
+                      <th className="py-3 px-4 font-bold uppercase tracking-wider">Dono(a)</th>
+                      <th className="py-3 px-4 font-bold uppercase tracking-wider">Equipe</th>
+                      <th className="py-3 px-4 font-bold uppercase tracking-wider">Km Rodado</th>
+                      <th className="py-3 px-4 font-bold uppercase tracking-wider">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#2b2b2b]">
+                    {[...carros]
+                      .sort((a, b) => (b.km_rodado || 0) - (a.km_rodado || 0))
+                      .map((carro, index) => {
+                        const isFirst = index === 0 && (carro.km_rodado || 0) > 0;
+                        return (
+                          <tr
+                            key={carro.id}
+                            className={`hover:bg-[#252525] transition-colors ${
+                              isFirst ? 'bg-primary/5 font-semibold text-primary' : 'text-white'
+                            }`}
+                          >
+                            <td className="py-3.5 px-4">
+                              {isFirst ? (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded bg-primary/20 text-primary border border-primary/30 font-black">
+                                  MAIOR RODAGEM
+                                </span>
+                              ) : (
+                                <span>{index + 1}º mais rodado</span>
+                              )}
+                            </td>
+                            <td className="py-3.5 px-4 font-bold">{carro.numero_inscricao}</td>
+                            <td className="py-3.5 px-4">{carro.modelo}</td>
+                            <td className="py-3.5 px-4">{carro.nome_dono}</td>
+                            <td className="py-3.5 px-4 font-semibold text-secondary">{carro.equipe || '-'}</td>
+                            <td className="py-3.5 px-4">{carro.km_rodado || 0} km</td>
+                            <td className="py-3.5 px-4">
+                              <button
+                                onClick={async () => {
+                                  if (confirm(`Tem certeza que deseja excluir o carro "${carro.modelo}"?`)) {
+                                    await deletarCarro(carro.id);
+                                  }
+                                }}
+                                className="p-1.5 rounded bg-red-950/20 hover:bg-red-950/40 border border-red-900/40 text-primary hover:text-red-400 transition-colors focus:outline-none"
+                                title="Excluir Carro"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* TABELA 3: EQUIPES POR QUANTIDADE */}
+            {valTab === 'equipes' && (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="border-b border-[#2b2b2b] text-text-secondary">
+                      <th className="py-3 px-4 font-bold uppercase tracking-wider">Ordenação</th>
+                      <th className="py-3 px-4 font-bold uppercase tracking-wider">Nome da Equipe</th>
+                      <th className="py-3 px-4 font-bold uppercase tracking-wider">Integrantes/Carros Inscritos</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#2b2b2b]">
+                    {(() => {
+                      const teamCounts: Record<string, number> = {};
+                      carros.forEach((c) => {
+                        if (c.equipe && c.equipe.trim()) {
+                          const t = c.equipe.trim();
+                          teamCounts[t] = (teamCounts[t] || 0) + 1;
+                        }
+                      });
+                      const sortedTeams = Object.keys(teamCounts)
+                        .map((teamName) => ({ teamName, count: teamCounts[teamName] }))
+                        .sort((a, b) => b.count - a.count);
+
+                      return sortedTeams.length === 0 ? (
+                        <tr>
+                          <td colSpan={3} className="py-6 text-center text-gray-500">
+                            Nenhuma equipe com veículo cadastrado.
+                          </td>
+                        </tr>
+                      ) : (
+                        sortedTeams.map((team, index) => {
+                          const isFirst = index === 0;
+                          return (
+                            <tr
+                              key={team.teamName}
+                              className={`hover:bg-[#252525] transition-colors ${
+                                isFirst ? 'bg-primary/5 font-semibold text-primary' : 'text-white'
+                              }`}
+                            >
+                              <td className="py-3.5 px-4">
+                                {isFirst ? (
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded bg-primary/20 text-primary border border-primary/30 font-black">
+                                    MAIOR EQUIPE
+                                  </span>
+                                ) : (
+                                  <span>{index + 1}ª equipe</span>
+                                )}
+                              </td>
+                              <td className="py-3.5 px-4 font-bold">{team.teamName}</td>
+                              <td className="py-3.5 px-4">{team.count} carros inscritos</td>
+                            </tr>
+                          );
+                        })
+                      );
+                    })()}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
       </div>

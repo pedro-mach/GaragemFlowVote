@@ -32,13 +32,15 @@ create table if not exists public.carros (
   url_foto text,
   nome_dono text not null default '',
   telefone_dono text,
+  equipe text,
+  km_rodado integer not null default 0,
   criado_em timestamptz default now() not null
 );
 
 -- 5. Tabela de Categorias
 create table if not exists public.categorias (
   id uuid primary key default gen_random_uuid(),
-  nome text not null, -- ex: 'Mais Bonito', 'Destaque', 'Mais Baixo'
+  nome text unique not null, -- ex: 'Mais Bonito', 'Destaque', 'Mais Baixo'
   tipo text not null default 'popular' check (tipo in ('popular', 'interna')), -- 'popular' (público vota), 'interna' (organizadores decidem)
   criado_em timestamptz default now() not null
 );
@@ -69,25 +71,12 @@ create policy "Acesso livre a carros" on public.carros for all using (true) with
 create policy "Acesso livre a categorias" on public.categorias for all using (true) with check (true);
 create policy "Acesso livre a votos" on public.votos for all using (true) with check (true);
 
-
--- 7. Dados Iniciais para Teste (Inserts)
--- Caso queira testar de imediato, execute estes comandos após rodar as tabelas.
-
--- Evento de Teste
-insert into public.eventos (id, nome, data, status)
-values ('11111111-1111-1111-1111-111111111111', 'Garagem Flow Meet 2026', '2026-07-16', 'aberto')
-on conflict (id) do nothing;
-
--- Categorias de Votação
+-- 7. Categorias Iniciais Padrão
 insert into public.categorias (id, nome, tipo) values
-  ('22222222-2222-2222-2222-222222222222', 'Mais Bonito', 'popular'),
-  ('33333333-3333-3333-3333-333333333333', 'Destaque', 'popular'),
-  ('44444444-4444-4444-4444-444444444444', 'Mais Baixo', 'popular')
-on conflict (id) do nothing;
+  ('22222222-2222-2222-2222-222222222222', 'Destaque Masculino', 'popular'),
+  ('33333333-3333-3333-3333-333333333333', 'Destaque Feminino', 'popular'),
+  ('44444444-4444-4444-4444-444444444444', 'Mais antigo', 'interna'),
+  ('55555555-5555-5555-5555-555555555555', 'Maior equipe uniformizada', 'interna'),
+  ('66666666-6666-6666-6666-666666666666', 'Maior rodagem', 'interna')
+on conflict (id) do update set nome = excluded.nome, tipo = excluded.tipo;
 
--- Carros Participantes
-insert into public.carros (evento_id, numero_inscricao, modelo, ano, altura_mm, url_foto, nome_dono, telefone_dono) values
-  ('11111111-1111-1111-1111-111111111111', '#042', 'Ford Ka (Estilo: OEM+)', 2013, 120, 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?q=80&w=600', 'Pedro Machado', '(11) 98888-7777'),
-  ('11111111-1111-1111-1111-111111111111', '#018', 'VW Gol (Estilo: Rebaixado)', 1994, 50, 'https://images.unsplash.com/photo-1617469767053-d3b508a0d825?q=80&w=600', 'Rodrigo Low', '(21) 97777-6666'),
-  ('11111111-1111-1111-1111-111111111111', '#105', 'Chevrolet Chevette (Estilo: Drift)', 1989, 75, 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?q=80&w=600', 'Mateus Drift', '(19) 96666-5555')
-on conflict do nothing;

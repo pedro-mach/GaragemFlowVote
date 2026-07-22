@@ -27,12 +27,14 @@ export function GalleryView({
 }: GalleryViewProps) {
   const [activeCategoryId, setActiveCategoryId] = useState<string>('');
 
+  const popularCategorias = categorias.filter((c) => c.tipo === 'popular');
+
   // Seta a primeira categoria como ativa quando carregada
   React.useEffect(() => {
-    if (categorias.length > 0 && !activeCategoryId) {
-      setActiveCategoryId(categorias[0].id);
+    if (popularCategorias.length > 0 && !activeCategoryId) {
+      setActiveCategoryId(popularCategorias[0].id);
     }
-  }, [categorias, activeCategoryId]);
+  }, [popularCategorias, activeCategoryId]);
 
   // Filtra carros que pertencem ao evento ativo (caso de segurança)
   const eventCarros = carros.filter((c) => !evento || c.evento_id === evento.id);
@@ -86,7 +88,7 @@ export function GalleryView({
           Categorias
         </label>
         <div className="flex space-x-2 overflow-x-auto pb-2 scrollbar-none snap-x -mx-1 px-1">
-          {categorias.map((cat) => {
+          {popularCategorias.map((cat) => {
             const isSelected = cat.id === activeCategoryId;
             const jaVotou = userVotos.some((v) => v.categoria_id === cat.id);
             return (
@@ -169,12 +171,18 @@ export function GalleryView({
                       {carro.modelo}
                     </h3>
                     <p className="text-[11px] text-secondary font-semibold mt-0.5">
-                      Dono(a): {carro.nome_dono}
+                      Dono(a): {carro.nome_dono}{carro.equipe ? ` | Equipe: ${carro.equipe}` : ''}
                     </p>
-                    <div className="flex space-x-3 text-xs text-text-secondary mt-1.5">
+                    <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-text-secondary mt-1.5">
                       <span>Ano: <strong className="text-white">{carro.ano}</strong></span>
                       <span className="text-gray-600">|</span>
                       <span>Altura: <strong className="text-white">{carro.altura_mm} mm</strong></span>
+                      {carro.km_rodado !== undefined && carro.km_rodado > 0 ? (
+                        <>
+                          <span className="text-gray-600">|</span>
+                          <span>Rodagem: <strong className="text-white">{carro.km_rodado} km</strong></span>
+                        </>
+                      ) : null}
                     </div>
                   </div>
 
