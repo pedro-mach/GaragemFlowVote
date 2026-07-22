@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   ToggleLeft, ToggleRight, Car, BarChart3, ShieldCheck,
   Plus, LogOut, RefreshCw, Layers, Camera, Trash2, Trophy, Award,
-  Edit2, Eye, EyeOff, Check, Tag, X
+  Edit2, Eye, EyeOff, Check, Tag, X, Menu
 } from 'lucide-react';
 import type { Carro, Categoria, Evento } from '../data/mockData';
 
@@ -111,6 +111,7 @@ export function DashboardView({
 }: DashboardViewProps) {
   const [activeTab, setActiveTab] = useState<TabType>('status');
   const [valTab, setValTab] = useState<'ano' | 'rodagem' | 'equipes'>('ano');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => typeof window !== 'undefined' ? window.innerWidth >= 768 : false);
 
   // Estado edição do nome do evento
   const [isEditingEventName, setIsEditingEventName] = useState(false);
@@ -249,44 +250,79 @@ export function DashboardView({
   ];
 
   return (
-    <div style={{ display: 'flex', width: '100%', minHeight: '100dvh', background: '#000000', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', width: '100%', minHeight: '100dvh', background: '#000000', overflow: 'hidden', position: 'relative' }}>
+
+      {/* Backdrop overlay para mobile quando a sidebar está aberta */}
+      {isSidebarOpen && (
+        <div
+          onClick={() => setIsSidebarOpen(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.75)',
+            zIndex: 40,
+          }}
+          className="md:hidden"
+        />
+      )}
 
       {/* ===== SIDEBAR ===== */}
       <div
         style={{
           background: '#181818',
-          borderRight: '1px solid #202020',
+          borderRight: isSidebarOpen ? '1px solid #202020' : 'none',
           padding: '0',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
           flexShrink: 0,
-          width: 220,
+          width: isSidebarOpen ? 240 : 0,
+          overflow: 'hidden',
+          transition: 'width 0.2s ease, border-color 0.2s ease',
+          zIndex: 50,
         }}
-        className="hidden md:flex"
+        className={`
+          ${isSidebarOpen ? 'fixed inset-y-0 left-0 h-full md:relative md:h-auto' : 'hidden md:flex'}
+        `}
       >
-        {/* Logo */}
+        {/* Logo e Cabeçalho do Menu */}
         <div>
-          <div style={{ padding: '20px 16px', borderBottom: '1px solid #202020', display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 32, height: 32, background: '#202020', border: '1px solid rgba(255,192,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <Car size={16} color="#FFC000" />
-            </div>
-            <div>
-              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#FFC000', lineHeight: 1.1 }}>
-                Painel
+          <div style={{ padding: '16px 16px', borderBottom: '1px solid #202020', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 32, height: 32, background: '#202020', border: '1px solid rgba(255,192,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Car size={16} color="#FFC000" />
               </div>
-              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, color: '#7D7D7D', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
-                Organizador
+              <div>
+                <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#FFC000', lineHeight: 1.1 }}>
+                  Painel
+                </div>
+                <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, color: '#7D7D7D', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
+                  Organizador
+                </div>
               </div>
             </div>
+            <button
+              onClick={() => setIsSidebarOpen(false)}
+              style={{ background: 'transparent', border: 'none', color: '#7D7D7D', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              onMouseEnter={e => e.currentTarget.style.color = '#FFFFFF'}
+              onMouseLeave={e => e.currentTarget.style.color = '#7D7D7D'}
+              title="Fechar Menu"
+            >
+              <X size={18} />
+            </button>
           </div>
 
-          {/* Nav */}
+          {/* Nav Items */}
           <nav style={{ padding: '8px 0' }}>
             {navItems.map((item) => (
               <button
                 key={item.id}
-                onClick={() => setActiveTab(item.id)}
+                onClick={() => {
+                  setActiveTab(item.id);
+                  if (typeof window !== 'undefined' && window.innerWidth < 768) {
+                    setIsSidebarOpen(false);
+                  }
+                }}
                 style={S.navBtn(activeTab === item.id)}
                 onMouseEnter={e => { if (activeTab !== item.id) e.currentTarget.style.color = '#FFFFFF'; }}
                 onMouseLeave={e => { if (activeTab !== item.id) e.currentTarget.style.color = '#7D7D7D'; }}
@@ -315,38 +351,43 @@ export function DashboardView({
         </button>
       </div>
 
-      {/* Coluna direita: mobile nav + conteúdo */}
+      {/* Coluna direita: conteúdo principal */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflowY: 'auto', maxHeight: '100dvh' }}>
-
-        {/* Mobile Nav */}
-        <div
-          className="md:hidden no-scrollbar"
-          style={{ background: '#181818', borderBottom: '1px solid #202020', display: 'flex', overflowX: 'auto', gap: 2, flexShrink: 0 }}
-        >
-          {navItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              style={{
-                ...S.navBtn(activeTab === item.id),
-                width: 'auto',
-                flexShrink: 0,
-                padding: '12px 14px',
-              }}
-            >
-              {item.icon}
-              <span>{item.label}</span>
-            </button>
-          ))}
-        </div>
 
         {/* ===== CONTEÚDO PRINCIPAL ===== */}
         <div style={{ flex: 1, background: '#000000' }}>
 
-          {/* Header com Edição de Nome de Evento */}
-          <div style={{ background: '#181818', borderBottom: '1px solid #202020', padding: '16px 24px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+          {/* Header com Botão Sandwich + Nome do Evento */}
+          <div style={{ background: '#181818', borderBottom: '1px solid #202020', padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              {/* Botão Sandwich Menu */}
+              <button
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                style={{
+                  background: isSidebarOpen ? 'rgba(255,192,0,0.15)' : '#202020',
+                  border: '1px solid rgba(255,192,0,0.3)',
+                  color: '#FFC000',
+                  padding: '8px 12px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  fontFamily: "'Barlow Condensed', sans-serif",
+                  fontWeight: 700,
+                  fontSize: 13,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.08em',
+                  transition: 'all 0.15s ease',
+                  flexShrink: 0,
+                }}
+                title={isSidebarOpen ? 'Fechar Menu' : 'Abrir Menu'}
+              >
+                <Menu size={18} />
+                <span>MENU</span>
+              </button>
+
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
                 <span style={{
                   fontFamily: "'Barlow Condensed', sans-serif",
                   fontSize: 10,
@@ -410,6 +451,7 @@ export function DashboardView({
                 </div>
               )}
             </div>
+          </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{
