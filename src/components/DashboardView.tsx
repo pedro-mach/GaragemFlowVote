@@ -523,7 +523,7 @@ export function DashboardView({
 
                     return (
                       <div key={cat.id} style={{ background: '#181818', border: '1px solid #202020', padding: '20px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyBetween: 'space-between', borderBottom: '1px solid #202020', paddingBottom: 12, marginBottom: 16 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #202020', paddingBottom: 12, marginBottom: 16 }}>
                           <h4 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#FFC000', margin: 0 }}>
                             {cat.nome}
                           </h4>
