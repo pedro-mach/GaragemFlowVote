@@ -1858,6 +1858,33 @@ export function DashboardView({
           </div>
         </div>
       )}
+
+      {/* Crédito do Desenvolvedor */}
+      <div
+        className="dev-credit-footer"
+        style={{
+          position: 'fixed',
+          bottom: 0,
+          right: 0,
+          left: 'auto',
+          width: 'auto',
+          padding: '10px 20px',
+          zIndex: 9999,
+          background: 'linear-gradient(90deg, transparent, rgba(0,0,0,0.9) 40%)',
+          pointerEvents: 'none',
+        }}
+      >
+        <span>Desenvolvido por</span>
+        <span className="dev-dot" />
+        <a
+          href="https://pedromachado.dev.br/"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ pointerEvents: 'auto' }}
+        >
+          PedroMachado.Dev
+        </a>
+      </div>
     </div>
   );
 }
