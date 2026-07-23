@@ -26,6 +26,7 @@ function App() {
     error: dataError,
     atualizarNomeEvento,
     cadastrarCarro,
+    editarCarro,
     deletarCarro,
     cadastrarEquipe,
     deletarEquipe,
@@ -65,6 +66,7 @@ function App() {
         error={globalError}
         atualizarNomeEvento={atualizarNomeEvento}
         cadastrarCarro={cadastrarCarro}
+        editarCarro={editarCarro}
         deletarCarro={deletarCarro}
         cadastrarEquipe={cadastrarEquipe}
         deletarEquipe={deletarEquipe}

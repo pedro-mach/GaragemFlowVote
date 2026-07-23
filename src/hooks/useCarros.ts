@@ -284,6 +284,100 @@ export function useCarros() {
     }
   };
 
+  const editarCarro = async (
+    id: string,
+    dados: {
+      numeroInscricao?: string;
+      modelo?: string;
+      ano?: number;
+      alturaMm?: number;
+      nomeDono?: string;
+      telefoneDono?: string;
+      urlFoto?: string;
+      equipe?: string;
+      kmRodado?: number;
+      genero?: 'M' | 'F';
+      categoriasIds?: string[];
+      pessoasEquipe?: number;
+    }
+  ) => {
+    setIsLoading(true);
+    try {
+      if (isSupabaseConfigured && supabase) {
+        // Resolver equipe_id se o nome da equipe for fornecido
+        let equipeId: string | null = null;
+        if (dados.equipe?.trim()) {
+          const eq = equipes.find((e) => e.nome.toLowerCase() === dados.equipe!.trim().toLowerCase());
+          if (eq) equipeId = eq.id;
+        }
+
+        const { error: updateError } = await supabase
+          .from('carros')
+          .update({
+            numero_inscricao: dados.numeroInscricao,
+            modelo: dados.modelo,
+            ano: dados.ano,
+            altura_mm: dados.alturaMm ?? 0,
+            nome_dono: dados.nomeDono || 'Não informado',
+            telefone_dono: dados.telefoneDono || null,
+            url_foto: dados.urlFoto,
+            equipe: dados.equipe || null,
+            equipe_id: equipeId,
+            km_rodado: dados.kmRodado ?? 0,
+            genero: dados.genero || null,
+            pessoas_equipe: dados.pessoasEquipe ?? 0,
+          })
+          .eq('id', id);
+        if (updateError) throw updateError;
+
+        // Atualizar inscrições nas categorias: apaga tudo e re-insere
+        const { error: delInscError } = await supabase
+          .from('carro_categorias')
+          .delete()
+          .eq('carro_id', id);
+        if (delInscError) throw delInscError;
+
+        if (dados.categoriasIds && dados.categoriasIds.length > 0) {
+          const inscricoes = dados.categoriasIds.map((catId) => ({
+            carro_id: id,
+            categoria_id: catId,
+          }));
+          const { error: inscError } = await supabase
+            .from('carro_categorias')
+            .insert(inscricoes);
+          if (inscError) throw inscError;
+        }
+      } else {
+        const currentCarros = carros.map((c) => {
+          if (c.id !== id) return c;
+          const equipeNome = dados.equipe?.trim() || c.equipe;
+          return {
+            ...c,
+            numero_inscricao: dados.numeroInscricao ?? c.numero_inscricao,
+            modelo: dados.modelo ?? c.modelo,
+            ano: dados.ano ?? c.ano,
+            altura_mm: dados.alturaMm ?? c.altura_mm,
+            nome_dono: dados.nomeDono ?? c.nome_dono,
+            telefone_dono: dados.telefoneDono ?? c.telefone_dono,
+            url_foto: dados.urlFoto ?? c.url_foto,
+            equipe: equipeNome,
+            km_rodado: dados.kmRodado ?? c.km_rodado,
+            genero: dados.genero ?? c.genero,
+            categorias_ids: dados.categoriasIds ?? c.categorias_ids,
+            pessoas_equipe: dados.pessoasEquipe ?? c.pessoas_equipe,
+          } as Carro;
+        });
+        localStorage.setItem('garagemflow_db_carros', JSON.stringify(currentCarros));
+      }
+      await fetchDados();
+    } catch (err: any) {
+      console.error('Erro ao editar carro:', err);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const cadastrarEquipe = async (nome: string) => {
     if (!nome.trim()) return;
     setIsLoading(true);
@@ -466,6 +560,7 @@ export function useCarros() {
     refresh: fetchDados,
     atualizarNomeEvento,
     cadastrarCarro,
+    editarCarro,
     deletarCarro,
     cadastrarEquipe,
     deletarEquipe,

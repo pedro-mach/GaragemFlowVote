@@ -31,6 +31,23 @@ interface DashboardViewProps {
     categoriasIds?: string[],
     pessoasEquipe?: number
   ) => Promise<void>;
+  editarCarro?: (
+    id: string,
+    dados: {
+      numeroInscricao?: string;
+      modelo?: string;
+      ano?: number;
+      alturaMm?: number;
+      nomeDono?: string;
+      telefoneDono?: string;
+      urlFoto?: string;
+      equipe?: string;
+      kmRodado?: number;
+      genero?: 'M' | 'F';
+      categoriasIds?: string[];
+      pessoasEquipe?: number;
+    }
+  ) => Promise<void>;
   deletarCarro: (id: string) => Promise<void>;
   cadastrarCategoria?: (nome: string, tipo: 'popular' | 'interna') => Promise<void>;
   editarCategoria?: (id: string, novoNome: string) => Promise<void>;
@@ -111,6 +128,7 @@ export function DashboardView({
   error,
   atualizarNomeEvento,
   cadastrarCarro,
+  editarCarro,
   deletarCarro,
   cadastrarCategoria,
   editarCategoria,
@@ -151,6 +169,26 @@ export function DashboardView({
   const [showNovaEquipe, setShowNovaEquipe] = useState(false);
   const [novaEquipeNome, setNovaEquipeNome] = useState('');
   const [submittingEquipe, setSubmittingEquipe] = useState(false);
+
+  // States do modal de edição de carro
+  const [editingCarro, setEditingCarro] = useState<Carro | null>(null);
+  const [editNumeroInscricao, setEditNumeroInscricao] = useState('');
+  const [editModelo, setEditModelo] = useState('');
+  const [editAno, setEditAno] = useState('');
+  const [editAlturaMm, setEditAlturaMm] = useState('');
+  const [editNomeDono, setEditNomeDono] = useState('');
+  const [editGenero, setEditGenero] = useState<'M' | 'F'>('M');
+  const [editTelefoneDono, setEditTelefoneDono] = useState('');
+  const [editUrlFoto, setEditUrlFoto] = useState('');
+  const [editEquipeId, setEditEquipeId] = useState('');
+  const [editKmRodado, setEditKmRodado] = useState('');
+  const [editPessoasEquipe, setEditPessoasEquipe] = useState('');
+  const [editCategoriasIds, setEditCategoriasIds] = useState<string[]>([]);
+  const [editMsg, setEditMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [submittingEdit, setSubmittingEdit] = useState(false);
+  const [showNovaEquipeEdit, setShowNovaEquipeEdit] = useState(false);
+  const [novaEquipeNomeEdit, setNovaEquipeNomeEdit] = useState('');
+  const [submittingEquipeEdit, setSubmittingEquipeEdit] = useState(false);
 
   // States gerenciamento de categorias
   const [novaCatNome, setNovaCatNome] = useState('');
@@ -266,6 +304,106 @@ export function DashboardView({
       console.error('Erro ao cadastrar equipe:', err);
     } finally {
       setSubmittingEquipe(false);
+    }
+  };
+
+  const openEditModal = (carro: Carro) => {
+    setEditingCarro(carro);
+    setEditNumeroInscricao(carro.numero_inscricao);
+    setEditModelo(carro.modelo);
+    setEditAno(String(carro.ano));
+    setEditAlturaMm(carro.altura_mm && carro.altura_mm > 0 ? String(carro.altura_mm) : '');
+    setEditNomeDono(carro.nome_dono);
+    setEditGenero(carro.genero || 'M');
+    setEditTelefoneDono(carro.telefone_dono || '');
+    setEditUrlFoto(carro.url_foto || '');
+    setEditKmRodado(carro.km_rodado ? String(carro.km_rodado) : '');
+    setEditPessoasEquipe(carro.pessoas_equipe ? String(carro.pessoas_equipe) : '');
+    setEditCategoriasIds(carro.categorias_ids || []);
+    setEditMsg(null);
+    setShowNovaEquipeEdit(false);
+    // Resolver equipe_id a partir do nome da equipe salvo
+    if (carro.equipe) {
+      const eq = equipes.find((e) => e.nome.toLowerCase() === carro.equipe!.toLowerCase());
+      setEditEquipeId(eq?.id || '');
+    } else {
+      setEditEquipeId('');
+    }
+  };
+
+  const closeEditModal = () => {
+    setEditingCarro(null);
+    setEditMsg(null);
+  };
+
+  const handleEditarCarro = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCarro || !editarCarro) return;
+    setSubmittingEdit(true);
+    setEditMsg(null);
+    try {
+      const equipeSelected = equipes.find((eq) => eq.id === editEquipeId);
+      const equipeName = equipeSelected?.nome || undefined;
+      await editarCarro(editingCarro.id, {
+        numeroInscricao: editNumeroInscricao.trim() || editingCarro.numero_inscricao,
+        modelo: editModelo.trim() || editingCarro.modelo,
+        ano: editAno.trim() ? parseInt(editAno, 10) : editingCarro.ano,
+        alturaMm: editAlturaMm.trim() ? parseInt(editAlturaMm, 10) : undefined,
+        nomeDono: editNomeDono.trim() || editingCarro.nome_dono,
+        telefoneDono: editTelefoneDono || undefined,
+        urlFoto: editUrlFoto || undefined,
+        equipe: equipeName,
+        kmRodado: editKmRodado.trim() ? parseInt(editKmRodado, 10) : undefined,
+        genero: editGenero,
+        categoriasIds: editCategoriasIds,
+        pessoasEquipe: editPessoasEquipe.trim() ? parseInt(editPessoasEquipe, 10) : undefined,
+      });
+      setEditMsg({ type: 'success', text: 'Veículo atualizado com sucesso!' });
+      setTimeout(() => closeEditModal(), 1200);
+    } catch (err: any) {
+      setEditMsg({ type: 'error', text: err.message || 'Erro ao editar veículo.' });
+    } finally {
+      setSubmittingEdit(false);
+    }
+  };
+
+  const handleCameraEditCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const maxDim = 1600;
+          let width = img.width;
+          let height = img.height;
+          if (width > height) {
+            if (width > maxDim) { height = (height * maxDim) / width; width = maxDim; }
+          } else {
+            if (height > maxDim) { width = (width * maxDim) / height; height = maxDim; }
+          }
+          canvas.width = width; canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) { ctx.drawImage(img, 0, 0, width, height); setEditUrlFoto(canvas.toDataURL('image/jpeg', 0.92)); }
+        };
+        img.src = event.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCadastrarEquipeEdit = async () => {
+    if (!novaEquipeNomeEdit.trim() || !cadastrarEquipe) return;
+    setSubmittingEquipeEdit(true);
+    try {
+      await cadastrarEquipe(novaEquipeNomeEdit.trim());
+      setNovaEquipeNomeEdit('');
+      setShowNovaEquipeEdit(false);
+    } catch (err: any) {
+      console.error('Erro ao cadastrar equipe:', err);
+    } finally {
+      setSubmittingEquipeEdit(false);
     }
   };
 
@@ -1010,19 +1148,32 @@ export function DashboardView({
                             </div>
                           </div>
 
-                          <button
-                            onClick={async () => {
-                              if (confirm(`Excluir "${carro.modelo}" (${carro.numero_inscricao})?`)) {
-                                await deletarCarro(carro.id);
-                              }
-                            }}
-                            style={{ background: 'rgba(180,0,0,0.1)', border: '1px solid rgba(200,50,50,0.3)', color: '#ef4444', padding: 8, cursor: 'pointer', flexShrink: 0, display: 'flex', transition: 'background 0.12s' }}
-                            title="Excluir"
-                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(180,0,0,0.25)'; }}
-                            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(180,0,0,0.1)'; }}
-                          >
-                            <Trash2 size={15} />
-                          </button>
+                          <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                            {editarCarro && (
+                              <button
+                                onClick={() => openEditModal(carro)}
+                                style={{ background: 'rgba(255,192,0,0.1)', border: '1px solid rgba(255,192,0,0.3)', color: '#FFC000', padding: 8, cursor: 'pointer', display: 'flex', transition: 'background 0.12s' }}
+                                title="Editar"
+                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,192,0,0.25)'; }}
+                                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,192,0,0.1)'; }}
+                              >
+                                <Edit2 size={15} />
+                              </button>
+                            )}
+                            <button
+                              onClick={async () => {
+                                if (confirm(`Excluir "${carro.modelo}" (${carro.numero_inscricao})?`)) {
+                                  await deletarCarro(carro.id);
+                                }
+                              }}
+                              style={{ background: 'rgba(180,0,0,0.1)', border: '1px solid rgba(200,50,50,0.3)', color: '#ef4444', padding: 8, cursor: 'pointer', display: 'flex', transition: 'background 0.12s' }}
+                              title="Excluir"
+                              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(180,0,0,0.25)'; }}
+                              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(180,0,0,0.1)'; }}
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
                         </div>
                       ))
                     )}
@@ -1343,6 +1494,201 @@ export function DashboardView({
           </div>
         </div>
       </div>
+
+      {/* ══════ MODAL EDIÇÃO DE CARRO ══════ */}
+      {editingCarro && (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'stretch', justifyContent: 'flex-end' }}
+          onClick={(e) => { if (e.target === e.currentTarget) closeEditModal(); }}
+        >
+          {/* Backdrop */}
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.75)' }} onClick={closeEditModal} />
+
+          {/* Painel lateral */}
+          <div style={{ position: 'relative', zIndex: 1, background: '#0a0a0a', borderLeft: '1px solid #202020', width: '100%', maxWidth: 520, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+            {/* Header */}
+            <div style={{ background: '#181818', borderBottom: '2px solid #FFC000', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <Edit2 size={16} color="#FFC000" />
+                <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#FFFFFF' }}>
+                  Editar Veículo
+                </span>
+                <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, color: '#FFC000', background: 'rgba(255,192,0,0.1)', border: '1px solid rgba(255,192,0,0.3)', padding: '2px 10px' }}>
+                  {editingCarro.numero_inscricao}
+                </span>
+              </div>
+              <button onClick={closeEditModal} style={{ background: '#202020', border: '1px solid #313131', color: '#7D7D7D', padding: 6, cursor: 'pointer', display: 'flex' }}
+                onMouseEnter={e => e.currentTarget.style.color = '#FFFFFF'} onMouseLeave={e => e.currentTarget.style.color = '#7D7D7D'}>
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Foto preview no topo */}
+            {editUrlFoto && (
+              <div style={{ position: 'relative', width: '100%', height: 160, overflow: 'hidden', background: '#000', flexShrink: 0 }}>
+                <img src={editUrlFoto} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', opacity: 0.85 }} />
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(10,10,10,0.8) 0%, transparent 60%)' }} />
+              </div>
+            )}
+
+            {/* Formulário */}
+            <form onSubmit={handleEditarCarro} style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: 20, flex: 1 }}>
+
+              {/* Inscrição */}
+              <div>
+                <label style={S.label}>Inscrição</label>
+                <input type="text" value={editNumeroInscricao} onChange={e => setEditNumeroInscricao(e.target.value)}
+                  style={S.input} onFocus={e => { e.target.style.borderColor = '#FFC000'; }} onBlur={e => { e.target.style.borderColor = '#313131'; }} />
+              </div>
+
+              {/* Modelo + Ano */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                <div>
+                  <label style={S.label}>Modelo</label>
+                  <input type="text" value={editModelo} onChange={e => setEditModelo(e.target.value)}
+                    style={{ ...S.input, height: 36 }} onFocus={e => { e.target.style.borderColor = '#FFC000'; }} onBlur={e => { e.target.style.borderColor = '#313131'; }} />
+                </div>
+                <div>
+                  <label style={S.label}>Ano</label>
+                  <input type="text" value={editAno} onChange={e => setEditAno(e.target.value)}
+                    style={{ ...S.input, height: 36 }} onFocus={e => { e.target.style.borderColor = '#FFC000'; }} onBlur={e => { e.target.style.borderColor = '#313131'; }} />
+                </div>
+              </div>
+
+              {/* Nome dono + Gênero */}
+              <div>
+                <label style={S.label}>Nome do Dono(a)</label>
+                <input type="text" value={editNomeDono} onChange={e => setEditNomeDono(e.target.value)}
+                  style={S.input} onFocus={e => { e.target.style.borderColor = '#FFC000'; }} onBlur={e => { e.target.style.borderColor = '#313131'; }} />
+              </div>
+              <div>
+                <label style={S.label}>Gênero do Dono(a)</label>
+                <div style={{ display: 'flex', gap: 16, marginTop: 6 }}>
+                  {[{ label: 'Masculino', value: 'M' }, { label: 'Feminino', value: 'F' }].map(opt => (
+                    <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#FFF', fontSize: 14, cursor: 'pointer' }}>
+                      <input type="radio" name="editGenero" value={opt.value} checked={editGenero === opt.value}
+                        onChange={e => setEditGenero(e.target.value as 'M' | 'F')} style={{ accentColor: '#FFC000', width: 16, height: 16 }} />
+                      {opt.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Telefone + Altura + KM */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                <div>
+                  <label style={S.label}>Telefone</label>
+                  <input type="text" value={editTelefoneDono} onChange={e => setEditTelefoneDono(e.target.value)} placeholder="(11) 99999-9999"
+                    style={{ ...S.input, height: 36 }} onFocus={e => { e.target.style.borderColor = '#FFC000'; }} onBlur={e => { e.target.style.borderColor = '#313131'; }} />
+                </div>
+                <div>
+                  <label style={S.label}>Altura mm</label>
+                  <input type="text" value={editAlturaMm} onChange={e => setEditAlturaMm(e.target.value)} placeholder="Ex: 50"
+                    style={{ ...S.input, height: 36 }} onFocus={e => { e.target.style.borderColor = '#FFC000'; }} onBlur={e => { e.target.style.borderColor = '#313131'; }} />
+                </div>
+                <div>
+                  <label style={S.label}>Km Rodados</label>
+                  <input type="text" value={editKmRodado} onChange={e => setEditKmRodado(e.target.value)} placeholder="Ex: 150"
+                    style={{ ...S.input, height: 36 }} onFocus={e => { e.target.style.borderColor = '#FFC000'; }} onBlur={e => { e.target.style.borderColor = '#313131'; }} />
+                </div>
+              </div>
+
+              {/* Equipe */}
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <label style={S.label}>Equipe</label>
+                  {cadastrarEquipe && (
+                    <button type="button" onClick={() => setShowNovaEquipeEdit(!showNovaEquipeEdit)}
+                      style={{ background: 'transparent', border: 'none', color: '#FFC000', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                      <UserPlus size={13} />{showNovaEquipeEdit ? 'Cancelar' : 'Nova Equipe'}
+                    </button>
+                  )}
+                </div>
+                {showNovaEquipeEdit && (
+                  <div style={{ background: '#000000', border: '1px solid rgba(255,192,0,0.25)', padding: '10px 12px', marginBottom: 8, display: 'flex', gap: 6, alignItems: 'center' }}>
+                    <input type="text" placeholder="Nome da equipe..." value={novaEquipeNomeEdit} onChange={e => setNovaEquipeNomeEdit(e.target.value)}
+                      style={{ ...S.input, height: 34, fontSize: 13, flex: 1 }}
+                      onFocus={e => { e.target.style.borderColor = '#FFC000'; }} onBlur={e => { e.target.style.borderColor = '#313131'; }}
+                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleCadastrarEquipeEdit(); } }} />
+                    <button type="button" onClick={handleCadastrarEquipeEdit} disabled={submittingEquipeEdit || !novaEquipeNomeEdit.trim()}
+                      style={{ background: '#FFC000', color: '#000', border: 'none', padding: '0 12px', height: 34, cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 12, textTransform: 'uppercase', flexShrink: 0, opacity: submittingEquipeEdit || !novaEquipeNomeEdit.trim() ? 0.5 : 1 }}>
+                      {submittingEquipeEdit ? '...' : 'Salvar'}
+                    </button>
+                  </div>
+                )}
+                <select value={editEquipeId} onChange={e => setEditEquipeId(e.target.value)}
+                  style={{ ...S.input, colorScheme: 'dark' }}
+                  onFocus={e => { e.target.style.borderColor = '#FFC000'; }} onBlur={e => { e.target.style.borderColor = '#313131'; }}>
+                  <option value="">— Sem equipe —</option>
+                  {equipes.map(eq => <option key={eq.id} value={eq.id}>{eq.nome}</option>)}
+                </select>
+              </div>
+
+              {/* Pessoas na equipe */}
+              {editEquipeId && (
+                <div>
+                  <label style={S.label}>Pessoas uniformizadas na equipe (neste carro)</label>
+                  <input type="number" min="0" placeholder="Ex: 5" value={editPessoasEquipe} onChange={e => setEditPessoasEquipe(e.target.value)}
+                    style={{ ...S.input, height: 36 }} onFocus={e => { e.target.style.borderColor = '#FFC000'; }} onBlur={e => { e.target.style.borderColor = '#313131'; }} />
+                </div>
+              )}
+
+              {/* Foto */}
+              <div>
+                <label style={S.label}>Foto do Veículo</label>
+                <button type="button" onClick={() => document.getElementById('camera-edit-input')?.click()}
+                  style={{ ...S.input, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer', background: '#202020', borderColor: '#313131', marginBottom: 6 }}>
+                  <Camera size={14} color="#FFC000" />
+                  <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Capturar / Trocar Foto</span>
+                </button>
+                <input id="camera-edit-input" type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handleCameraEditCapture} />
+                <input type="text" placeholder="Ou cole uma URL..." value={editUrlFoto.startsWith('data:image') ? '' : editUrlFoto}
+                  onChange={e => setEditUrlFoto(e.target.value)} style={{ ...S.input, height: 36 }}
+                  onFocus={e => { e.target.style.borderColor = '#FFC000'; }} onBlur={e => { e.target.style.borderColor = '#313131'; }} />
+              </div>
+
+              {/* Categorias */}
+              <div>
+                <label style={{ ...S.label, marginBottom: 10 }}>Categorias que este veículo concorre</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {categorias.map(cat => (
+                    <label key={cat.id} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '8px 10px', background: editCategoriasIds.includes(cat.id) ? 'rgba(255,192,0,0.07)' : '#000000', border: `1px solid ${editCategoriasIds.includes(cat.id) ? 'rgba(255,192,0,0.4)' : '#202020'}`, transition: 'background 0.12s, border-color 0.12s' }}>
+                      <input type="checkbox" checked={editCategoriasIds.includes(cat.id)}
+                        onChange={e => {
+                          if (e.target.checked) setEditCategoriasIds(prev => [...prev, cat.id]);
+                          else setEditCategoriasIds(prev => prev.filter(id => id !== cat.id));
+                        }}
+                        style={{ accentColor: '#FFC000', width: 15, height: 15, flexShrink: 0 }} />
+                      <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, fontWeight: 600, color: editCategoriasIds.includes(cat.id) ? '#FFC000' : '#FFFFFF', flex: 1 }}>{cat.nome}</span>
+                      <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: cat.tipo === 'popular' ? '#FFC000' : '#29ABE2', background: cat.tipo === 'popular' ? 'rgba(255,192,0,0.08)' : 'rgba(41,171,226,0.08)', padding: '2px 6px', border: `1px solid ${cat.tipo === 'popular' ? 'rgba(255,192,0,0.2)' : 'rgba(41,171,226,0.2)'}`, flexShrink: 0 }}>
+                        {cat.tipo === 'popular' ? 'Popular' : 'Interna'}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Mensagem */}
+              {editMsg && (
+                <div style={{ background: editMsg.type === 'success' ? 'rgba(0,120,60,0.15)' : 'rgba(180,0,0,0.15)', border: `1px solid ${editMsg.type === 'success' ? 'rgba(74,222,128,0.3)' : 'rgba(220,50,50,0.3)'}`, borderLeft: `3px solid ${editMsg.type === 'success' ? '#4ade80' : '#ef4444'}`, padding: '10px 14px' }}>
+                  <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: editMsg.type === 'success' ? '#86efac' : '#fca5a5' }}>{editMsg.text}</span>
+                </div>
+              )}
+
+              {/* Botões */}
+              <div style={{ display: 'flex', gap: 8, paddingTop: 4 }}>
+                <button type="submit" disabled={submittingEdit} className="btn-gold" style={{ flex: 1, height: 44, fontSize: 14 }}>
+                  {submittingEdit ? 'Salvando...' : 'Salvar Alterações'}
+                </button>
+                <button type="button" onClick={closeEditModal}
+                  style={{ background: '#202020', border: '1px solid #313131', color: '#FFFFFF', padding: '0 16px', height: 44, cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 13, textTransform: 'uppercase' }}>
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
