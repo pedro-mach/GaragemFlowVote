@@ -224,7 +224,7 @@ export function GalleryView({
                 margin: 0,
                 lineHeight: 1,
               }}>
-                {evento?.nome || 'Garagem Flow'}
+                {evento?.nome || 'Regional das Equipes'}
               </h2>
             </div>
           </div>

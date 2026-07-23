@@ -1,5 +1,5 @@
 // Dados Simulados para Testes e Desenvolvimento Offline
-// Projeto: GaragemFlowVote
+// Projeto: RegionalDasEquipesVote
 
 export interface Evento {
   id: string;
@@ -65,7 +65,7 @@ export interface Eleitor {
 // Evento Padrão Ativo
 export const mockEvento: Evento = {
   id: '11111111-1111-1111-1111-111111111111',
-  nome: 'Garagem Flow Meet 2026',
+  nome: 'Regional das Equipes 2026',
   data: '2026-07-16',
   status: 'aberto',
 };
@@ -88,7 +88,7 @@ export const mockCarros: Carro[] = [];;
 
 // Carregados inicialmente do LocalStorage, caso existam, ou em branco para testes.
 const getStoredVotos = (): Voto[] => {
-  const stored = localStorage.getItem('garagemflow_votos');
+  const stored = localStorage.getItem('regional_votos') || localStorage.getItem('garagemflow_votos');
   if (stored) {
     try {
       return JSON.parse(stored);
@@ -112,7 +112,7 @@ export const saveMockVoto = (voto: Voto) => {
     throw new Error('Você já votou nesta categoria!');
   }
   votos.push(voto);
-  localStorage.setItem('garagemflow_votos', JSON.stringify(votos));
+  localStorage.setItem('regional_votos', JSON.stringify(votos));
 };
 
 export const getMockVotos = (): Voto[] => {
@@ -120,5 +120,6 @@ export const getMockVotos = (): Voto[] => {
 };
 
 export const clearMockVotos = () => {
+  localStorage.removeItem('regional_votos');
   localStorage.removeItem('garagemflow_votos');
 };

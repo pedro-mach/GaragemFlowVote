@@ -30,7 +30,7 @@ export function useCarros() {
         if (!activeEvent) {
           const { data: newEv, error: newEvError } = await supabase
             .from('eventos')
-            .insert({ nome: 'Garagem Flow Meet 2026', data: new Date().toISOString().split('T')[0], status: 'aberto' })
+            .insert({ nome: 'Regional das Equipes 2026', data: new Date().toISOString().split('T')[0], status: 'aberto' })
             .select()
             .single();
           if (newEvError) throw newEvError;
@@ -48,7 +48,7 @@ export function useCarros() {
         if (catError) throw catError;
 
         // Mesclar com estado de ocultação salvo localmente se necessário
-        const storedCatState = localStorage.getItem('garagemflow_categorias_ocultas');
+        const storedCatState = localStorage.getItem('regional_categorias_ocultas') || localStorage.getItem('garagemflow_categorias_ocultas');
         const ocultasMap: Record<string, boolean> = storedCatState ? JSON.parse(storedCatState) : {};
 
         const formattedCats = (catData || []).map((c) => ({
@@ -105,15 +105,15 @@ export function useCarros() {
         }
       } else {
         // Fluxo offline / Mock
-        const localEvento = localStorage.getItem('garagemflow_evento');
+        const localEvento = localStorage.getItem('regional_evento') || localStorage.getItem('garagemflow_evento');
         if (localEvento) {
           setEvento(JSON.parse(localEvento));
         } else {
-          localStorage.setItem('garagemflow_evento', JSON.stringify(mockEvento));
+          localStorage.setItem('regional_evento', JSON.stringify(mockEvento));
           setEvento(mockEvento);
         }
 
-        const localCategorias = localStorage.getItem('garagemflow_categorias');
+        const localCategorias = localStorage.getItem('regional_categorias') || localStorage.getItem('garagemflow_categorias');
         if (localCategorias) {
           const parsedCats = JSON.parse(localCategorias);
           const mergedCats = parsedCats.map((c: Categoria) => ({
@@ -122,25 +122,25 @@ export function useCarros() {
           }));
           setCategorias(mergedCats);
           // Opcionalmente atualiza o cache para ter os novos campos salvos
-          localStorage.setItem('garagemflow_categorias', JSON.stringify(mergedCats));
+          localStorage.setItem('regional_categorias', JSON.stringify(mergedCats));
         } else {
-          localStorage.setItem('garagemflow_categorias', JSON.stringify(mockCategorias));
+          localStorage.setItem('regional_categorias', JSON.stringify(mockCategorias));
           setCategorias(mockCategorias);
         }
 
-        const localEquipes = localStorage.getItem('garagemflow_equipes');
+        const localEquipes = localStorage.getItem('regional_equipes') || localStorage.getItem('garagemflow_equipes');
         if (localEquipes) {
           setEquipes(JSON.parse(localEquipes));
         } else {
-          localStorage.setItem('garagemflow_equipes', JSON.stringify(mockEquipes));
+          localStorage.setItem('regional_equipes', JSON.stringify(mockEquipes));
           setEquipes(mockEquipes);
         }
 
-        const localCarros = localStorage.getItem('garagemflow_db_carros');
+        const localCarros = localStorage.getItem('regional_db_carros') || localStorage.getItem('garagemflow_db_carros');
         if (localCarros) {
           setCarros(JSON.parse(localCarros));
         } else {
-          localStorage.setItem('garagemflow_db_carros', JSON.stringify(mockCarros));
+          localStorage.setItem('regional_db_carros', JSON.stringify(mockCarros));
           setCarros(mockCarros);
         }
       }
@@ -168,7 +168,7 @@ export function useCarros() {
         if (updateError) throw updateError;
       } else {
         const novoEvento = { ...evento, nome: novoNome.trim() };
-        localStorage.setItem('garagemflow_evento', JSON.stringify(novoEvento));
+        localStorage.setItem('regional_evento', JSON.stringify(novoEvento));
       }
       await fetchDados();
     } catch (err: any) {
@@ -259,7 +259,7 @@ export function useCarros() {
           pessoas_equipe: pessoasEquipe || 0,
         };
         currentCarros.push(newCarro);
-        localStorage.setItem('garagemflow_db_carros', JSON.stringify(currentCarros));
+        localStorage.setItem('regional_db_carros', JSON.stringify(currentCarros));
       }
       await fetchDados();
     } catch (err: any) {
@@ -281,7 +281,7 @@ export function useCarros() {
         if (deleteError) throw deleteError;
       } else {
         const currentCarros = carros.filter((c) => c.id !== id);
-        localStorage.setItem('garagemflow_db_carros', JSON.stringify(currentCarros));
+        localStorage.setItem('regional_db_carros', JSON.stringify(currentCarros));
       }
       await fetchDados();
     } catch (err: any) {
@@ -376,7 +376,7 @@ export function useCarros() {
             pessoas_equipe: dados.pessoasEquipe ?? c.pessoas_equipe,
           } as Carro;
         });
-        localStorage.setItem('garagemflow_db_carros', JSON.stringify(currentCarros));
+        localStorage.setItem('regional_db_carros', JSON.stringify(currentCarros));
       }
       await fetchDados();
     } catch (err: any) {
@@ -403,7 +403,7 @@ export function useCarros() {
           nome: nome.trim(),
         };
         currentEquipes.push(newEquipe);
-        localStorage.setItem('garagemflow_equipes', JSON.stringify(currentEquipes));
+        localStorage.setItem('regional_equipes', JSON.stringify(currentEquipes));
       }
       await fetchDados();
     } catch (err: any) {
@@ -425,7 +425,7 @@ export function useCarros() {
         if (deleteError) throw deleteError;
       } else {
         const currentEquipes = equipes.filter((e) => e.id !== id);
-        localStorage.setItem('garagemflow_equipes', JSON.stringify(currentEquipes));
+        localStorage.setItem('regional_equipes', JSON.stringify(currentEquipes));
       }
       await fetchDados();
     } catch (err: any) {
@@ -455,7 +455,7 @@ export function useCarros() {
           campos_requeridos: camposRequeridos,
         };
         currentCats.push(newCat);
-        localStorage.setItem('garagemflow_categorias', JSON.stringify(currentCats));
+        localStorage.setItem('regional_categorias', JSON.stringify(currentCats));
       }
       await fetchDados();
     } catch (err: any) {
@@ -479,7 +479,7 @@ export function useCarros() {
         if (updateError) throw updateError;
       } else {
         const currentCats = categorias.map((c) => (c.id === id ? { ...c, nome: novoNome.trim() } : c));
-        localStorage.setItem('garagemflow_categorias', JSON.stringify(currentCats));
+        localStorage.setItem('regional_categorias', JSON.stringify(currentCats));
       }
       await fetchDados();
     } catch (err: any) {
@@ -498,14 +498,14 @@ export function useCarros() {
       const novoOculta = !cat.oculta;
 
       // Salvar estado localmente para persistência
-      const storedCatState = localStorage.getItem('garagemflow_categorias_ocultas');
+      const storedCatState = localStorage.getItem('regional_categorias_ocultas') || localStorage.getItem('garagemflow_categorias_ocultas');
       const ocultasMap: Record<string, boolean> = storedCatState ? JSON.parse(storedCatState) : {};
       ocultasMap[id] = novoOculta;
-      localStorage.setItem('garagemflow_categorias_ocultas', JSON.stringify(ocultasMap));
+      localStorage.setItem('regional_categorias_ocultas', JSON.stringify(ocultasMap));
 
       if (!isSupabaseConfigured || !supabase) {
         const currentCats = categorias.map((c) => (c.id === id ? { ...c, oculta: novoOculta } : c));
-        localStorage.setItem('garagemflow_categorias', JSON.stringify(currentCats));
+        localStorage.setItem('regional_categorias', JSON.stringify(currentCats));
       }
       await fetchDados();
     } catch (err: any) {
@@ -526,7 +526,7 @@ export function useCarros() {
         if (deleteError) throw deleteError;
       } else {
         const currentCats = categorias.filter((c) => c.id !== id);
-        localStorage.setItem('garagemflow_categorias', JSON.stringify(currentCats));
+        localStorage.setItem('regional_categorias', JSON.stringify(currentCats));
       }
       await fetchDados();
     } catch (err: any) {
@@ -550,7 +550,7 @@ export function useCarros() {
         if (updateError) throw updateError;
       } else {
         const novoEvento = { ...evento, status: novoStatus };
-        localStorage.setItem('garagemflow_evento', JSON.stringify(novoEvento));
+        localStorage.setItem('regional_evento', JSON.stringify(novoEvento));
       }
       await fetchDados();
     } catch (err: any) {

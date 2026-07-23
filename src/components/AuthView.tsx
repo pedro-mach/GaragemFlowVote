@@ -94,7 +94,7 @@ export function AuthView({ evento, login, loginAsOrganizer, isLoading, error }: 
               >
                 <img
                   src="/Logo-evento.jpeg"
-                  alt="Logo Garagem Flow"
+                  alt="Logo Regional das Equipes"
                   style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                   onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
                 />
@@ -108,7 +108,7 @@ export function AuthView({ evento, login, loginAsOrganizer, isLoading, error }: 
                   letterSpacing: '0.12em',
                   color: '#FFC000',
                 }}>
-                  {evento?.nome || 'GARAGEM FLOW VOTE'}
+                  {evento?.nome || 'REGIONAL DAS EQUIPES'}
                 </span>
               </div>
             </div>

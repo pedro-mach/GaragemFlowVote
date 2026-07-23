@@ -20,13 +20,14 @@ export function useAuth() {
 
   useEffect(() => {
     // Carregar sessão salva no LocalStorage
-    const storedUser = localStorage.getItem('garagemflow_user');
-    const storedRole = localStorage.getItem('garagemflow_role');
+    const storedUser = localStorage.getItem('regional_user') || localStorage.getItem('garagemflow_user');
+    const storedRole = localStorage.getItem('regional_role') || localStorage.getItem('garagemflow_role');
 
     if (storedUser) {
       try {
         setUser(JSON.parse(storedUser));
       } catch {
+        localStorage.removeItem('regional_user');
         localStorage.removeItem('garagemflow_user');
       }
     }
@@ -59,8 +60,8 @@ export function useAuth() {
           if (existing.data_nascimento === dataNascimento) {
             setUser(existing);
             setIsOrganizer(false);
-            localStorage.setItem('garagemflow_user', JSON.stringify(existing));
-            localStorage.setItem('garagemflow_role', 'voter');
+            localStorage.setItem('regional_user', JSON.stringify(existing));
+            localStorage.setItem('regional_role', 'voter');
           } else {
             throw new Error('Data de nascimento incorreta para este CPF.');
           }
@@ -76,14 +77,14 @@ export function useAuth() {
 
           setUser(created);
           setIsOrganizer(false);
-          localStorage.setItem('garagemflow_user', JSON.stringify(created));
-          localStorage.setItem('garagemflow_role', 'voter');
+          localStorage.setItem('regional_user', JSON.stringify(created));
+          localStorage.setItem('regional_role', 'voter');
         }
       } else {
         // Fluxo offline / Mock
         // Usar banco simulado local no LocalStorage
         const localDb: Eleitor[] = JSON.parse(
-          localStorage.getItem('garagemflow_db_eleitores') || '[]'
+          localStorage.getItem('regional_db_eleitores') || localStorage.getItem('garagemflow_db_eleitores') || '[]'
         );
         
         const existing = localDb.find((e) => e.cpf_hash === cpfHash);
@@ -92,8 +93,8 @@ export function useAuth() {
           if (existing.data_nascimento === dataNascimento) {
             setUser(existing);
             setIsOrganizer(false);
-            localStorage.setItem('garagemflow_user', JSON.stringify(existing));
-            localStorage.setItem('garagemflow_role', 'voter');
+            localStorage.setItem('regional_user', JSON.stringify(existing));
+            localStorage.setItem('regional_role', 'voter');
           } else {
             throw new Error('Data de nascimento incorreta para este CPF.');
           }
@@ -105,12 +106,12 @@ export function useAuth() {
             criado_em: new Date().toISOString(),
           };
           localDb.push(newEleitor);
-          localStorage.setItem('garagemflow_db_eleitores', JSON.stringify(localDb));
+          localStorage.setItem('regional_db_eleitores', JSON.stringify(localDb));
           
           setUser(newEleitor);
           setIsOrganizer(false);
-          localStorage.setItem('garagemflow_user', JSON.stringify(newEleitor));
-          localStorage.setItem('garagemflow_role', 'voter');
+          localStorage.setItem('regional_user', JSON.stringify(newEleitor));
+          localStorage.setItem('regional_role', 'voter');
         }
       }
     } catch (err: any) {
@@ -125,7 +126,8 @@ export function useAuth() {
     setIsLoading(true);
     setIsOrganizer(true);
     setUser(null);
-    localStorage.setItem('garagemflow_role', 'organizer');
+    localStorage.setItem('regional_role', 'organizer');
+    localStorage.removeItem('regional_user');
     localStorage.removeItem('garagemflow_user');
     setIsLoading(false);
   };
@@ -133,7 +135,9 @@ export function useAuth() {
   const logout = () => {
     setUser(null);
     setIsOrganizer(false);
+    localStorage.removeItem('regional_user');
     localStorage.removeItem('garagemflow_user');
+    localStorage.removeItem('regional_role');
     localStorage.removeItem('garagemflow_role');
   };
 
