@@ -74,49 +74,100 @@ export function AuthView({ evento, login, loginAsOrganizer, isLoading, error }: 
 
   return (
     <div className="w-full flex-1 flex flex-col justify-center py-6 lg:py-12">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-y-10 lg:gap-x-16 lg:gap-y-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-y-10 lg:gap-x-16 items-start">
 
-        {/* ===== A: BRANDING ===== */}
-        <div className="lg:col-span-7 lg:col-start-1 lg:row-start-1 flex flex-col justify-center order-1 lg:mt-8" style={{ gap: '32px' }}>
+        {/* ===== LADO ESQUERDO (Desktop) / ITENS (Mobile) ===== */}
+        <div className="contents lg:flex lg:flex-col lg:col-span-7 gap-10">
 
-          {/* Logo + Event Name */}
-          <div className="flex items-center gap-4">
-            <div
-              className="overflow-hidden shrink-0"
-              style={{
-                width: 64,
-                height: 64,
-                border: '1px solid rgba(255,192,0,0.3)',
-                background: '#181818',
-              }}
-            >
-              <img
-                src="/Logo-evento.jpeg"
-                alt="Logo Garagem Flow"
-                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
-              />
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{
-                fontFamily: "'Barlow Condensed', sans-serif",
-                fontSize: 14,
-                fontWeight: 700,
-                textTransform: 'uppercase',
-                letterSpacing: '0.12em',
-                color: '#FFC000',
-              }}>
-                {evento?.nome || 'GARAGEM FLOW VOTE'}
-              </span>
+          {/* ===== A: BRANDING ===== */}
+          <div className="flex flex-col justify-center order-1 lg:mt-8" style={{ gap: '32px' }}>
+            {/* Logo + Event Name */}
+            <div className="flex items-center gap-4">
+              <div
+                className="overflow-hidden shrink-0"
+                style={{
+                  width: 64,
+                  height: 64,
+                  border: '1px solid rgba(255,192,0,0.3)',
+                  background: '#181818',
+                }}
+              >
+                <img
+                  src="/Logo-evento.jpeg"
+                  alt="Logo Garagem Flow"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                  onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                />
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{
+                  fontFamily: "'Barlow Condensed', sans-serif",
+                  fontSize: 14,
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.12em',
+                  color: '#FFC000',
+                }}>
+                  {evento?.nome || 'GARAGEM FLOW VOTE'}
+                </span>
+              </div>
             </div>
           </div>
 
-          {/* Headline */}
+          {/* ===== C: FEATURE PILLS ===== */}
+          <div className="order-3 w-full">
+            <p style={{
+              fontFamily: "'Barlow', sans-serif",
+              fontSize: 15,
+              color: '#7D7D7D',
+              lineHeight: 1.6,
+              maxWidth: 480,
+              fontWeight: 400,
+              marginBottom: 24,
+            }}>
+              Plataforma oficial de votação em tempo real para eventos de carros.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-px" style={{ background: '#202020' }}>
+              {[
+                { label: 'Apuração ao Vivo', sub: 'Resultados imediatos' },
+                { label: 'Categorias Troféu', sub: 'Populares & técnicas' },
+                { label: 'Voto Auditado', sub: 'Por CPF' },
+              ].map((f) => (
+                <div
+                  key={f.label}
+                  style={{
+                    background: '#000000',
+                    padding: '16px 20px',
+                    borderTop: '2px solid #202020',
+                  }}
+                >
+                  <div style={{
+                    fontFamily: "'Barlow Condensed', sans-serif",
+                    fontWeight: 700,
+                    fontSize: 13,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.1em',
+                    color: '#FFFFFF',
+                  }}>
+                    {f.label}
+                  </div>
+                  <div style={{
+                    fontFamily: "'Barlow', sans-serif",
+                    fontSize: 12,
+                    color: '#7D7D7D',
+                    marginTop: 4,
+                  }}>
+                    {f.sub}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
 
         </div>
 
         {/* ===== B: CARD DE LOGIN ===== */}
-        <div className="lg:col-span-5 lg:col-start-8 lg:row-start-1 lg:row-span-2 w-full order-2">
+        <div className="lg:col-span-5 w-full order-2">
           <div
             style={{
               background: '#181818',
@@ -325,59 +376,8 @@ export function AuthView({ evento, login, loginAsOrganizer, isLoading, error }: 
           </div>
         </div>
 
-        {/* ===== C: FEATURE PILLS ===== */}
-
-        <div className="lg:col-span-7 lg:col-start-1 lg:row-start-2 order-3 w-full">
-          <p style={{
-            fontFamily: "'Barlow', sans-serif",
-            fontSize: 15,
-            color: '#7D7D7D',
-            marginTop: 16,
-            lineHeight: 1.6,
-            maxWidth: 480,
-            fontWeight: 400,
-          }}>
-            Plataforma oficial de votação em tempo real para eventos de carros.
-          </p>
-          <br />
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-px" style={{ background: '#202020' }}>
-            {[
-              { label: 'Apuração ao Vivo', sub: 'Resultados imediatos' },
-              { label: 'Categorias Troféu', sub: 'Populares & técnicas' },
-              { label: 'Voto Auditado', sub: 'Por CPF' },
-            ].map((f) => (
-              <div
-                key={f.label}
-                style={{
-                  background: '#000000',
-                  padding: '16px 20px',
-                  borderTop: '2px solid #202020',
-                }}
-              >
-                <div style={{
-                  fontFamily: "'Barlow Condensed', sans-serif",
-                  fontWeight: 700,
-                  fontSize: 13,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.1em',
-                  color: '#FFFFFF',
-                }}>
-                  {f.label}
-                </div>
-                <div style={{
-                  fontFamily: "'Barlow', sans-serif",
-                  fontSize: 12,
-                  color: '#7D7D7D',
-                  marginTop: 4,
-                }}>
-                  {f.sub}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
       </div>
     </div>
   );
 }
+
