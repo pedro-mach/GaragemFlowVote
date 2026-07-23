@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase, isSupabaseConfigured } from '../supabaseClient';
-import type { Carro, Categoria, Equipe, Evento } from '../data/mockData';
+import type { Carro, Categoria, CampoRequerido, Equipe, Evento } from '../data/mockData';
 import { mockCarros, mockCategorias, mockEquipes, mockEvento } from '../data/mockData';
+
 
 export function useCarros() {
   const [evento, setEvento] = useState<Evento | null>(null);
@@ -53,6 +54,7 @@ export function useCarros() {
         const formattedCats = (catData || []).map((c) => ({
           ...c,
           oculta: ocultasMap[c.id] ?? c.oculta ?? false,
+          campos_requeridos: c.campos_requeridos || mockCategorias.find(mc => mc.nome === c.nome)?.campos_requeridos || [],
         }));
 
         setCategorias(formattedCats);
@@ -113,7 +115,14 @@ export function useCarros() {
 
         const localCategorias = localStorage.getItem('garagemflow_categorias');
         if (localCategorias) {
-          setCategorias(JSON.parse(localCategorias));
+          const parsedCats = JSON.parse(localCategorias);
+          const mergedCats = parsedCats.map((c: Categoria) => ({
+            ...c,
+            campos_requeridos: c.campos_requeridos || mockCategorias.find(mc => mc.nome === c.nome)?.campos_requeridos || []
+          }));
+          setCategorias(mergedCats);
+          // Opcionalmente atualiza o cache para ter os novos campos salvos
+          localStorage.setItem('garagemflow_categorias', JSON.stringify(mergedCats));
         } else {
           localStorage.setItem('garagemflow_categorias', JSON.stringify(mockCategorias));
           setCategorias(mockCategorias);
@@ -187,7 +196,7 @@ export function useCarros() {
     if (!evento) return;
     setIsLoading(true);
     try {
-      const fotoUrl = urlFoto || 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?q=80&w=600';
+      const fotoUrl = urlFoto?.trim() || null;
       const alturaValue = alturaMm ?? 0;
       const donoValue = nomeDono || 'Não informado';
 
@@ -242,7 +251,7 @@ export function useCarros() {
           altura_mm: alturaValue,
           nome_dono: donoValue,
           telefone_dono: telefoneDono,
-          url_foto: fotoUrl,
+          url_foto: fotoUrl ?? undefined,
           equipe: equipe || undefined,
           km_rodado: kmRodado || 0,
           genero: genero,
@@ -427,14 +436,14 @@ export function useCarros() {
     }
   };
 
-  const cadastrarCategoria = async (nome: string, tipo: 'popular' | 'interna' = 'popular') => {
+  const cadastrarCategoria = async (nome: string, tipo: 'popular' | 'interna' = 'popular', camposRequeridos: CampoRequerido[] = []) => {
     if (!nome.trim()) return;
     setIsLoading(true);
     try {
       if (isSupabaseConfigured && supabase) {
         const { error: insertError } = await supabase
           .from('categorias')
-          .insert({ nome: nome.trim(), tipo });
+          .insert({ nome: nome.trim(), tipo, campos_requeridos: camposRequeridos });
         if (insertError) throw insertError;
       } else {
         const currentCats = [...categorias];
@@ -443,6 +452,7 @@ export function useCarros() {
           nome: nome.trim(),
           tipo,
           oculta: false,
+          campos_requeridos: camposRequeridos,
         };
         currentCats.push(newCat);
         localStorage.setItem('garagemflow_categorias', JSON.stringify(currentCats));
@@ -455,6 +465,7 @@ export function useCarros() {
       setIsLoading(false);
     }
   };
+
 
   const editarCategoria = async (id: string, novoNome: string) => {
     if (!novoNome.trim()) return;

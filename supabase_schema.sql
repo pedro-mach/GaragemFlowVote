@@ -51,6 +51,7 @@ create table if not exists public.categorias (
   id uuid primary key default gen_random_uuid(),
   nome text unique not null, -- ex: 'Mais Bonito', 'Destaque', 'Mais Baixo'
   tipo text not null default 'popular' check (tipo in ('popular', 'interna')), -- 'popular' (público vota), 'interna' (organizadores decidem)
+  campos_requeridos text[] not null default '{}'::text[],
   criado_em timestamptz default now() not null
 );
 
@@ -106,13 +107,13 @@ drop policy if exists "Acesso livre a votos" on public.votos;
 create policy "Acesso livre a votos" on public.votos for all using (true) with check (true);
 
 -- 9. Categorias Iniciais Padrão
-insert into public.categorias (nome, tipo) values
-  ('Destaque Masculino', 'popular'),
-  ('Destaque Feminino', 'popular'),
-  ('Mais antigo', 'interna'),
-  ('Maior equipe uniformizada', 'interna'),
-  ('Maior rodagem', 'interna')
-on conflict (nome) do update set tipo = excluded.tipo;
+insert into public.categorias (nome, tipo, campos_requeridos) values
+  ('Destaque Masculino', 'popular', array['genero', 'foto']),
+  ('Destaque Feminino', 'popular', array['genero', 'foto']),
+  ('Mais antigo', 'interna', array[]::text[]),
+  ('Maior equipe uniformizada', 'interna', array['equipe']),
+  ('Maior rodagem', 'interna', array['km_rodado'])
+on conflict (nome) do update set tipo = excluded.tipo, campos_requeridos = excluded.campos_requeridos;
 
 -- ─── MIGRAÇÕES (para bancos já existentes) ────────────────────────────────────
 -- Execute apenas se o banco já existia antes deste schema:
@@ -124,5 +125,9 @@ on conflict (nome) do update set tipo = excluded.tipo;
 alter table public.carros add column if not exists equipe_id uuid references public.equipes(id) on delete set null;
 alter table public.carros add column if not exists pessoas_equipe integer not null default 0;
 
+-- Adicionar coluna campos_requeridos na tabela categorias (se já existir)
+alter table public.categorias add column if not exists campos_requeridos text[] not null default '{}'::text[];
+
 -- Criar tabela carro_categorias se não existir
 -- (já coberto pelo "create table if not exists" acima)
+

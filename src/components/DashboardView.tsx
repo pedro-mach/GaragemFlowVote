@@ -4,7 +4,9 @@ import {
   Plus, LogOut, RefreshCw, Layers, Camera, Trash2, Trophy, Award,
   Edit2, Eye, EyeOff, Check, Tag, X, Menu, Users, UserPlus
 } from 'lucide-react';
-import type { Carro, Categoria, Equipe, Evento } from '../data/mockData';
+import type { Carro, Categoria, CampoRequerido, Equipe, Evento } from '../data/mockData';
+import { validateTeamName } from '../utils/teamValidation';
+
 
 interface DashboardViewProps {
   evento: Evento | null;
@@ -49,7 +51,8 @@ interface DashboardViewProps {
     }
   ) => Promise<void>;
   deletarCarro: (id: string) => Promise<void>;
-  cadastrarCategoria?: (nome: string, tipo: 'popular' | 'interna') => Promise<void>;
+  cadastrarCategoria?: (nome: string, tipo: 'popular' | 'interna', camposRequeridos: CampoRequerido[]) => Promise<void>;
+
   editarCategoria?: (id: string, novoNome: string) => Promise<void>;
   toggleOcultarCategoria?: (id: string) => Promise<void>;
   deletarCategoria?: (id: string) => Promise<void>;
@@ -193,8 +196,10 @@ export function DashboardView({
   // States gerenciamento de categorias
   const [novaCatNome, setNovaCatNome] = useState('');
   const [novaCatTipo, setNovaCatTipo] = useState<'popular' | 'interna'>('popular');
+  const [novaCatCampos, setNovaCatCampos] = useState<CampoRequerido[]>([]);
   const [catEditingId, setCatEditingId] = useState<string | null>(null);
   const [catTempName, setCatTempName] = useState('');
+
 
   const getNextSuggestedInscricao = () => {
     const numbers = carros
@@ -276,7 +281,7 @@ export function DashboardView({
         telefoneDono || undefined,
         urlFoto || undefined,
         equipeName,
-        kmRodado ? parseInt(kmRodado, 10) : undefined,
+        kmRodado ? parseFloat(kmRodado.replace(',', '.')) : undefined,
         genero,
         categoriasIds.length > 0 ? categoriasIds : undefined,
         pessoasEquipe ? parseInt(pessoasEquipe, 10) : undefined
@@ -295,6 +300,21 @@ export function DashboardView({
 
   const handleCadastrarEquipe = async () => {
     if (!novaEquipeNome.trim() || !cadastrarEquipe) return;
+
+    const valRes = validateTeamName(novaEquipeNome, equipes);
+    if (valRes.status === 'profanity') {
+      alert(valRes.message);
+      return;
+    }
+    if (valRes.status === 'exact') {
+      alert(valRes.message);
+      return;
+    }
+    if (valRes.status === 'similar') {
+      const confirmCont = confirm(`${valRes.message}\n\nDeseja cadastrar "${novaEquipeNome.trim()}" mesmo assim?`);
+      if (!confirmCont) return;
+    }
+
     setSubmittingEquipe(true);
     try {
       await cadastrarEquipe(novaEquipeNome.trim());
@@ -353,7 +373,7 @@ export function DashboardView({
         telefoneDono: editTelefoneDono || undefined,
         urlFoto: editUrlFoto || undefined,
         equipe: equipeName,
-        kmRodado: editKmRodado.trim() ? parseInt(editKmRodado, 10) : undefined,
+        kmRodado: editKmRodado.trim() ? parseFloat(editKmRodado.replace(',', '.')) : undefined,
         genero: editGenero,
         categoriasIds: editCategoriasIds,
         pessoasEquipe: editPessoasEquipe.trim() ? parseInt(editPessoasEquipe, 10) : undefined,
@@ -395,6 +415,21 @@ export function DashboardView({
 
   const handleCadastrarEquipeEdit = async () => {
     if (!novaEquipeNomeEdit.trim() || !cadastrarEquipe) return;
+
+    const valRes = validateTeamName(novaEquipeNomeEdit, equipes);
+    if (valRes.status === 'profanity') {
+      alert(valRes.message);
+      return;
+    }
+    if (valRes.status === 'exact') {
+      alert(valRes.message);
+      return;
+    }
+    if (valRes.status === 'similar') {
+      const confirmCont = confirm(`${valRes.message}\n\nDeseja cadastrar "${novaEquipeNomeEdit.trim()}" mesmo assim?`);
+      if (!confirmCont) return;
+    }
+
     setSubmittingEquipeEdit(true);
     try {
       await cadastrarEquipe(novaEquipeNomeEdit.trim());
@@ -410,9 +445,11 @@ export function DashboardView({
   const handleAddCategoria = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!novaCatNome.trim() || !cadastrarCategoria) return;
-    await cadastrarCategoria(novaCatNome.trim(), novaCatTipo);
+    await cadastrarCategoria(novaCatNome.trim(), novaCatTipo, novaCatCampos);
     setNovaCatNome('');
+    setNovaCatCampos([]);
   };
+
 
   const handleSaveCategoriaName = async (id: string) => {
     if (!catTempName.trim() || !editarCategoria) return;
@@ -844,343 +881,437 @@ export function DashboardView({
             )}
 
             {/* ══════ TAB: GERENCIAR CARROS ══════ */}
-            {activeTab === 'carros' && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
-                {/* Form Cadastro */}
-                <div style={{ background: '#181818', border: '1px solid #202020', borderTop: '2px solid #FFC000', padding: '20px' }}>
-                  <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#FFFFFF', margin: '0 0 20px 0', display: 'flex', alignItems: 'center', gap: 8, paddingBottom: 16, borderBottom: '1px solid #202020' }}>
-                    <Plus size={16} color="#FFC000" />
-                    Novo Veículo Inscrito
-                  </h3>
+            {activeTab === 'carros' && (() => {
+              // Computar quais campos extras são exigidos pelas categorias atualmente marcadas
+              const camposNecessarios = new Set<CampoRequerido>();
+              categoriasIds.forEach((id) => {
+                const cat = categorias.find((c) => c.id === id);
+                if (cat?.campos_requeridos) {
+                  cat.campos_requeridos.forEach((c) => camposNecessarios.add(c));
+                }
+              });
+              const temCamposComplementares = camposNecessarios.size > 0;
 
-                  <form onSubmit={handleCadastrarCarro} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                    <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                        <label style={S.label}>Inscrição (opcional)</label>
-                        <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, color: '#FFC000', letterSpacing: '0.1em' }}>
-                          {isManualInscricao ? 'MANUAL' : 'AUTO'}
-                        </span>
-                      </div>
-                      <input
-                        type="text"
-                        placeholder="#024 (opcional)"
-                        value={numeroInscricao}
-                        onChange={(e) => { setNumeroInscricao(e.target.value); setIsManualInscricao(true); }}
-                        style={S.input}
-                        onFocus={e => { e.target.style.borderColor = '#FFC000'; }}
-                        onBlur={e => { e.target.style.borderColor = '#313131'; }}
-                      />
-                    </div>
+              return (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
+                  {/* Form Cadastro */}
+                  <div style={{ background: '#181818', border: '1px solid #202020', borderTop: '2px solid #FFC000', padding: '20px' }}>
+                    <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#FFFFFF', margin: '0 0 20px 0', display: 'flex', alignItems: 'center', gap: 8, paddingBottom: 16, borderBottom: '1px solid #202020' }}>
+                      <Plus size={16} color="#FFC000" />
+                      Novo Veículo Inscrito
+                    </h3>
 
-                    {[
-                      { label: 'Modelo (opcional)', value: modelo, setter: setModelo, placeholder: 'Ex: VW Gol 1.8 (opcional)', type: 'text' },
-                      { label: 'Nome do Dono(a) (opcional)', value: nomeDono, setter: setNomeDono, placeholder: 'Ex: Rodrigo Silva (opcional)', type: 'text' },
-                      { label: 'Gênero do Dono(a)', value: genero, setter: setGenero, type: 'radio', options: [{ label: 'Masculino', value: 'M' }, { label: 'Feminino', value: 'F' }] },
-                      { label: 'Telefone (opcional)', value: telefoneDono, setter: setTelefoneDono, placeholder: 'Ex: (11) 99999-9999', type: 'text' },
-                    ].map((field: any) => (
-                      <div key={field.label}>
-                        <label style={S.label}>{field.label}</label>
-                        {field.type === 'radio' ? (
-                          <div style={{ display: 'flex', gap: '16px', marginTop: '8px' }}>
-                            {field.options.map((opt: any) => (
-                              <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#FFF', fontSize: '14px', cursor: 'pointer' }}>
-                                <input
-                                  type="radio"
-                                  name="genero"
-                                  value={opt.value}
-                                  checked={field.value === opt.value}
-                                  onChange={(e) => field.setter(e.target.value)}
-                                  style={{ accentColor: '#FFC000', width: '16px', height: '16px' }}
-                                />
-                                {opt.label}
-                              </label>
-                            ))}
-                          </div>
-                        ) : (
-                          <input
-                            type={field.type}
-                            placeholder={field.placeholder}
-                            value={field.value}
-                            onChange={(e) => field.setter(e.target.value)}
-                            style={S.input}
-                            onFocus={e => { e.target.style.borderColor = '#FFC000'; }}
-                            onBlur={e => { e.target.style.borderColor = '#313131'; }}
-                          />
-                        )}
-                      </div>
-                    ))}
+                    <form onSubmit={handleCadastrarCarro} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                      {[
-                        { label: 'Ano (opcional)', value: ano, setter: setAno, placeholder: 'Ex: 1994 (opcional)' },
-                        { label: 'Altura mm (opcional)', value: alturaMm, setter: setAlturaMm, placeholder: 'Ex: 50 (opcional)' },
-                        { label: 'Km Rodados (opcional)', value: kmRodado, setter: setKmRodado, placeholder: 'Ex: 150 (opcional)' },
-                      ].map((field) => (
-                        <div key={field.label}>
-                          <label style={S.label}>{field.label}</label>
-                          <input
-                            type="text"
-                            placeholder={field.placeholder}
-                            value={field.value}
-                            onChange={(e) => field.setter(e.target.value)}
-                            style={{ ...S.input, height: 36 }}
-                            onFocus={e => { e.target.style.borderColor = '#FFC000'; }}
-                            onBlur={e => { e.target.style.borderColor = '#313131'; }}
-                          />
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Equipe */}
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                        <label style={S.label}>Equipe (opcional)</label>
-                        {cadastrarEquipe && (
-                          <button
-                            type="button"
-                            onClick={() => setShowNovaEquipe(!showNovaEquipe)}
-                            style={{ background: 'transparent', border: 'none', color: '#FFC000', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}
-                          >
-                            <UserPlus size={13} />
-                            {showNovaEquipe ? 'Cancelar' : 'Nova Equipe'}
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Mini-form de nova equipe */}
-                      {showNovaEquipe && (
-                        <div style={{ background: '#000000', border: '1px solid rgba(255,192,0,0.25)', padding: '10px 12px', marginBottom: 8, display: 'flex', gap: 6, alignItems: 'center' }}>
-                          <input
-                            type="text"
-                            placeholder="Nome da equipe..."
-                            value={novaEquipeNome}
-                            onChange={(e) => setNovaEquipeNome(e.target.value)}
-                            style={{ ...S.input, height: 34, fontSize: 13, flex: 1 }}
-                            onFocus={e => { e.target.style.borderColor = '#FFC000'; }}
-                            onBlur={e => { e.target.style.borderColor = '#313131'; }}
-                            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleCadastrarEquipe(); } }}
-                          />
-                          <button
-                            type="button"
-                            onClick={handleCadastrarEquipe}
-                            disabled={submittingEquipe || !novaEquipeNome.trim()}
-                            style={{ background: '#FFC000', color: '#000000', border: 'none', padding: '0 12px', height: 34, cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 12, textTransform: 'uppercase', flexShrink: 0, opacity: submittingEquipe || !novaEquipeNome.trim() ? 0.5 : 1 }}
-                          >
-                            {submittingEquipe ? '...' : 'Salvar'}
-                          </button>
-                        </div>
-                      )}
-
-                      <select
-                        value={equipeId}
-                        onChange={(e) => setEquipeId(e.target.value)}
-                        style={{ ...S.input, colorScheme: 'dark' }}
-                        onFocus={e => { e.target.style.borderColor = '#FFC000'; }}
-                        onBlur={e => { e.target.style.borderColor = '#313131'; }}
-                      >
-                        <option value="">— Sem equipe —</option>
-                        {equipes.map((eq) => (
-                          <option key={eq.id} value={eq.id}>{eq.nome}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Pessoas na equipe */}
-                    {equipeId && (
+                      {/* ── ETAPA 1: campos essenciais (sempre visíveis) ── */}
                       <div>
-                        <label style={S.label}>Pessoas uniformizadas na equipe (neste carro)</label>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                          <label style={S.label}>Inscrição (opcional)</label>
+                          <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, color: '#FFC000', letterSpacing: '0.1em' }}>
+                            {isManualInscricao ? 'MANUAL' : 'AUTO'}
+                          </span>
+                        </div>
                         <input
-                          type="number"
-                          min="0"
-                          placeholder="Ex: 5"
-                          value={pessoasEquipe}
-                          onChange={(e) => setPessoasEquipe(e.target.value)}
+                          type="text"
+                          placeholder="#024 (opcional)"
+                          value={numeroInscricao}
+                          onChange={(e) => { setNumeroInscricao(e.target.value); setIsManualInscricao(true); }}
+                          style={S.input}
+                          onFocus={e => { e.target.style.borderColor = '#FFC000'; }}
+                          onBlur={e => { e.target.style.borderColor = '#313131'; }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={S.label}>Modelo (opcional)</label>
+                        <input
+                          type="text"
+                          placeholder="Ex: VW Gol 1.8 (opcional)"
+                          value={modelo}
+                          onChange={(e) => setModelo(e.target.value)}
+                          style={S.input}
+                          onFocus={e => { e.target.style.borderColor = '#FFC000'; }}
+                          onBlur={e => { e.target.style.borderColor = '#313131'; }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={S.label}>Ano (opcional)</label>
+                        <input
+                          type="text"
+                          placeholder="Ex: 1994 (opcional)"
+                          value={ano}
+                          onChange={(e) => setAno(e.target.value)}
+                          style={S.input}
+                          onFocus={e => { e.target.style.borderColor = '#FFC000'; }}
+                          onBlur={e => { e.target.style.borderColor = '#313131'; }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={S.label}>Nome do Dono(a) (opcional)</label>
+                        <input
+                          type="text"
+                          placeholder="Ex: Rodrigo Silva (opcional)"
+                          value={nomeDono}
+                          onChange={(e) => setNomeDono(e.target.value)}
+                          style={S.input}
+                          onFocus={e => { e.target.style.borderColor = '#FFC000'; }}
+                          onBlur={e => { e.target.style.borderColor = '#313131'; }}
+                        />
+                      </div>
+
+                      {/* Foto - Sempre visível */}
+                      <div>
+                        <label style={S.label}>Foto do Veículo (opcional)</label>
+                        {urlFoto && (
+                          <div style={{ position: 'relative', width: '100%', height: 100, overflow: 'hidden', marginBottom: 8, background: '#000000' }}>
+                            <img src={urlFoto} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                            <button
+                              type="button"
+                              onClick={() => setUrlFoto('')}
+                              style={{ position: 'absolute', top: 6, right: 6, background: 'rgba(0,0,0,0.85)', border: '1px solid #313131', color: '#FFFFFF', padding: '3px 8px', cursor: 'pointer', fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif" }}
+                            >
+                              Remover
+                            </button>
+                          </div>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => document.getElementById('camera-file-input')?.click()}
+                          style={{ ...S.input, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer', background: '#202020', borderColor: '#313131', marginBottom: 6 }}
+                        >
+                          <Camera size={14} color="#FFC000" />
+                          <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                            Capturar Foto
+                          </span>
+                        </button>
+                        <input id="camera-file-input" type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handleCameraCapture} />
+                        <input
+                          type="text"
+                          placeholder="Ou cole uma URL..."
+                          value={urlFoto.startsWith('data:image') ? '' : urlFoto}
+                          onChange={(e) => setUrlFoto(e.target.value)}
                           style={{ ...S.input, height: 36 }}
                           onFocus={e => { e.target.style.borderColor = '#FFC000'; }}
                           onBlur={e => { e.target.style.borderColor = '#313131'; }}
                         />
-                        <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#7D7D7D', marginTop: 4, display: 'block' }}>
-                          Quantas pessoas uniformizadas da equipe vieram com este veículo
-                        </span>
                       </div>
-                    )}
 
-                    {/* Categorias que o carro concorre */}
-                    <div>
-                      <label style={{ ...S.label, marginBottom: 10 }}>Categorias que este veículo concorre</label>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {/* Categorias — parte do passo 1, desbloqueiam o passo 2 */}
+                      <div>
+                        <label style={{ ...S.label, marginBottom: 10 }}>Categorias que este veículo concorre</label>
                         {categorias.length === 0 ? (
                           <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#7D7D7D' }}>Nenhuma categoria cadastrada.</span>
                         ) : (
-                          categorias.map((cat) => (
-                            <label
-                              key={cat.id}
-                              style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '8px 10px', background: categoriasIds.includes(cat.id) ? 'rgba(255,192,0,0.07)' : '#000000', border: `1px solid ${categoriasIds.includes(cat.id) ? 'rgba(255,192,0,0.4)' : '#202020'}`, transition: 'background 0.12s, border-color 0.12s' }}
-                            >
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            {categorias.map((cat) => (
+                              <label
+                                key={cat.id}
+                                style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '8px 10px', background: categoriasIds.includes(cat.id) ? 'rgba(255,192,0,0.07)' : '#000000', border: `1px solid ${categoriasIds.includes(cat.id) ? 'rgba(255,192,0,0.4)' : '#202020'}`, transition: 'background 0.12s, border-color 0.12s' }}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={categoriasIds.includes(cat.id)}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setCategoriasIds((prev) => [...prev, cat.id]);
+                                    } else {
+                                      setCategoriasIds((prev) => prev.filter((id) => id !== cat.id));
+                                    }
+                                  }}
+                                  style={{ accentColor: '#FFC000', width: 15, height: 15, flexShrink: 0 }}
+                                />
+                                <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, fontWeight: 600, color: categoriasIds.includes(cat.id) ? '#FFC000' : '#FFFFFF', flex: 1 }}>
+                                  {cat.nome}
+                                </span>
+                                <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: cat.tipo === 'popular' ? '#FFC000' : '#29ABE2', background: cat.tipo === 'popular' ? 'rgba(255,192,0,0.08)' : 'rgba(41,171,226,0.08)', padding: '2px 6px', border: `1px solid ${cat.tipo === 'popular' ? 'rgba(255,192,0,0.2)' : 'rgba(41,171,226,0.2)'}`, flexShrink: 0 }}>
+                                  {cat.tipo === 'popular' ? 'Popular' : 'Interna'}
+                                </span>
+                              </label>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* ── ETAPA 2: campos complementares (liberados dinamicamente baseados na categoria) ── */}
+                      {temCamposComplementares && (
+                        <div
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 14,
+                            borderTop: '1px solid rgba(255,192,0,0.25)',
+                            paddingTop: 16,
+                            animation: 'fadeSlideIn 0.3s ease',
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                            <div style={{ flex: 1, height: 1, background: 'rgba(255,192,0,0.15)' }} />
+                            <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.16em', color: '#FFC000' }}>Dados Complementares</span>
+                            <div style={{ flex: 1, height: 1, background: 'rgba(255,192,0,0.15)' }} />
+                          </div>
+
+                          {/* Gênero */}
+                          {camposNecessarios.has('genero') && (
+                            <div>
+                              <label style={S.label}>Gênero do Dono(a)</label>
+                              <div style={{ display: 'flex', gap: '16px', marginTop: '8px' }}>
+                                {[{ label: 'Masculino', value: 'M' }, { label: 'Feminino', value: 'F' }].map((opt) => (
+                                  <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#FFF', fontSize: '14px', cursor: 'pointer' }}>
+                                    <input
+                                      type="radio"
+                                      name="genero"
+                                      value={opt.value}
+                                      checked={genero === opt.value}
+                                      onChange={(e) => setGenero(e.target.value as 'M' | 'F')}
+                                      style={{ accentColor: '#FFC000', width: '16px', height: '16px' }}
+                                    />
+                                    {opt.label}
+                                  </label>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Telefone */}
+                          {camposNecessarios.has('telefone') && (
+                            <div>
+                              <label style={S.label}>Telefone (opcional)</label>
                               <input
-                                type="checkbox"
-                                checked={categoriasIds.includes(cat.id)}
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    setCategoriasIds((prev) => [...prev, cat.id]);
-                                  } else {
-                                    setCategoriasIds((prev) => prev.filter((id) => id !== cat.id));
+                                type="text"
+                                placeholder="Ex: (11) 99999-9999"
+                                value={telefoneDono}
+                                onChange={(e) => setTelefoneDono(e.target.value)}
+                                style={S.input}
+                                onFocus={e => { e.target.style.borderColor = '#FFC000'; }}
+                                onBlur={e => { e.target.style.borderColor = '#313131'; }}
+                              />
+                            </div>
+                          )}
+
+                          {/* Altura e Km */}
+                          {(camposNecessarios.has('altura_mm') || camposNecessarios.has('km_rodado')) && (
+                            <div style={{ display: 'grid', gridTemplateColumns: camposNecessarios.has('altura_mm') && camposNecessarios.has('km_rodado') ? '1fr 1fr' : '1fr', gap: 8 }}>
+                              {camposNecessarios.has('altura_mm') && (
+                                <div>
+                                  <label style={S.label}>Altura mm (opcional)</label>
+                                  <input
+                                    type="text"
+                                    placeholder="Ex: 50 (opcional)"
+                                    value={alturaMm}
+                                    onChange={(e) => setAlturaMm(e.target.value)}
+                                    style={{ ...S.input, height: 36 }}
+                                    onFocus={e => { e.target.style.borderColor = '#FFC000'; }}
+                                    onBlur={e => { e.target.style.borderColor = '#313131'; }}
+                                  />
+                                </div>
+                              )}
+                              {camposNecessarios.has('km_rodado') && (
+                                <div>
+                                  <label style={S.label}>Km Rodados (opcional)</label>
+                                  <input
+                                    type="text"
+                                    placeholder="Ex: 150 (opcional)"
+                                    value={kmRodado}
+                                    onChange={(e) => setKmRodado(e.target.value)}
+                                    style={{ ...S.input, height: 36 }}
+                                    onFocus={e => { e.target.style.borderColor = '#FFC000'; }}
+                                    onBlur={e => { e.target.style.borderColor = '#313131'; }}
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Equipe */}
+                          {camposNecessarios.has('equipe') && (
+                            <div>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                                <label style={S.label}>Equipe (opcional)</label>
+                                {cadastrarEquipe && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setShowNovaEquipe(!showNovaEquipe)}
+                                    style={{ background: 'transparent', border: 'none', color: '#FFC000', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}
+                                  >
+                                    <UserPlus size={13} />
+                                    {showNovaEquipe ? 'Cancelar' : 'Nova Equipe'}
+                                  </button>
+                                )}
+                              </div>
+
+                              {showNovaEquipe && (
+                                <div style={{ background: '#000000', border: '1px solid rgba(255,192,0,0.25)', padding: '10px 12px', marginBottom: 8, display: 'flex', gap: 6, alignItems: 'center' }}>
+                                  <input
+                                    type="text"
+                                    placeholder="Nome da equipe..."
+                                    value={novaEquipeNome}
+                                    onChange={(e) => setNovaEquipeNome(e.target.value)}
+                                    style={{ ...S.input, height: 34, fontSize: 13, flex: 1 }}
+                                    onFocus={e => { e.target.style.borderColor = '#FFC000'; }}
+                                    onBlur={e => { e.target.style.borderColor = '#313131'; }}
+                                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleCadastrarEquipe(); } }}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={handleCadastrarEquipe}
+                                    disabled={submittingEquipe || !novaEquipeNome.trim()}
+                                    style={{ background: '#FFC000', color: '#000000', border: 'none', padding: '0 12px', height: 34, cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 12, textTransform: 'uppercase', flexShrink: 0, opacity: submittingEquipe || !novaEquipeNome.trim() ? 0.5 : 1 }}
+                                  >
+                                    {submittingEquipe ? '...' : 'Salvar'}
+                                  </button>
+                                </div>
+                              )}
+
+                              <select
+                                value={equipeId}
+                                onChange={(e) => setEquipeId(e.target.value)}
+                                style={{ ...S.input, colorScheme: 'dark' }}
+                                onFocus={e => { e.target.style.borderColor = '#FFC000'; }}
+                                onBlur={e => { e.target.style.borderColor = '#313131'; }}
+                              >
+                                <option value="">— Sem equipe —</option>
+                                {equipes.map((eq) => (
+                                  <option key={eq.id} value={eq.id}>{eq.nome}</option>
+                                ))}
+                              </select>
+                            </div>
+                          )}
+
+                          {/* Pessoas na equipe */}
+                          {camposNecessarios.has('equipe') && equipeId && (
+                            <div>
+                              <label style={S.label}>Pessoas uniformizadas na equipe (neste carro)</label>
+                              <input
+                                type="number"
+                                min="0"
+                                placeholder="Ex: 5"
+                                value={pessoasEquipe}
+                                onChange={(e) => setPessoasEquipe(e.target.value)}
+                                style={{ ...S.input, height: 36 }}
+                                onFocus={e => { e.target.style.borderColor = '#FFC000'; }}
+                                onBlur={e => { e.target.style.borderColor = '#313131'; }}
+                              />
+                              <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#7D7D7D', marginTop: 4, display: 'block' }}>
+                                Quantas pessoas uniformizadas da equipe vieram com este veículo
+                              </span>
+                            </div>
+                          )}
+
+                        </div>
+                      )}
+
+                      {cadastroMsg && (
+                        <div style={{
+                          background: cadastroMsg.type === 'success' ? 'rgba(0,120,60,0.15)' : 'rgba(180,0,0,0.15)',
+                          border: `1px solid ${cadastroMsg.type === 'success' ? 'rgba(74,222,128,0.3)' : 'rgba(220,50,50,0.3)'}`,
+                          borderLeft: `3px solid ${cadastroMsg.type === 'success' ? '#4ade80' : '#ef4444'}`,
+                          padding: '10px 14px',
+                        }}>
+                          <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: cadastroMsg.type === 'success' ? '#86efac' : '#fca5a5' }}>
+                            {cadastroMsg.text}
+                          </span>
+                        </div>
+                      )}
+
+                      <button
+                        type="submit"
+                        disabled={submitting}
+                        className="btn-gold"
+                        style={{ width: '100%', height: 44, fontSize: 14, marginTop: 4 }}
+                      >
+                        {submitting ? 'Adicionando...' : 'Cadastrar Veículo'}
+                      </button>
+                    </form>
+                  </div>
+
+                  {/* Lista */}
+                  <div style={{ background: '#181818', border: '1px solid #202020', padding: '20px' }}>
+                    <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#FFFFFF', margin: '0 0 16px 0', paddingBottom: 14, borderBottom: '1px solid #202020' }}>
+                      Veículos Cadastrados({carros.length})
+                    </h3>
+
+                    <div style={{ maxHeight: 500, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }} className="no-scrollbar">
+                      {carros.length === 0 ? (
+                        <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: '#7D7D7D', textAlign: 'center', padding: '32px 0', margin: 0 }}>
+                          Nenhum veículo cadastrado ainda.
+                        </p>
+                      ) : (
+                        carros.map((carro) => (
+                          <div
+                            key={carro.id}
+                            style={{ background: '#000000', border: '1px solid #202020', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+                              {carro.url_foto ? (
+                                <img
+                                  src={carro.url_foto}
+                                  alt={carro.modelo}
+                                  style={{ width: 52, height: 52, objectFit: 'cover', flexShrink: 0, display: 'block', border: '1px solid #202020' }}
+                                />
+                              ) : (
+                                <div style={{ width: 52, height: 52, flexShrink: 0, background: '#181818', border: '1px solid #202020', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                  <Camera size={18} color="#313131" />
+                                </div>
+                              )}
+                              <div style={{ minWidth: 0 }}>
+                                <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 15, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#FFFFFF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                  {carro.modelo}
+                                </div>
+                                <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#7D7D7D', marginTop: 3 }}>
+                                  {carro.nome_dono}{carro.equipe ? ` · ${carro.equipe}` : ''}
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
+                                  <span style={{ background: '#FFC000', color: '#000000', padding: '2px 8px', fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, fontWeight: 700 }}>
+                                    {carro.numero_inscricao}
+                                  </span>
+                                  <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, color: '#7D7D7D' }}>
+                                    {carro.ano} {carro.altura_mm && carro.altura_mm > 0 ? `· ${carro.altura_mm}mm` : ''}
+                                  </span>
+                                  {carro.categorias_ids && carro.categorias_ids.length > 0 && (
+                                    <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, color: '#FFC000', background: 'rgba(255,192,0,0.08)', border: '1px solid rgba(255,192,0,0.2)', padding: '1px 6px' }}>
+                                      {carro.categorias_ids.length} cat.
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                              {editarCarro && (
+                                <button
+                                  onClick={() => openEditModal(carro)}
+                                  style={{ background: 'rgba(255,192,0,0.1)', border: '1px solid rgba(255,192,0,0.3)', color: '#FFC000', padding: 8, cursor: 'pointer', display: 'flex', transition: 'background 0.12s' }}
+                                  title="Editar"
+                                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,192,0,0.25)'; }}
+                                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,192,0,0.1)'; }}
+                                >
+                                  <Edit2 size={15} />
+                                </button>
+                              )}
+                              <button
+                                onClick={async () => {
+                                  if (confirm(`Excluir "${carro.modelo}" (${carro.numero_inscricao})?`)) {
+                                    await deletarCarro(carro.id);
                                   }
                                 }}
-                                style={{ accentColor: '#FFC000', width: 15, height: 15, flexShrink: 0 }}
-                              />
-                              <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, fontWeight: 600, color: categoriasIds.includes(cat.id) ? '#FFC000' : '#FFFFFF', flex: 1 }}>
-                                {cat.nome}
-                              </span>
-                              <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: cat.tipo === 'popular' ? '#FFC000' : '#29ABE2', background: cat.tipo === 'popular' ? 'rgba(255,192,0,0.08)' : 'rgba(41,171,226,0.08)', padding: '2px 6px', border: `1px solid ${cat.tipo === 'popular' ? 'rgba(255,192,0,0.2)' : 'rgba(41,171,226,0.2)'}`, flexShrink: 0 }}>
-                                {cat.tipo === 'popular' ? 'Popular' : 'Interna'}
-                              </span>
-                            </label>
+                                style={{ background: 'rgba(180,0,0,0.1)', border: '1px solid rgba(200,50,50,0.3)', color: '#ef4444', padding: 8, cursor: 'pointer', display: 'flex', transition: 'background 0.12s' }}
+                                title="Excluir"
+                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(180,0,0,0.25)'; }}
+                                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(180,0,0,0.1)'; }}
+                                >
+                                  <Trash2 size={15} />
+                                </button>
+                              </div>
+                            </div>
                           ))
                         )}
                       </div>
                     </div>
-
-                    {/* Foto */}
-                    <div>
-                      <label style={S.label}>Foto do Veículo</label>
-                      {urlFoto && (
-                        <div style={{ position: 'relative', width: '100%', height: 100, overflow: 'hidden', marginBottom: 8, background: '#000000' }}>
-                          <img src={urlFoto} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                          <button
-                            type="button"
-                            onClick={() => setUrlFoto('')}
-                            style={{ position: 'absolute', top: 6, right: 6, background: 'rgba(0,0,0,0.85)', border: '1px solid #313131', color: '#FFFFFF', padding: '3px 8px', cursor: 'pointer', fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif" }}
-                          >
-                            Remover
-                          </button>
-                        </div>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => document.getElementById('camera-file-input')?.click()}
-                        style={{ ...S.input, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer', background: '#202020', borderColor: '#313131', marginBottom: 6 }}
-                      >
-                        <Camera size={14} color="#FFC000" />
-                        <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                          Capturar Foto
-                        </span>
-                      </button>
-                      <input id="camera-file-input" type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handleCameraCapture} />
-                      <input
-                        type="text"
-                        placeholder="Ou cole uma URL..."
-                        value={urlFoto.startsWith('data:image') ? '' : urlFoto}
-                        onChange={(e) => setUrlFoto(e.target.value)}
-                        style={{ ...S.input, height: 36 }}
-                        onFocus={e => { e.target.style.borderColor = '#FFC000'; }}
-                        onBlur={e => { e.target.style.borderColor = '#313131'; }}
-                      />
-                    </div>
-
-                    {cadastroMsg && (
-                      <div style={{
-                        background: cadastroMsg.type === 'success' ? 'rgba(0,120,60,0.15)' : 'rgba(180,0,0,0.15)',
-                        border: `1px solid ${cadastroMsg.type === 'success' ? 'rgba(74,222,128,0.3)' : 'rgba(220,50,50,0.3)'}`,
-                        borderLeft: `3px solid ${cadastroMsg.type === 'success' ? '#4ade80' : '#ef4444'}`,
-                        padding: '10px 14px',
-                      }}>
-                        <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: cadastroMsg.type === 'success' ? '#86efac' : '#fca5a5' }}>
-                          {cadastroMsg.text}
-                        </span>
-                      </div>
-                    )}
-
-                    <button
-                      type="submit"
-                      disabled={submitting}
-                      className="btn-gold"
-                      style={{ width: '100%', height: 44, fontSize: 14, marginTop: 4 }}
-                    >
-                      {submitting ? 'Adicionando...' : 'Cadastrar Veículo'}
-                    </button>
-                  </form>
-                </div>
-
-                {/* Lista */}
-                <div style={{ background: '#181818', border: '1px solid #202020', padding: '20px' }}>
-                  <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#FFFFFF', margin: '0 0 16px 0', paddingBottom: 14, borderBottom: '1px solid #202020' }}>
-                    Veículos Cadastrados({carros.length})
-                  </h3>
-
-                  <div style={{ maxHeight: 500, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }} className="no-scrollbar">
-                    {carros.length === 0 ? (
-                      <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: '#7D7D7D', textAlign: 'center', padding: '32px 0', margin: 0 }}>
-                        Nenhum veículo cadastrado ainda.
-                      </p>
-                    ) : (
-                      carros.map((carro) => (
-                        <div
-                          key={carro.id}
-                          style={{ background: '#000000', border: '1px solid #202020', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-                            <img
-                              src={carro.url_foto}
-                              alt={carro.modelo}
-                              style={{ width: 52, height: 52, objectFit: 'cover', flexShrink: 0, display: 'block', border: '1px solid #202020' }}
-                            />
-                            <div style={{ minWidth: 0 }}>
-                              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 15, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#FFFFFF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                {carro.modelo}
-                              </div>
-                              <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#7D7D7D', marginTop: 3 }}>
-                                {carro.nome_dono}{carro.equipe ? ` · ${carro.equipe}` : ''}
-                              </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
-                                <span style={{ background: '#FFC000', color: '#000000', padding: '2px 8px', fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, fontWeight: 700 }}>
-                                  {carro.numero_inscricao}
-                                </span>
-                                <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, color: '#7D7D7D' }}>
-                                  {carro.ano} {carro.altura_mm && carro.altura_mm > 0 ? `· ${carro.altura_mm}mm` : ''}
-                                </span>
-                                {carro.categorias_ids && carro.categorias_ids.length > 0 && (
-                                  <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, color: '#FFC000', background: 'rgba(255,192,0,0.08)', border: '1px solid rgba(255,192,0,0.2)', padding: '1px 6px' }}>
-                                    {carro.categorias_ids.length} cat.
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-
-                          <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                            {editarCarro && (
-                              <button
-                                onClick={() => openEditModal(carro)}
-                                style={{ background: 'rgba(255,192,0,0.1)', border: '1px solid rgba(255,192,0,0.3)', color: '#FFC000', padding: 8, cursor: 'pointer', display: 'flex', transition: 'background 0.12s' }}
-                                title="Editar"
-                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,192,0,0.25)'; }}
-                                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,192,0,0.1)'; }}
-                              >
-                                <Edit2 size={15} />
-                              </button>
-                            )}
-                            <button
-                              onClick={async () => {
-                                if (confirm(`Excluir "${carro.modelo}" (${carro.numero_inscricao})?`)) {
-                                  await deletarCarro(carro.id);
-                                }
-                              }}
-                              style={{ background: 'rgba(180,0,0,0.1)', border: '1px solid rgba(200,50,50,0.3)', color: '#ef4444', padding: 8, cursor: 'pointer', display: 'flex', transition: 'background 0.12s' }}
-                              title="Excluir"
-                              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(180,0,0,0.25)'; }}
-                              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(180,0,0,0.1)'; }}
-                            >
-                              <Trash2 size={15} />
-                            </button>
-                          </div>
-                        </div>
-                      ))
-                    )}
                   </div>
-                </div>
-              </div>
-            )}
+                );
+              })()}
 
             {/* ══════ TAB: GERENCIAR CATEGORIAS ══════ */}
             {activeTab === 'categorias' && (
@@ -1216,6 +1347,44 @@ export function DashboardView({
                         <option value="popular">Popular (Público vota no site)</option>
                         <option value="interna">Interna / Técnica (Pódio da Organização)</option>
                       </select>
+                    </div>
+
+                    {/* Campos que esta categoria exige ao inscrever um carro */}
+                    <div>
+                      <label style={{ ...S.label, marginBottom: 10 }}>Dados que esta categoria exige</label>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {(
+                          [
+                            { value: 'genero', label: 'Gênero do dono' },
+                            { value: 'foto', label: 'Foto do veículo' },
+                            { value: 'altura_mm', label: 'Altura (mm)' },
+                            { value: 'km_rodado', label: 'Km rodados' },
+                            { value: 'equipe', label: 'Equipe + Pessoas' },
+                            { value: 'telefone', label: 'Telefone do dono' },
+                          ] as { value: CampoRequerido; label: string }[]
+                        ).map((opt) => {
+                          const ativo = novaCatCampos.includes(opt.value);
+                          return (
+                            <label
+                              key={opt.value}
+                              style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '7px 10px', background: ativo ? 'rgba(255,192,0,0.07)' : '#000000', border: `1px solid ${ativo ? 'rgba(255,192,0,0.35)' : '#202020'}`, transition: 'background 0.12s, border-color 0.12s' }}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={ativo}
+                                onChange={(e) => {
+                                  if (e.target.checked) setNovaCatCampos((p) => [...p, opt.value]);
+                                  else setNovaCatCampos((p) => p.filter((c) => c !== opt.value));
+                                }}
+                                style={{ accentColor: '#FFC000', width: 14, height: 14, flexShrink: 0 }}
+                              />
+                              <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, fontWeight: 600, color: ativo ? '#FFC000' : '#FFFFFF' }}>
+                                {opt.label}
+                              </span>
+                            </label>
+                          );
+                        })}
+                      </div>
                     </div>
 
                     <button

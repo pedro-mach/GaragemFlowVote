@@ -51,6 +51,17 @@ function App() {
   const globalLoading = authLoading || dataLoading;
   const globalError = authError || dataError || votingError;
 
+  // Carregamento da sessão inicial
+  if (authLoading) {
+    return (
+      <Layout>
+        <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FFC000', fontFamily: "'Barlow Condensed', sans-serif", fontSize: 16, letterSpacing: '0.1em' }}>
+          CARREGANDO SESSÃO...
+        </div>
+      </Layout>
+    );
+  }
+
   // 1. Tela do Organizador (Painel Administrativo)
   if (isOrganizer) {
     return (
@@ -90,8 +101,10 @@ function App() {
           evento={evento}
           carros={carros}
           categorias={categorias}
+          equipes={equipes}
           userVotos={userVotos}
           votar={votar}
+          cadastrarEquipe={cadastrarEquipe}
           logout={logout}
           isLoading={globalLoading || votingLoading}
           error={globalError}

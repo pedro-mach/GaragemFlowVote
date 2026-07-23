@@ -13,7 +13,13 @@ export interface Categoria {
   nome: string;
   tipo: 'popular' | 'interna';
   oculta?: boolean;
+  /** Campos de dados que esta categoria exige ao inscrever um carro */
+  campos_requeridos?: CampoRequerido[];
 }
+
+/** Campos de preenchimento que uma categoria pode exigir */
+export type CampoRequerido = 'genero' | 'foto' | 'altura_mm' | 'km_rodado' | 'equipe' | 'telefone';
+
 
 export interface Equipe {
   id: string;
@@ -28,7 +34,7 @@ export interface Carro {
   modelo: string;
   ano: number;
   altura_mm?: number;
-  url_foto: string;
+  url_foto?: string;
   nome_dono: string;
   telefone_dono?: string;
   equipe?: string;
@@ -66,12 +72,13 @@ export const mockEvento: Evento = {
 
 // Categorias Padrão
 export const mockCategorias: Categoria[] = [
-  { id: 'cat-1', nome: 'Destaque Masculino', tipo: 'popular', oculta: false },
-  { id: 'cat-2', nome: 'Destaque Feminino', tipo: 'popular', oculta: false },
-  { id: 'cat-3', nome: 'Mais antigo', tipo: 'interna', oculta: false },
-  { id: 'cat-4', nome: 'Maior equipe uniformizada', tipo: 'interna', oculta: false },
-  { id: 'cat-5', nome: 'Maior rodagem', tipo: 'interna', oculta: false },
+  { id: 'cat-1', nome: 'Destaque Masculino', tipo: 'popular', oculta: false, campos_requeridos: ['genero', 'foto'] },
+  { id: 'cat-2', nome: 'Destaque Feminino', tipo: 'popular', oculta: false, campos_requeridos: ['genero', 'foto'] },
+  { id: 'cat-3', nome: 'Mais antigo', tipo: 'interna', oculta: false, campos_requeridos: [] },
+  { id: 'cat-4', nome: 'Maior equipe uniformizada', tipo: 'interna', oculta: false, campos_requeridos: ['equipe'] },
+  { id: 'cat-5', nome: 'Maior rodagem', tipo: 'interna', oculta: false, campos_requeridos: ['km_rodado'] },
 ];
+
 
 // Equipes Padrão
 export const mockEquipes: Equipe[] = [];
