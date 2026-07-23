@@ -103,6 +103,9 @@ function App() {
           categorias={categorias}
           equipes={equipes}
           userVotos={userVotos}
+          resultados={resultados}
+          totalVotos={totalVotos}
+          fetchResultados={fetchResultados}
           votar={votar}
           cadastrarEquipe={cadastrarEquipe}
           logout={logout}
