@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { Shield, KeyRound, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import type { Evento } from '../data/mockData';
 
 interface AuthViewProps {
+  evento?: Evento | null;
   login: (cpf: string, birthdate: string) => Promise<void>;
   loginAsOrganizer: () => void;
   isLoading: boolean;
   error: string | null;
 }
 
-export function AuthView({ login, loginAsOrganizer, isLoading, error }: AuthViewProps) {
+export function AuthView({ evento, login, loginAsOrganizer, isLoading, error }: AuthViewProps) {
   const [cpf, setCpf] = useState('');
   const [birthdate, setBirthdate] = useState('');
   const [lgpdConsent, setLgpdConsent] = useState(false);
@@ -39,7 +41,7 @@ export function AuthView({ login, loginAsOrganizer, isLoading, error }: AuthView
     } else if (value.length > 2) {
       value = `${value.slice(0, 2)}/${value.slice(2)}`;
     }
-    
+
     setBirthdate(value);
     setFormError(null);
   };
@@ -72,12 +74,12 @@ export function AuthView({ login, loginAsOrganizer, isLoading, error }: AuthView
 
   return (
     <div className="w-full flex-1 flex flex-col justify-center py-6 lg:py-12">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-y-10 lg:gap-x-16 lg:gap-y-8 items-start">
 
-        {/* ===== LADO ESQUERDO — BRANDING ===== */}
-        <div className="lg:col-span-7 flex flex-col justify-center" style={{ gap: '32px' }}>
+        {/* ===== A: BRANDING ===== */}
+        <div className="lg:col-span-7 lg:col-start-1 lg:row-start-1 flex flex-col justify-center order-1 lg:mt-8" style={{ gap: '32px' }}>
 
-          {/* Logo + Status */}
+          {/* Logo + Event Name */}
           <div className="flex items-center gap-4">
             <div
               className="overflow-hidden shrink-0"
@@ -96,80 +98,25 @@ export function AuthView({ login, loginAsOrganizer, isLoading, error }: AuthView
               />
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span className="live-dot" />
               <span style={{
                 fontFamily: "'Barlow Condensed', sans-serif",
-                fontSize: 11,
-                fontWeight: 600,
+                fontSize: 14,
+                fontWeight: 700,
                 textTransform: 'uppercase',
-                letterSpacing: '0.18em',
+                letterSpacing: '0.12em',
                 color: '#FFC000',
               }}>
-                Votação Automotiva ao Vivo
+                {evento?.nome || 'GARAGEM FLOW VOTE'}
               </span>
             </div>
           </div>
 
           {/* Headline */}
-          <div>
-            <h1 className="display-hero" style={{ color: '#FFFFFF' }}>
-              GARAGEM{' '}
-              <span style={{ color: '#FFC000' }}>FLOW</span>{' '}
-              VOTE
-            </h1>
-            <p style={{
-              fontFamily: "'Barlow', sans-serif",
-              fontSize: 15,
-              color: '#7D7D7D',
-              marginTop: 16,
-              lineHeight: 1.6,
-              maxWidth: 480,
-              fontWeight: 400,
-            }}>
-              Plataforma oficial de votação em tempo real para eventos de carros modificados, antigos e de alta performance.
-            </p>
-          </div>
 
-          {/* Feature Pills */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-px" style={{ background: '#202020' }}>
-            {[
-              { label: 'Apuração ao Vivo', sub: 'Resultados imediatos' },
-              { label: 'Categorias Troféu', sub: 'Populares & técnicas' },
-              { label: 'Voto Auditado', sub: 'Por CPF' },
-            ].map((f) => (
-              <div
-                key={f.label}
-                style={{
-                  background: '#000000',
-                  padding: '16px 20px',
-                  borderTop: '2px solid #202020',
-                }}
-              >
-                <div style={{
-                  fontFamily: "'Barlow Condensed', sans-serif",
-                  fontWeight: 700,
-                  fontSize: 13,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.1em',
-                  color: '#FFFFFF',
-                }}>
-                  {f.label}
-                </div>
-                <div style={{
-                  fontFamily: "'Barlow', sans-serif",
-                  fontSize: 12,
-                  color: '#7D7D7D',
-                  marginTop: 4,
-                }}>
-                  {f.sub}
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
 
-        {/* ===== LADO DIREITO — CARD DE LOGIN ===== */}
-        <div className="lg:col-span-5 w-full">
+        {/* ===== B: CARD DE LOGIN ===== */}
+        <div className="lg:col-span-5 lg:col-start-8 lg:row-start-1 lg:row-span-2 w-full order-2">
           <div
             style={{
               background: '#181818',
@@ -375,6 +322,58 @@ export function AuthView({ login, loginAsOrganizer, isLoading, error }: AuthView
                 Votação Auditada
               </span>
             </div>
+          </div>
+        </div>
+
+        {/* ===== C: FEATURE PILLS ===== */}
+
+        <div className="lg:col-span-7 lg:col-start-1 lg:row-start-2 order-3 w-full">
+          <p style={{
+            fontFamily: "'Barlow', sans-serif",
+            fontSize: 15,
+            color: '#7D7D7D',
+            marginTop: 16,
+            lineHeight: 1.6,
+            maxWidth: 480,
+            fontWeight: 400,
+          }}>
+            Plataforma oficial de votação em tempo real para eventos de carros.
+          </p>
+          <br />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-px" style={{ background: '#202020' }}>
+            {[
+              { label: 'Apuração ao Vivo', sub: 'Resultados imediatos' },
+              { label: 'Categorias Troféu', sub: 'Populares & técnicas' },
+              { label: 'Voto Auditado', sub: 'Por CPF' },
+            ].map((f) => (
+              <div
+                key={f.label}
+                style={{
+                  background: '#000000',
+                  padding: '16px 20px',
+                  borderTop: '2px solid #202020',
+                }}
+              >
+                <div style={{
+                  fontFamily: "'Barlow Condensed', sans-serif",
+                  fontWeight: 700,
+                  fontSize: 13,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.1em',
+                  color: '#FFFFFF',
+                }}>
+                  {f.label}
+                </div>
+                <div style={{
+                  fontFamily: "'Barlow', sans-serif",
+                  fontSize: 12,
+                  color: '#7D7D7D',
+                  marginTop: 4,
+                }}>
+                  {f.sub}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 

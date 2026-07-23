@@ -96,6 +96,7 @@ function App() {
   return (
     <Layout>
       <AuthView
+        evento={evento}
         login={login}
         loginAsOrganizer={loginAsOrganizer}
         isLoading={globalLoading}

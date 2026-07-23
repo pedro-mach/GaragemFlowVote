@@ -366,36 +366,64 @@ export function DashboardView({
         <div style={{ flex: 1, background: '#000000' }}>
 
           {/* Header com Botão Sandwich + Nome do Evento */}
-          <div style={{ background: '#181818', borderBottom: '1px solid #202020', padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              {/* Botão Sandwich Menu */}
-              <button
-                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                style={{
-                  background: isSidebarOpen ? 'rgba(255,192,0,0.15)' : '#202020',
-                  border: '1px solid rgba(255,192,0,0.3)',
-                  color: '#FFC000',
-                  padding: '8px 12px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  fontFamily: "'Barlow Condensed', sans-serif",
-                  fontWeight: 700,
-                  fontSize: 13,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.08em',
-                  transition: 'all 0.15s ease',
-                  flexShrink: 0,
-                }}
-                title={isSidebarOpen ? 'Fechar Menu' : 'Abrir Menu'}
-              >
-                <Menu size={18} />
-                <span>MENU</span>
-              </button>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-16" style={{ background: '#181818', borderBottom: '1px solid #202020', padding: '16px 24px' }}>
+            
+            <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-16 w-full md:w-auto">
+              
+              <div className="flex items-center justify-between w-full md:w-auto">
+                {/* Botão Sandwich Menu */}
+                <button
+                  onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                  style={{
+                    background: isSidebarOpen ? 'rgba(255,192,0,0.15)' : '#202020',
+                    border: '1px solid rgba(255,192,0,0.3)',
+                    color: '#FFC000',
+                    padding: '8px 12px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    fontFamily: "'Barlow Condensed', sans-serif",
+                    fontWeight: 700,
+                    fontSize: 13,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.08em',
+                    transition: 'all 0.15s ease',
+                    flexShrink: 0,
+                  }}
+                  title={isSidebarOpen ? 'Fechar Menu' : 'Abrir Menu'}
+                >
+                  <Menu size={18} />
+                  <span>MENU</span>
+                </button>
 
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                {/* Status on mobile - right side of row 1 */}
+                <div className="flex md:hidden items-center gap-2">
+                  <span style={{
+                    fontFamily: "'Barlow Condensed', sans-serif",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.12em',
+                    color: votacaoAberta ? '#4ade80' : '#ef4444',
+                    border: `1px solid ${votacaoAberta ? 'rgba(74,222,128,0.3)' : 'rgba(239,68,68,0.3)'}`,
+                    padding: '5px 12px',
+                    whiteSpace: 'nowrap',
+                  }}>
+                    {votacaoAberta ? '● EM ANDAMENTO' : '○ ENCERRADA'}
+                  </span>
+                  <button
+                    onClick={() => fetchResultados()}
+                    style={{ background: '#202020', border: '1px solid #313131', padding: '6px', cursor: 'pointer', display: 'flex', color: '#FFC000', flexShrink: 0 }}
+                    title="Atualizar Dados"
+                  >
+                    <RefreshCw size={16} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, flexWrap: 'wrap' }}>
                   <span style={{
                     fontFamily: "'Barlow Condensed', sans-serif",
                     fontSize: 10,
@@ -406,22 +434,23 @@ export function DashboardView({
                     background: 'rgba(255,192,0,0.08)',
                     border: '1px solid rgba(255,192,0,0.2)',
                     padding: '3px 10px',
+                    whiteSpace: 'nowrap',
                   }}>
                     Evento Ativo
                   </span>
-                  <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#7D7D7D' }}>
+                  <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#7D7D7D', whiteSpace: 'nowrap' }}>
                     {evento?.data}
                   </span>
                 </div>
 
                 {/* Nome do Evento (Visualizar ou Editar) */}
                 {isEditingEventName ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4, flexWrap: 'wrap' }}>
                     <input
                       type="text"
                       value={eventTempName}
                       onChange={(e) => setEventTempName(e.target.value)}
-                      style={{ ...S.input, height: 36, fontSize: 18, width: 280 }}
+                      style={{ ...S.input, height: 36, fontSize: 18, width: '100%', maxWidth: 280 }}
                       autoFocus
                     />
                     <button
@@ -439,7 +468,7 @@ export function DashboardView({
                   </div>
                 ) : (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 24, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#FFFFFF', margin: 0, lineHeight: 1 }}>
+                    <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 24, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#FFFFFF', margin: 0, lineHeight: 1, wordBreak: 'break-word' }}>
                       {evento?.nome || 'Carregando...'}
                     </h1>
                     {atualizarNomeEvento && (
@@ -448,7 +477,7 @@ export function DashboardView({
                           setEventTempName(evento?.nome || '');
                           setIsEditingEventName(true);
                         }}
-                        style={{ background: 'none', border: 'none', color: '#7D7D7D', cursor: 'pointer', padding: 4, display: 'flex', transition: 'color 0.12s' }}
+                        style={{ background: 'none', border: 'none', color: '#7D7D7D', cursor: 'pointer', padding: 4, display: 'flex', transition: 'color 0.12s', flexShrink: 0 }}
                         title="Editar Nome do Evento"
                         onMouseEnter={e => e.currentTarget.style.color = '#FFC000'}
                         onMouseLeave={e => e.currentTarget.style.color = '#7D7D7D'}
@@ -461,7 +490,8 @@ export function DashboardView({
               </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {/* Status on desktop - right side */}
+            <div className="hidden md:flex items-center gap-2">
               <span style={{
                 fontFamily: "'Barlow Condensed', sans-serif",
                 fontSize: 11,
@@ -471,12 +501,13 @@ export function DashboardView({
                 color: votacaoAberta ? '#4ade80' : '#ef4444',
                 border: `1px solid ${votacaoAberta ? 'rgba(74,222,128,0.3)' : 'rgba(239,68,68,0.3)'}`,
                 padding: '5px 12px',
+                whiteSpace: 'nowrap',
               }}>
                 {votacaoAberta ? '● EM ANDAMENTO' : '○ ENCERRADA'}
               </span>
               <button
                 onClick={() => fetchResultados()}
-                style={{ background: '#202020', border: '1px solid #313131', padding: '6px', cursor: 'pointer', display: 'flex', color: '#FFC000' }}
+                style={{ background: '#202020', border: '1px solid #313131', padding: '6px', cursor: 'pointer', display: 'flex', color: '#FFC000', flexShrink: 0 }}
                 title="Atualizar Dados"
               >
                 <RefreshCw size={16} />
