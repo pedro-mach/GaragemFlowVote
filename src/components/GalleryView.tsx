@@ -129,8 +129,14 @@ export function GalleryView({
     .filter((c) => Boolean(c))
     .filter((c) => !evento || c.evento_id === evento.id)
     .filter((c) => {
-      // Exibir apenas carros com foto real cadastrada
-      if (!c.url_foto || c.url_foto.trim() === '') return false;
+      const catObj = safeCategorias.find((cat) => cat.id === activeCategoryId);
+      const catName = (catObj?.nome || '').toLowerCase();
+      const isDestaqueOuPopular = catObj?.tipo === 'popular' || catName.includes('destaque');
+
+      // Se for categoria de destaque/popular de voto direto por visual, exige foto real
+      if (isDestaqueOuPopular && (!c.url_foto || c.url_foto.trim() === '')) {
+        return false;
+      }
       return true;
     })
     .filter((c) => {
@@ -839,7 +845,7 @@ export function GalleryView({
           >
             <Car size={36} color="#313131" style={{ margin: '0 auto 12px' }} />
             <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 14, color: '#7D7D7D', margin: 0 }}>
-              Nenhum veículo com foto encontrado nesta categoria.
+              Nenhum veículo encontrado nesta categoria.
             </p>
           </div>
         ) : (
@@ -870,39 +876,52 @@ export function GalleryView({
                     position: 'relative',
                   }}
                 >
-                  {/* Foto */}
+                  {/* Foto ou Placeholder sem foto */}
                   <div
-                    style={{ position: 'relative', height: 200, background: '#0a0a0a', overflow: 'hidden', cursor: 'zoom-in' }}
-                    onClick={() => setZoomPhoto({ url: carro.url_foto!, modelo: carro.modelo, numero: carro.numero_inscricao })}
-                    title="Clique para ampliar"
+                    style={{ position: 'relative', height: 200, background: '#0a0a0a', overflow: 'hidden', cursor: carro.url_foto ? 'zoom-in' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    onClick={() => {
+                      if (carro.url_foto) {
+                        setZoomPhoto({ url: carro.url_foto, modelo: carro.modelo, numero: carro.numero_inscricao });
+                      }
+                    }}
+                    title={carro.url_foto ? "Clique para ampliar" : "Sem foto cadastrada"}
                   >
-                    <img
-                      src={carro.url_foto!}
-                      alt={carro.modelo}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.2s ease' }}
-                      loading="lazy"
-                      onMouseEnter={e => { (e.currentTarget as HTMLImageElement).style.transform = 'scale(1.04)'; }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLImageElement).style.transform = 'scale(1)'; }}
-                    />
+                    {carro.url_foto ? (
+                      <img
+                        src={carro.url_foto}
+                        alt={carro.modelo}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.2s ease' }}
+                        loading="lazy"
+                        onMouseEnter={e => { (e.currentTarget as HTMLImageElement).style.transform = 'scale(1.04)'; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLImageElement).style.transform = 'scale(1)'; }}
+                      />
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, color: '#313131' }}>
+                        <Car size={48} strokeWidth={1.5} color="#555555" />
+                        <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, color: '#666666', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Sem foto enviada</span>
+                      </div>
+                    )}
 
-                    {/* Ícone zoom hint */}
-                    <div
-                      style={{
-                        position: 'absolute',
-                        bottom: 8,
-                        right: 8,
-                        background: 'rgba(0,0,0,0.65)',
-                        border: '1px solid rgba(255,192,0,0.4)',
-                        borderRadius: 2,
-                        padding: '4px 6px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 4,
-                        pointerEvents: 'none',
-                      }}
-                    >
-                      <ZoomIn size={12} color="#FFC000" />
-                    </div>
+                    {/* Ícone zoom hint se houver foto */}
+                    {carro.url_foto && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          bottom: 8,
+                          right: 8,
+                          background: 'rgba(0,0,0,0.65)',
+                          border: '1px solid rgba(255,192,0,0.4)',
+                          borderRadius: 2,
+                          padding: '4px 6px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 4,
+                          pointerEvents: 'none',
+                        }}
+                      >
+                        <ZoomIn size={12} color="#FFC000" />
+                      </div>
+                    )}
 
                     {/* Badge número */}
                     <div
