@@ -2,14 +2,15 @@ import React, { useState, useEffect } from 'react';
 import {
   ToggleLeft, ToggleRight, Car, BarChart3, ShieldCheck,
   Plus, LogOut, RefreshCw, Layers, Camera, Trash2, Trophy, Award,
-  Edit2, Eye, EyeOff, Check, Tag, X, Menu, Users
+  Edit2, Eye, EyeOff, Check, Tag, X, Menu, Users, UserPlus
 } from 'lucide-react';
-import type { Carro, Categoria, Evento } from '../data/mockData';
+import type { Carro, Categoria, Equipe, Evento } from '../data/mockData';
 
 interface DashboardViewProps {
   evento: Evento | null;
   carros: Carro[];
   categorias: Categoria[];
+  equipes: Equipe[];
   resultados: Record<string, { carroId: string; votosCount: number }[]>;
   totalUsuarios?: number;
   totalVotos?: number;
@@ -26,13 +27,17 @@ interface DashboardViewProps {
     urlFoto?: string,
     equipe?: string,
     kmRodado?: number,
-    genero?: 'M' | 'F'
+    genero?: 'M' | 'F',
+    categoriasIds?: string[],
+    pessoasEquipe?: number
   ) => Promise<void>;
   deletarCarro: (id: string) => Promise<void>;
   cadastrarCategoria?: (nome: string, tipo: 'popular' | 'interna') => Promise<void>;
   editarCategoria?: (id: string, novoNome: string) => Promise<void>;
   toggleOcultarCategoria?: (id: string) => Promise<void>;
   deletarCategoria?: (id: string) => Promise<void>;
+  cadastrarEquipe?: (nome: string) => Promise<void>;
+  deletarEquipe?: (id: string) => Promise<void>;
   toggleStatusVotacao: () => Promise<void>;
   fetchResultados: () => Promise<void>;
   logout: () => void;
@@ -98,6 +103,7 @@ export function DashboardView({
   evento,
   carros,
   categorias,
+  equipes,
   resultados,
   totalUsuarios = 0,
   totalVotos = 0,
@@ -110,6 +116,8 @@ export function DashboardView({
   editarCategoria,
   toggleOcultarCategoria,
   deletarCategoria,
+  cadastrarEquipe,
+  deletarEquipe: _deletarEquipe,
   toggleStatusVotacao,
   fetchResultados,
   logout,
@@ -132,10 +140,17 @@ export function DashboardView({
   const [genero, setGenero] = useState<'M'|'F'>('M');
   const [telefoneDono, setTelefoneDono] = useState('');
   const [urlFoto, setUrlFoto] = useState('');
-  const [equipe, setEquipe] = useState('');
+  const [equipeId, setEquipeId] = useState('');
   const [kmRodado, setKmRodado] = useState('');
+  const [pessoasEquipe, setPessoasEquipe] = useState('');
+  const [categoriasIds, setCategoriasIds] = useState<string[]>([]);
   const [cadastroMsg, setCadastroMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // States de cadastro rápido de equipe
+  const [showNovaEquipe, setShowNovaEquipe] = useState(false);
+  const [novaEquipeNome, setNovaEquipeNome] = useState('');
+  const [submittingEquipe, setSubmittingEquipe] = useState(false);
 
   // States gerenciamento de categorias
   const [novaCatNome, setNovaCatNome] = useState('');
@@ -210,6 +225,10 @@ export function DashboardView({
       const parsedAno = ano.trim() ? parseInt(ano.trim(), 10) : new Date().getFullYear();
       const finalAno = isNaN(parsedAno) ? new Date().getFullYear() : parsedAno;
 
+      // Resolver nome da equipe a partir do ID selecionado
+      const equipeSelected = equipes.find((eq) => eq.id === equipeId);
+      const equipeName = equipeSelected?.nome || undefined;
+
       await cadastrarCarro(
         finalInscricao,
         finalModelo,
@@ -218,18 +237,35 @@ export function DashboardView({
         finalNomeDono,
         telefoneDono || undefined,
         urlFoto || undefined,
-        equipe || undefined,
+        equipeName,
         kmRodado ? parseInt(kmRodado, 10) : undefined,
-        genero
+        genero,
+        categoriasIds.length > 0 ? categoriasIds : undefined,
+        pessoasEquipe ? parseInt(pessoasEquipe, 10) : undefined
       );
       setCadastroMsg({ type: 'success', text: 'Carro cadastrado com sucesso!' });
       setModelo(''); setAno(''); setAlturaMm(''); setNomeDono(''); setGenero('M');
-      setTelefoneDono(''); setUrlFoto(''); setEquipe(''); setKmRodado('');
+      setTelefoneDono(''); setUrlFoto(''); setEquipeId(''); setKmRodado('');
+      setPessoasEquipe(''); setCategoriasIds([]);
       setIsManualInscricao(false);
     } catch (err: any) {
       setCadastroMsg({ type: 'error', text: err.message || 'Erro ao cadastrar carro.' });
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleCadastrarEquipe = async () => {
+    if (!novaEquipeNome.trim() || !cadastrarEquipe) return;
+    setSubmittingEquipe(true);
+    try {
+      await cadastrarEquipe(novaEquipeNome.trim());
+      setNovaEquipeNome('');
+      setShowNovaEquipe(false);
+    } catch (err: any) {
+      console.error('Erro ao cadastrar equipe:', err);
+    } finally {
+      setSubmittingEquipe(false);
     }
   };
 
@@ -740,7 +776,6 @@ export function DashboardView({
                       {[
                         { label: 'Ano (opcional)', value: ano, setter: setAno, placeholder: 'Ex: 1994 (opcional)' },
                         { label: 'Altura mm (opcional)', value: alturaMm, setter: setAlturaMm, placeholder: 'Ex: 50 (opcional)' },
-                        { label: 'Equipe (opcional)', value: equipe, setter: setEquipe, placeholder: 'Ex: Flow Club (opcional)' },
                         { label: 'Km Rodados (opcional)', value: kmRodado, setter: setKmRodado, placeholder: 'Ex: 150 (opcional)' },
                       ].map((field) => (
                         <div key={field.label}>
@@ -756,6 +791,116 @@ export function DashboardView({
                           />
                         </div>
                       ))}
+                    </div>
+
+                    {/* Equipe */}
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                        <label style={S.label}>Equipe (opcional)</label>
+                        {cadastrarEquipe && (
+                          <button
+                            type="button"
+                            onClick={() => setShowNovaEquipe(!showNovaEquipe)}
+                            style={{ background: 'transparent', border: 'none', color: '#FFC000', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}
+                          >
+                            <UserPlus size={13} />
+                            {showNovaEquipe ? 'Cancelar' : 'Nova Equipe'}
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Mini-form de nova equipe */}
+                      {showNovaEquipe && (
+                        <div style={{ background: '#000000', border: '1px solid rgba(255,192,0,0.25)', padding: '10px 12px', marginBottom: 8, display: 'flex', gap: 6, alignItems: 'center' }}>
+                          <input
+                            type="text"
+                            placeholder="Nome da equipe..."
+                            value={novaEquipeNome}
+                            onChange={(e) => setNovaEquipeNome(e.target.value)}
+                            style={{ ...S.input, height: 34, fontSize: 13, flex: 1 }}
+                            onFocus={e => { e.target.style.borderColor = '#FFC000'; }}
+                            onBlur={e => { e.target.style.borderColor = '#313131'; }}
+                            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleCadastrarEquipe(); } }}
+                          />
+                          <button
+                            type="button"
+                            onClick={handleCadastrarEquipe}
+                            disabled={submittingEquipe || !novaEquipeNome.trim()}
+                            style={{ background: '#FFC000', color: '#000000', border: 'none', padding: '0 12px', height: 34, cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 12, textTransform: 'uppercase', flexShrink: 0, opacity: submittingEquipe || !novaEquipeNome.trim() ? 0.5 : 1 }}
+                          >
+                            {submittingEquipe ? '...' : 'Salvar'}
+                          </button>
+                        </div>
+                      )}
+
+                      <select
+                        value={equipeId}
+                        onChange={(e) => setEquipeId(e.target.value)}
+                        style={{ ...S.input, colorScheme: 'dark' }}
+                        onFocus={e => { e.target.style.borderColor = '#FFC000'; }}
+                        onBlur={e => { e.target.style.borderColor = '#313131'; }}
+                      >
+                        <option value="">— Sem equipe —</option>
+                        {equipes.map((eq) => (
+                          <option key={eq.id} value={eq.id}>{eq.nome}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Pessoas na equipe */}
+                    {equipeId && (
+                      <div>
+                        <label style={S.label}>Pessoas uniformizadas na equipe (neste carro)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          placeholder="Ex: 5"
+                          value={pessoasEquipe}
+                          onChange={(e) => setPessoasEquipe(e.target.value)}
+                          style={{ ...S.input, height: 36 }}
+                          onFocus={e => { e.target.style.borderColor = '#FFC000'; }}
+                          onBlur={e => { e.target.style.borderColor = '#313131'; }}
+                        />
+                        <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#7D7D7D', marginTop: 4, display: 'block' }}>
+                          Quantas pessoas uniformizadas da equipe vieram com este veículo
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Categorias que o carro concorre */}
+                    <div>
+                      <label style={{ ...S.label, marginBottom: 10 }}>Categorias que este veículo concorre</label>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {categorias.length === 0 ? (
+                          <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#7D7D7D' }}>Nenhuma categoria cadastrada.</span>
+                        ) : (
+                          categorias.map((cat) => (
+                            <label
+                              key={cat.id}
+                              style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '8px 10px', background: categoriasIds.includes(cat.id) ? 'rgba(255,192,0,0.07)' : '#000000', border: `1px solid ${categoriasIds.includes(cat.id) ? 'rgba(255,192,0,0.4)' : '#202020'}`, transition: 'background 0.12s, border-color 0.12s' }}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={categoriasIds.includes(cat.id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setCategoriasIds((prev) => [...prev, cat.id]);
+                                  } else {
+                                    setCategoriasIds((prev) => prev.filter((id) => id !== cat.id));
+                                  }
+                                }}
+                                style={{ accentColor: '#FFC000', width: 15, height: 15, flexShrink: 0 }}
+                              />
+                              <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, fontWeight: 600, color: categoriasIds.includes(cat.id) ? '#FFC000' : '#FFFFFF', flex: 1 }}>
+                                {cat.nome}
+                              </span>
+                              <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: cat.tipo === 'popular' ? '#FFC000' : '#29ABE2', background: cat.tipo === 'popular' ? 'rgba(255,192,0,0.08)' : 'rgba(41,171,226,0.08)', padding: '2px 6px', border: `1px solid ${cat.tipo === 'popular' ? 'rgba(255,192,0,0.2)' : 'rgba(41,171,226,0.2)'}`, flexShrink: 0 }}>
+                                {cat.tipo === 'popular' ? 'Popular' : 'Interna'}
+                              </span>
+                            </label>
+                          ))
+                        )}
+                      </div>
                     </div>
 
                     {/* Foto */}
@@ -849,13 +994,18 @@ export function DashboardView({
                               <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#7D7D7D', marginTop: 3 }}>
                                 {carro.nome_dono}{carro.equipe ? ` · ${carro.equipe}` : ''}
                               </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
                                 <span style={{ background: '#FFC000', color: '#000000', padding: '2px 8px', fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, fontWeight: 700 }}>
                                   {carro.numero_inscricao}
                                 </span>
                                 <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, color: '#7D7D7D' }}>
                                   {carro.ano} {carro.altura_mm && carro.altura_mm > 0 ? `· ${carro.altura_mm}mm` : ''}
                                 </span>
+                                {carro.categorias_ids && carro.categorias_ids.length > 0 && (
+                                  <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, color: '#FFC000', background: 'rgba(255,192,0,0.08)', border: '1px solid rgba(255,192,0,0.2)', padding: '1px 6px' }}>
+                                    {carro.categorias_ids.length} cat.
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -1126,7 +1276,7 @@ export function DashboardView({
                     <thead>
                       <tr style={{ borderBottom: '1px solid #202020' }}>
                         {['Posição', 'Inscrição', 'Modelo', 'Dono(a)',
-                          valTab === 'ano' ? 'Ano' : valTab === 'rodagem' ? 'KM Rodado' : 'Carros'].map((h) => (
+                          valTab === 'ano' ? 'Ano' : valTab === 'rodagem' ? 'KM Rodado' : 'Pessoas'].map((h) => (
                             <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#7D7D7D', fontSize: 11 }}>
                               {h}
                             </th>
@@ -1162,17 +1312,25 @@ export function DashboardView({
                       })}
 
                       {valTab === 'equipes' && (() => {
-                        const teamCounts: Record<string, number> = {};
-                        carros.forEach((c) => { if (c.equipe?.trim()) { const t = c.equipe.trim(); teamCounts[t] = (teamCounts[t] || 0) + 1; } });
-                        return Object.entries(teamCounts).sort(([, a], [, b]) => b - a).map(([teamName, count], index) => (
+                        // Agrupa por equipe e SOMA o número de pessoas (não conta carros)
+                        const teamPeople: Record<string, number> = {};
+                        const teamCarros: Record<string, number> = {};
+                        carros.forEach((c) => {
+                          if (c.equipe?.trim()) {
+                            const t = c.equipe.trim();
+                            teamPeople[t] = (teamPeople[t] || 0) + (c.pessoas_equipe || 0);
+                            teamCarros[t] = (teamCarros[t] || 0) + 1;
+                          }
+                        });
+                        return Object.entries(teamPeople).sort(([, a], [, b]) => b - a).map(([teamName, pessoasTotal], index) => (
                           <tr key={teamName} style={{ borderBottom: '1px solid #181818', background: index === 0 ? 'rgba(255,192,0,0.06)' : 'transparent' }}>
                             <td style={{ padding: '12px 16px', color: index === 0 ? '#FFC000' : '#7D7D7D', fontWeight: 700 }}>
                               {index === 0 ? '🏆 1ª' : `${index + 1}ª`}
                             </td>
                             <td style={{ padding: '12px 16px', color: '#FFC000', fontWeight: 700 }}>—</td>
                             <td style={{ padding: '12px 16px', color: '#FFFFFF' }}>{teamName}</td>
-                            <td style={{ padding: '12px 16px', color: '#969696' }}>—</td>
-                            <td style={{ padding: '12px 16px', color: index === 0 ? '#FFC000' : '#FFFFFF', fontWeight: 700 }}>{count} carros</td>
+                            <td style={{ padding: '12px 16px', color: '#969696' }}>{teamCarros[teamName]} carro(s)</td>
+                            <td style={{ padding: '12px 16px', color: index === 0 ? '#FFC000' : '#FFFFFF', fontWeight: 700 }}>{pessoasTotal} pessoas</td>
                           </tr>
                         ));
                       })()}

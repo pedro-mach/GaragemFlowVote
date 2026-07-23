@@ -21,7 +21,14 @@ create table if not exists public.eventos (
   criado_em timestamptz default now() not null
 );
 
--- 4. Tabela de Carros
+-- 4. Tabela de Equipes
+create table if not exists public.equipes (
+  id uuid primary key default gen_random_uuid(),
+  nome text unique not null,
+  criado_em timestamptz default now() not null
+);
+
+-- 5. Tabela de Carros
 create table if not exists public.carros (
   id uuid primary key default gen_random_uuid(),
   evento_id uuid not null references public.eventos(id) on delete cascade,
@@ -32,12 +39,14 @@ create table if not exists public.carros (
   url_foto text,
   nome_dono text not null default '',
   telefone_dono text,
-  equipe text,
+  equipe text, -- nome da equipe (redundância para compatibilidade)
+  equipe_id uuid references public.equipes(id) on delete set null, -- FK para equipe
+  pessoas_equipe integer not null default 0, -- nº de pessoas uniformizadas que vieram com este carro
   km_rodado integer not null default 0,
   criado_em timestamptz default now() not null
 );
 
--- 5. Tabela de Categorias
+-- 6. Tabela de Categorias
 create table if not exists public.categorias (
   id uuid primary key default gen_random_uuid(),
   nome text unique not null, -- ex: 'Mais Bonito', 'Destaque', 'Mais Baixo'
@@ -45,7 +54,16 @@ create table if not exists public.categorias (
   criado_em timestamptz default now() not null
 );
 
--- 6. Tabela de Votos
+-- 7. Tabela de Inscrições (Carro × Categoria) — em quais categorias o carro concorre
+create table if not exists public.carro_categorias (
+  id uuid primary key default gen_random_uuid(),
+  carro_id uuid not null references public.carros(id) on delete cascade,
+  categoria_id uuid not null references public.categorias(id) on delete cascade,
+  criado_em timestamptz default now() not null,
+  constraint unique_carro_categoria unique (carro_id, categoria_id)
+);
+
+-- 8. Tabela de Votos
 create table if not exists public.votos (
   id uuid primary key default gen_random_uuid(),
   eleitor_id uuid not null references public.eleitores(id) on delete cascade,
@@ -56,22 +74,38 @@ create table if not exists public.votos (
   constraint unique_eleitor_categoria_evento unique (eleitor_id, categoria_id, evento_id)
 );
 
--- Habilitar RLS (Row Level Security) - para simplificar e garantir funcionamento imediato
--- nas configurações locais ou desenvolvimento rápido, desative RLS ou configure políticas permissivas.
+-- Habilitar RLS (Row Level Security)
 alter table public.eleitores enable row level security;
 alter table public.eventos enable row level security;
+alter table public.equipes enable row level security;
 alter table public.carros enable row level security;
 alter table public.categorias enable row level security;
+alter table public.carro_categorias enable row level security;
 alter table public.votos enable row level security;
 
 -- Criar políticas de acesso aberto temporárias para funcionamento do app cliente
+drop policy if exists "Acesso livre a eleitores" on public.eleitores;
 create policy "Acesso livre a eleitores" on public.eleitores for all using (true) with check (true);
+
+drop policy if exists "Acesso livre a eventos" on public.eventos;
 create policy "Acesso livre a eventos" on public.eventos for all using (true) with check (true);
+
+drop policy if exists "Acesso livre a equipes" on public.equipes;
+create policy "Acesso livre a equipes" on public.equipes for all using (true) with check (true);
+
+drop policy if exists "Acesso livre a carros" on public.carros;
 create policy "Acesso livre a carros" on public.carros for all using (true) with check (true);
+
+drop policy if exists "Acesso livre a categorias" on public.categorias;
 create policy "Acesso livre a categorias" on public.categorias for all using (true) with check (true);
+
+drop policy if exists "Acesso livre a carro_categorias" on public.carro_categorias;
+create policy "Acesso livre a carro_categorias" on public.carro_categorias for all using (true) with check (true);
+
+drop policy if exists "Acesso livre a votos" on public.votos;
 create policy "Acesso livre a votos" on public.votos for all using (true) with check (true);
 
--- 7. Categorias Iniciais Padrão
+-- 9. Categorias Iniciais Padrão
 insert into public.categorias (nome, tipo) values
   ('Destaque Masculino', 'popular'),
   ('Destaque Feminino', 'popular'),
@@ -80,3 +114,15 @@ insert into public.categorias (nome, tipo) values
   ('Maior rodagem', 'interna')
 on conflict (nome) do update set tipo = excluded.tipo;
 
+-- ─── MIGRAÇÕES (para bancos já existentes) ────────────────────────────────────
+-- Execute apenas se o banco já existia antes deste schema:
+
+-- Criar tabela equipes se não existir
+-- (já coberto pelo "create table if not exists" acima)
+
+-- Adicionar colunas novas na tabela carros (se já existir)
+alter table public.carros add column if not exists equipe_id uuid references public.equipes(id) on delete set null;
+alter table public.carros add column if not exists pessoas_equipe integer not null default 0;
+
+-- Criar tabela carro_categorias se não existir
+-- (já coberto pelo "create table if not exists" acima)

@@ -21,11 +21,14 @@ function App() {
     evento,
     carros,
     categorias,
+    equipes,
     isLoading: dataLoading,
     error: dataError,
     atualizarNomeEvento,
     cadastrarCarro,
     deletarCarro,
+    cadastrarEquipe,
+    deletarEquipe,
     cadastrarCategoria,
     editarCategoria,
     toggleOcultarCategoria,
@@ -54,6 +57,7 @@ function App() {
         evento={evento}
         carros={carros}
         categorias={categorias}
+        equipes={equipes}
         resultados={resultados}
         totalUsuarios={totalUsuarios}
         totalVotos={totalVotos}
@@ -62,6 +66,8 @@ function App() {
         atualizarNomeEvento={atualizarNomeEvento}
         cadastrarCarro={cadastrarCarro}
         deletarCarro={deletarCarro}
+        cadastrarEquipe={cadastrarEquipe}
+        deletarEquipe={deletarEquipe}
         cadastrarCategoria={cadastrarCategoria}
         editarCategoria={editarCategoria}
         toggleOcultarCategoria={toggleOcultarCategoria}

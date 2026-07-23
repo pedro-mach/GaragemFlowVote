@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { supabase, isSupabaseConfigured } from '../supabaseClient';
-import type { Carro, Categoria, Evento } from '../data/mockData';
-import { mockCarros, mockCategorias, mockEvento } from '../data/mockData';
+import type { Carro, Categoria, Equipe, Evento } from '../data/mockData';
+import { mockCarros, mockCategorias, mockEquipes, mockEvento } from '../data/mockData';
 
 export function useCarros() {
   const [evento, setEvento] = useState<Evento | null>(null);
   const [carros, setCarros] = useState<Carro[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [equipes, setEquipes] = useState<Equipe[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -56,7 +57,16 @@ export function useCarros() {
 
         setCategorias(formattedCats);
 
-        // 3. Buscar carros do evento ativo
+        // 3. Buscar equipes
+        const { data: equipesData, error: equipesError } = await supabase
+          .from('equipes')
+          .select('*')
+          .order('nome');
+
+        if (equipesError) throw equipesError;
+        setEquipes(equipesData || []);
+
+        // 4. Buscar carros do evento ativo com suas categorias inscritas
         if (activeEvent) {
           const { data: carsData, error: carsError } = await supabase
             .from('carros')
@@ -65,7 +75,31 @@ export function useCarros() {
             .order('numero_inscricao');
 
           if (carsError) throw carsError;
-          setCarros(carsData || []);
+
+          // Buscar inscricoes de categoria por carro
+          const carroIds = (carsData || []).map((c) => c.id);
+          let categoriasMap: Record<string, string[]> = {};
+
+          if (carroIds.length > 0) {
+            const { data: inscData, error: inscError } = await supabase
+              .from('carro_categorias')
+              .select('carro_id, categoria_id')
+              .in('carro_id', carroIds);
+
+            if (inscError) throw inscError;
+
+            (inscData || []).forEach((insc) => {
+              if (!categoriasMap[insc.carro_id]) categoriasMap[insc.carro_id] = [];
+              categoriasMap[insc.carro_id].push(insc.categoria_id);
+            });
+          }
+
+          const formattedCarros = (carsData || []).map((c) => ({
+            ...c,
+            categorias_ids: categoriasMap[c.id] || [],
+          }));
+
+          setCarros(formattedCarros);
         }
       } else {
         // Fluxo offline / Mock
@@ -83,6 +117,14 @@ export function useCarros() {
         } else {
           localStorage.setItem('garagemflow_categorias', JSON.stringify(mockCategorias));
           setCategorias(mockCategorias);
+        }
+
+        const localEquipes = localStorage.getItem('garagemflow_equipes');
+        if (localEquipes) {
+          setEquipes(JSON.parse(localEquipes));
+        } else {
+          localStorage.setItem('garagemflow_equipes', JSON.stringify(mockEquipes));
+          setEquipes(mockEquipes);
         }
 
         const localCarros = localStorage.getItem('garagemflow_db_carros');
@@ -138,7 +180,9 @@ export function useCarros() {
     urlFoto?: string,
     equipe?: string,
     kmRodado?: number,
-    genero?: 'M' | 'F'
+    genero?: 'M' | 'F',
+    categoriasIds?: string[],
+    pessoasEquipe?: number
   ) => {
     if (!evento) return;
     setIsLoading(true);
@@ -148,7 +192,14 @@ export function useCarros() {
       const donoValue = nomeDono || 'Não informado';
 
       if (isSupabaseConfigured && supabase) {
-        const { error: insertError } = await supabase
+        // Resolver equipe_id se o nome da equipe for fornecido
+        let equipeId: string | null = null;
+        if (equipe?.trim()) {
+          const equipFound = equipes.find((e) => e.nome.toLowerCase() === equipe.trim().toLowerCase());
+          if (equipFound) equipeId = equipFound.id;
+        }
+
+        const { data: insertedCar, error: insertError } = await supabase
           .from('carros')
           .insert({
             evento_id: evento.id,
@@ -160,10 +211,26 @@ export function useCarros() {
             telefone_dono: telefoneDono,
             url_foto: fotoUrl,
             equipe: equipe || null,
+            equipe_id: equipeId,
             km_rodado: kmRodado || 0,
             genero: genero || null,
-          });
+            pessoas_equipe: pessoasEquipe || 0,
+          })
+          .select()
+          .single();
         if (insertError) throw insertError;
+
+        // Inserir inscrições nas categorias
+        if (insertedCar && categoriasIds && categoriasIds.length > 0) {
+          const inscricoes = categoriasIds.map((catId) => ({
+            carro_id: insertedCar.id,
+            categoria_id: catId,
+          }));
+          const { error: inscError } = await supabase
+            .from('carro_categorias')
+            .insert(inscricoes);
+          if (inscError) throw inscError;
+        }
       } else {
         const currentCarros = [...carros];
         const newCarro: Carro = {
@@ -179,6 +246,8 @@ export function useCarros() {
           equipe: equipe || undefined,
           km_rodado: kmRodado || 0,
           genero: genero,
+          categorias_ids: categoriasIds || [],
+          pessoas_equipe: pessoasEquipe || 0,
         };
         currentCarros.push(newCarro);
         localStorage.setItem('garagemflow_db_carros', JSON.stringify(currentCarros));
@@ -209,6 +278,55 @@ export function useCarros() {
     } catch (err: any) {
       console.error('Erro ao deletar carro:', err);
       setError(err.message || 'Erro ao deletar carro.');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const cadastrarEquipe = async (nome: string) => {
+    if (!nome.trim()) return;
+    setIsLoading(true);
+    try {
+      if (isSupabaseConfigured && supabase) {
+        const { error: insertError } = await supabase
+          .from('equipes')
+          .insert({ nome: nome.trim() });
+        if (insertError) throw insertError;
+      } else {
+        const currentEquipes = [...equipes];
+        const newEquipe: Equipe = {
+          id: `eq-${Math.random().toString(36).substr(2, 9)}`,
+          nome: nome.trim(),
+        };
+        currentEquipes.push(newEquipe);
+        localStorage.setItem('garagemflow_equipes', JSON.stringify(currentEquipes));
+      }
+      await fetchDados();
+    } catch (err: any) {
+      console.error('Erro ao cadastrar equipe:', err);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const deletarEquipe = async (id: string) => {
+    setIsLoading(true);
+    try {
+      if (isSupabaseConfigured && supabase) {
+        const { error: deleteError } = await supabase
+          .from('equipes')
+          .delete()
+          .eq('id', id);
+        if (deleteError) throw deleteError;
+      } else {
+        const currentEquipes = equipes.filter((e) => e.id !== id);
+        localStorage.setItem('garagemflow_equipes', JSON.stringify(currentEquipes));
+      }
+      await fetchDados();
+    } catch (err: any) {
+      console.error('Erro ao deletar equipe:', err);
       throw err;
     } finally {
       setIsLoading(false);
@@ -342,12 +460,15 @@ export function useCarros() {
     evento,
     carros,
     categorias,
+    equipes,
     isLoading,
     error,
     refresh: fetchDados,
     atualizarNomeEvento,
     cadastrarCarro,
     deletarCarro,
+    cadastrarEquipe,
+    deletarEquipe,
     cadastrarCategoria,
     editarCategoria,
     toggleOcultarCategoria,

@@ -15,6 +15,12 @@ export interface Categoria {
   oculta?: boolean;
 }
 
+export interface Equipe {
+  id: string;
+  nome: string;
+  criado_em?: string;
+}
+
 export interface Carro {
   id: string;
   evento_id: string;
@@ -28,6 +34,10 @@ export interface Carro {
   equipe?: string;
   km_rodado?: number;
   genero?: 'M' | 'F';
+  /** IDs das categorias nas quais este carro está inscrito */
+  categorias_ids?: string[];
+  /** Quantidade de pessoas uniformizadas da equipe que vieram com este carro */
+  pessoas_equipe?: number;
 }
 
 export interface Voto {
@@ -62,6 +72,9 @@ export const mockCategorias: Categoria[] = [
   { id: 'cat-4', nome: 'Maior equipe uniformizada', tipo: 'interna', oculta: false },
   { id: 'cat-5', nome: 'Maior rodagem', tipo: 'interna', oculta: false },
 ];
+
+// Equipes Padrão
+export const mockEquipes: Equipe[] = [];
 
 // Carros
 export const mockCarros: Carro[] = [];;
