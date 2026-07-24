@@ -158,7 +158,7 @@ export function DashboardView({
   const [ano, setAno] = useState('');
   const [alturaMm, setAlturaMm] = useState('');
   const [nomeDono, setNomeDono] = useState('');
-  const [genero, setGenero] = useState<'M'|'F'>('M');
+  const [genero, setGenero] = useState<'M' | 'F'>('M');
   const [telefoneDono, setTelefoneDono] = useState('');
   const [urlFoto, setUrlFoto] = useState('');
   const [equipeId, setEquipeId] = useState('');
@@ -578,9 +578,9 @@ export function DashboardView({
 
           {/* Header com Botão Sandwich + Nome do Evento */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-16" style={{ background: '#181818', borderBottom: '1px solid #202020', padding: '16px 24px' }}>
-            
+
             <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-16 w-full md:w-auto">
-              
+
               <div className="flex items-center justify-between w-full md:w-auto">
                 {/* Botão Sandwich Menu */}
                 <button
@@ -1299,19 +1299,19 @@ export function DashboardView({
                                 style={{ background: 'rgba(180,0,0,0.1)', border: '1px solid rgba(200,50,50,0.3)', color: '#ef4444', padding: 8, cursor: 'pointer', display: 'flex', transition: 'background 0.12s' }}
                                 title="Excluir"
                                 onMouseEnter={e => { e.currentTarget.style.background = 'rgba(180,0,0,0.25)'; }}
-                                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(180,0,0,0.1)'; }}
-                                >
-                                  <Trash2 size={15} />
-                                </button>
-                              </div>
+                                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(180,0,0,0.1)'; }}
+                              >
+                                <Trash2 size={15} />
+                              </button>
                             </div>
-                          ))
-                        )}
-                      </div>
+                          </div>
+                        ))
+                      )}
                     </div>
                   </div>
-                );
-              })()}
+                </div>
+              );
+            })()}
 
             {/* ══════ TAB: GERENCIAR CATEGORIAS ══════ */}
             {activeTab === 'categorias' && (
@@ -1877,7 +1877,7 @@ export function DashboardView({
         <span>Desenvolvido por</span>
         <span className="dev-dot" />
         <a
-          href="https://pedromachado.dev.br/"
+          href="https://pedromachado.dev.br/votacao"
           target="_blank"
           rel="noopener noreferrer"
           style={{ pointerEvents: 'auto' }}

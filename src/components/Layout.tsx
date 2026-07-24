@@ -17,7 +17,7 @@ export function Layout({ children }: LayoutProps) {
       <footer className="dev-credit-footer">
         <span>Desenvolvido por</span>
         <span className="dev-dot" />
-        <a href="https://pedromachado.dev.br/" target="_blank" rel="noopener noreferrer">
+        <a href="https://pedromachado.dev.br/votacao" target="_blank" rel="noopener noreferrer">
           PedroMachado.Dev
         </a>
       </footer>
