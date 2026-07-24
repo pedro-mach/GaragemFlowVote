@@ -75,6 +75,27 @@ export function GalleryView({
   const visibleCategorias = safeCategorias.filter((c) => !c?.oculta);
   const currentCategory = visibleCategorias.find((c) => c?.id === activeCategoryId);
   const isInternalCategory = currentCategory?.tipo === 'interna';
+  const isMaiorEquipeCategory = currentCategory?.id === 'cat-4' || currentCategory?.nome?.toLowerCase().includes('equipe');
+
+  const equipesUniformizadas = React.useMemo(() => {
+    const groups: Record<string, number> = {};
+    safeCarros.forEach(c => {
+      if (c.equipe && c.equipe.trim() && c.pessoas_equipe && c.pessoas_equipe > 0) {
+        const name = c.equipe.trim();
+        groups[name] = Math.max(groups[name] || 0, c.pessoas_equipe);
+      }
+    });
+    
+    let list = Object.entries(groups)
+      .map(([nome, total]) => ({ nome, total }));
+      
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase().trim();
+      list = list.filter(item => item.nome.toLowerCase().includes(term));
+    }
+    
+    return list.sort((a, b) => b.total - a.total);
+  }, [safeCarros, searchTerm]);
 
   React.useEffect(() => {
     if (visibleCategorias.length > 0 && (!activeCategoryId || !visibleCategorias.some((c) => c.id === activeCategoryId))) {
@@ -182,73 +203,79 @@ export function GalleryView({
         style={{
           background: '#181818',
           borderBottom: '1px solid #202020',
-          padding: '16px 20px',
+          padding: '14px 16px 12px',
           display: 'flex',
           flexDirection: 'column',
-          gap: 12,
+          gap: 10,
           marginBottom: 1,
         }}
       >
-        {/* Linha 1: Logo + Evento + Status */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div
-              style={{
-                width: 40,
-                height: 40,
-                background: '#202020',
-                border: '1px solid rgba(255,192,0,0.25)',
-                flexShrink: 0,
-                overflow: 'hidden',
-              }}
-            >
-              <img
-                src="/Logo-evento.jpeg"
-                alt="Logo do Evento"
-                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
-              />
-            </div>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                <span
-                  style={{
-                    width: 7,
-                    height: 7,
-                    borderRadius: '50%',
-                    background: votacaoAberta ? '#4ade80' : '#ef4444',
-                    display: 'inline-block',
-                    flexShrink: 0,
-                    animation: votacaoAberta ? 'pulse-dot 1.4s infinite' : 'none',
-                  }}
-                />
-                <span style={{
-                  fontFamily: "'Barlow Condensed', sans-serif",
-                  fontSize: 10,
-                  fontWeight: 600,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.18em',
-                  color: '#FFC000',
-                }}>
-                  {votacaoAberta ? 'Votação Popular Aberta' : 'Votação Encerrada'}
-                </span>
-              </div>
-              <h2 style={{
-                fontFamily: "'Barlow Condensed', sans-serif",
-                fontWeight: 700,
-                fontSize: 18,
-                textTransform: 'uppercase',
-                letterSpacing: '0.06em',
-                color: '#FFFFFF',
-                margin: 0,
-                lineHeight: 1,
-              }}>
-                {evento?.nome || 'Regional das Equipes'}
-              </h2>
-            </div>
+        {/* Linha 1: Logo + Status + Ações */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* Logo */}
+          <div
+            style={{
+              width: 38,
+              height: 38,
+              background: '#202020',
+              border: '1px solid rgba(255,192,0,0.25)',
+              flexShrink: 0,
+              overflow: 'hidden',
+            }}
+          >
+            <img
+              src="/Logo-evento.jpeg"
+              alt="Logo do Evento"
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+              onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+            />
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {/* Status + Nome do Evento */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+              <span
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  background: votacaoAberta ? '#4ade80' : '#ef4444',
+                  display: 'inline-block',
+                  flexShrink: 0,
+                  animation: votacaoAberta ? 'pulse-dot 1.4s infinite' : 'none',
+                }}
+              />
+              <span style={{
+                fontFamily: "'Barlow Condensed', sans-serif",
+                fontSize: 10,
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.14em',
+                color: '#FFC000',
+                whiteSpace: 'nowrap',
+              }}>
+                {votacaoAberta ? 'Votação Popular Aberta' : 'Votação Encerrada'}
+              </span>
+            </div>
+            <h2 style={{
+              fontFamily: "'Barlow Condensed', sans-serif",
+              fontWeight: 700,
+              fontSize: 16,
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              color: '#FFFFFF',
+              margin: 0,
+              lineHeight: 1.1,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}>
+              {evento?.nome || 'Regional das Equipes'}
+            </h2>
+          </div>
+
+          {/* Ações: Cadastrar Equipe + Sair */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
             {cadastrarEquipe && (
               <button
                 onClick={() => {
@@ -257,41 +284,53 @@ export function GalleryView({
                   setEquipeValidationMsg(null);
                 }}
                 className="btn-gold"
-                style={{ height: 36, padding: '0 12px', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}
+                style={{
+                  height: 34,
+                  padding: '0 10px',
+                  fontSize: 11,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  whiteSpace: 'nowrap',
+                }}
                 title="Cadastrar Minha Equipe"
               >
-                <UserPlus size={14} />
-                <span>Cadastrar Equipe</span>
+                <UserPlus size={13} />
+                <span className="hidden sm:inline">Cadastrar Equipe</span>
               </button>
             )}
 
             <button
               onClick={logout}
               className="btn-ghost"
-              style={{ height: 36, padding: '0 14px', fontSize: 12 }}
+              style={{
+                height: 34,
+                padding: '0 10px',
+                fontSize: 11,
+                borderColor: 'rgba(255,255,255,0.2)',
+              }}
               title="Sair"
             >
               <LogOut size={14} />
-              <span className="hidden sm:inline">SAIR</span>
             </button>
           </div>
         </div>
 
-        {/* Linha 1.5: Alternador de Tela (Votação vs Resultados) */}
-        <div style={{ display: 'flex', gap: 4, background: '#0a0a0a', padding: 3, border: '1px solid #202020', margin: '4px 0' }}>
+        {/* Linha 2: Alternador de Tela (Votação vs Resultados) */}
+        <div style={{ display: 'flex', gap: 0, background: '#0a0a0a', padding: 3, border: '1px solid #202020' }}>
           <button
             onClick={() => setActiveMainTab('votacao')}
             style={{
               flex: 1,
-              height: 38,
+              height: 36,
               background: activeMainTab === 'votacao' ? '#FFC000' : 'transparent',
               color: activeMainTab === 'votacao' ? '#000000' : '#7D7D7D',
               border: 'none',
               fontFamily: "'Barlow Condensed', sans-serif",
               fontWeight: 700,
-              fontSize: 13,
+              fontSize: 12,
               textTransform: 'uppercase',
-              letterSpacing: '0.08em',
+              letterSpacing: '0.06em',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -300,7 +339,7 @@ export function GalleryView({
               transition: 'all 0.2s ease',
             }}
           >
-            <Vote size={15} />
+            <Vote size={14} />
             <span>Votação de Carros</span>
           </button>
           <button
@@ -310,15 +349,15 @@ export function GalleryView({
             }}
             style={{
               flex: 1,
-              height: 38,
+              height: 36,
               background: activeMainTab === 'resultados' ? '#FFC000' : 'transparent',
               color: activeMainTab === 'resultados' ? '#000000' : '#7D7D7D',
               border: 'none',
               fontFamily: "'Barlow Condensed', sans-serif",
               fontWeight: 700,
-              fontSize: 13,
+              fontSize: 12,
               textTransform: 'uppercase',
-              letterSpacing: '0.08em',
+              letterSpacing: '0.06em',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -327,7 +366,7 @@ export function GalleryView({
               transition: 'all 0.2s ease',
             }}
           >
-            <Trophy size={15} />
+            <Trophy size={14} />
             <span>Resultados & Ranking</span>
           </button>
         </div>
@@ -551,22 +590,15 @@ export function GalleryView({
                     </div>
                     {equipeLider ? (
                       <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                        {equipeLider.url_foto ? (
-                          <img src={equipeLider.url_foto} alt={equipeLider.modelo} style={{ width: 56, height: 56, objectFit: 'cover', border: '1px solid #313131', flexShrink: 0 }} />
-                        ) : (
-                          <div style={{ width: 56, height: 56, background: '#0a0a0a', border: '1px solid #313131', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                            <Car size={24} color="#7D7D7D" />
-                          </div>
-                        )}
+                        <div style={{ width: 56, height: 56, background: '#0a0a0a', border: '1px solid rgba(34, 197, 94, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <Users size={24} color="#22c55e" />
+                        </div>
                         <div>
                           <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 15, color: '#FFFFFF' }}>
                             {equipeLider.equipe || 'Equipe Sem Nome'}
                           </div>
                           <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, color: '#22c55e', fontWeight: 700 }}>
                             {equipeLider.pessoas_equipe} Integrantes Uniformizados
-                          </div>
-                          <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#7D7D7D' }}>
-                            Veículo: {equipeLider.modelo} (#{equipeLider.numero_inscricao})
                           </div>
                         </div>
                       </div>
@@ -811,7 +843,9 @@ export function GalleryView({
         }}
       >
         <span className="label-ds">
-          {eventCarros.length} veículo(s)
+          {isMaiorEquipeCategory
+            ? `${equipesUniformizadas.length} equipe(s)`
+            : `${eventCarros.length} veículo(s)`}
         </span>
         {votoNestaCategoria && (
           <span style={{
@@ -831,333 +865,440 @@ export function GalleryView({
         )}
       </div>
 
-      {/* ===== GRID DE CARROS ===== */}
+      {/* ===== GRID DE CARROS / EQUIPES ===== */}
       <div style={{ padding: '20px 0', flex: 1 }}>
-        {eventCarros.length === 0 ? (
-          <div
-            style={{
-              background: '#181818',
-              border: '1px solid #202020',
-              padding: '48px 24px',
-              textAlign: 'center',
-              margin: '0 0',
-            }}
-          >
-            <Car size={36} color="#313131" style={{ margin: '0 auto 12px' }} />
-            <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 14, color: '#7D7D7D', margin: 0 }}>
-              Nenhum veículo encontrado nesta categoria.
-            </p>
-          </div>
-        ) : (
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-              gap: 2,
-            }}
-          >
-            {eventCarros.slice(0, visibleCount).map((carro) => {
-              const isVotadoPorMim = votoNestaCategoria?.carro_id === carro.id;
-              const disabled = !votacaoAberta || !!votoNestaCategoria || isLoading;
-
-              return (
+        {isMaiorEquipeCategory ? (
+          equipesUniformizadas.length === 0 ? (
+            <div
+              style={{
+                background: '#181818',
+                border: '1px solid #202020',
+                padding: '48px 24px',
+                textAlign: 'center',
+                margin: '0 0',
+              }}
+            >
+              <Users size={36} color="#313131" style={{ margin: '0 auto 12px' }} />
+              <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 14, color: '#7D7D7D', margin: 0 }}>
+                Nenhuma equipe com integrantes cadastrada neste evento.
+              </p>
+            </div>
+          ) : (
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                gap: 16,
+              }}
+            >
+              {equipesUniformizadas.slice(0, visibleCount).map((eq, index) => (
                 <div
-                  key={carro.id}
+                  key={eq.nome}
+                  className="card-surface"
                   style={{
-                    background: isVotadoPorMim ? '#181818' : '#181818',
-                    border: isVotadoPorMim
-                      ? '1px solid #FFC000'
-                      : '1px solid #202020',
+                    padding: '24px 20px',
+                    borderTop: index === 0 ? '3px solid #22c55e' : '1px solid #202020',
                     display: 'flex',
-                    flexDirection: 'column',
-                    transition: 'border-color 0.15s ease',
-                    outline: isVotadoPorMim ? '1px solid rgba(255,192,0,0.3)' : 'none',
-                    outlineOffset: '-1px',
+                    alignItems: 'center',
+                    gap: 16,
                     position: 'relative',
                   }}
                 >
-                  {/* Foto ou Placeholder sem foto */}
-                  <div
-                    style={{ position: 'relative', height: 200, background: '#0a0a0a', overflow: 'hidden', cursor: carro.url_foto ? 'zoom-in' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                    onClick={() => {
-                      if (carro.url_foto) {
-                        setZoomPhoto({ url: carro.url_foto, modelo: carro.modelo, numero: carro.numero_inscricao });
-                      }
-                    }}
-                    title={carro.url_foto ? "Clique para ampliar" : "Sem foto cadastrada"}
-                  >
-                    {carro.url_foto ? (
-                      <img
-                        src={carro.url_foto}
-                        alt={carro.modelo}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.2s ease' }}
-                        loading="lazy"
-                        onMouseEnter={e => { (e.currentTarget as HTMLImageElement).style.transform = 'scale(1.04)'; }}
-                        onMouseLeave={e => { (e.currentTarget as HTMLImageElement).style.transform = 'scale(1)'; }}
-                      />
-                    ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, color: '#313131' }}>
-                        <Car size={48} strokeWidth={1.5} color="#555555" />
-                        <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, color: '#666666', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Sem foto enviada</span>
-                      </div>
-                    )}
-
-                    {/* Ícone zoom hint se houver foto */}
-                    {carro.url_foto && (
-                      <div
-                        style={{
-                          position: 'absolute',
-                          bottom: 8,
-                          right: 8,
-                          background: 'rgba(0,0,0,0.65)',
-                          border: '1px solid rgba(255,192,0,0.4)',
-                          borderRadius: 2,
-                          padding: '4px 6px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 4,
-                          pointerEvents: 'none',
-                        }}
-                      >
-                        <ZoomIn size={12} color="#FFC000" />
-                      </div>
-                    )}
-
-                    {/* Badge número */}
+                  {/* Rank Badge para a maior equipe */}
+                  {index === 0 && (
                     <div
                       style={{
                         position: 'absolute',
                         top: 0,
-                        left: 0,
-                        background: '#000000',
-                        borderBottom: '1px solid #FFC000',
-                        borderRight: '1px solid #FFC000',
-                        padding: '6px 12px',
+                        right: 0,
+                        background: '#22c55e',
+                        color: '#000000',
+                        padding: '2px 8px',
                         fontFamily: "'Barlow Condensed', sans-serif",
-                        fontSize: 11,
+                        fontSize: 10,
                         fontWeight: 700,
                         textTransform: 'uppercase',
-                        letterSpacing: '0.12em',
-                        color: '#FFC000',
+                        letterSpacing: '0.08em',
                       }}
                     >
-                      {carro.numero_inscricao}
+                      Líder
                     </div>
+                  )}
 
-                    {/* Overlay "Votado" */}
-                    {isVotadoPorMim && (
-                      <div
-                        style={{
-                          position: 'absolute',
-                          inset: 0,
-                          background: 'rgba(0,0,0,0.75)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}
-                      >
-                        <div
-                          style={{
-                            background: '#FFC000',
-                            color: '#000000',
-                            padding: '10px 20px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 8,
-                            fontFamily: "'Barlow Condensed', sans-serif",
-                            fontWeight: 700,
-                            fontSize: 14,
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.1em',
-                          }}
-                        >
-                          <Trophy size={18} color="#000000" />
-                          Seu Voto Registrado
-                        </div>
-                      </div>
-                    )}
+                  <div
+                    style={{
+                      width: 52,
+                      height: 52,
+                      background: '#0a0a0a',
+                      border: `1px solid ${index === 0 ? 'rgba(34, 197, 94, 0.4)' : '#313131'}`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Users size={24} color={index === 0 ? '#22c55e' : '#7D7D7D'} />
                   </div>
 
-                  {/* Info */}
-                  <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    <div>
-                      <h3 style={{
+                  <div>
+                    <h3
+                      style={{
                         fontFamily: "'Barlow Condensed', sans-serif",
                         fontWeight: 700,
-                        fontSize: 20,
+                        fontSize: 18,
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
                         color: '#FFFFFF',
                         margin: '0 0 4px 0',
                         lineHeight: 1.1,
-                      }}>
-                        {carro.modelo}
-                      </h3>
-                      <p style={{
-                        fontFamily: "'Barlow', sans-serif",
-                        fontSize: 12,
-                        color: '#7D7D7D',
-                        margin: 0,
-                      }}>
-                        {carro.nome_dono}{carro.equipe ? ` · ${carro.equipe}` : ''}
-                      </p>
-                    </div>
-
-                    {/* Specs */}
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                      <span
-                        style={{
-                          background: '#202020',
-                          border: '1px solid #313131',
-                          padding: '4px 10px',
-                          fontFamily: "'Barlow Condensed', sans-serif",
-                          fontSize: 11,
-                          color: '#969696',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 5,
-                        }}
-                      >
-                        <Calendar size={11} color="#FFC000" />
-                        {carro.ano}
-                      </span>
-                      {carro.altura_mm !== undefined && carro.altura_mm > 0 && (
-                        <span
-                          style={{
-                            background: '#202020',
-                            border: '1px solid #313131',
-                            padding: '4px 10px',
-                            fontFamily: "'Barlow Condensed', sans-serif",
-                            fontSize: 11,
-                            color: '#969696',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 5,
-                          }}
-                        >
-                          <Ruler size={11} color="#FFC000" />
-                          {carro.altura_mm}mm
-                        </span>
-                      )}
-                      {carro.km_rodado !== undefined && carro.km_rodado > 0 && (
-                        <span
-                          style={{
-                            background: '#202020',
-                            border: '1px solid #313131',
-                            padding: '4px 10px',
-                            fontFamily: "'Barlow Condensed', sans-serif",
-                            fontSize: 11,
-                            color: '#969696',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 5,
-                          }}
-                        >
-                          <Gauge size={11} color="#FFC000" />
-                          {carro.km_rodado}km
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Botão de Voto / Aviso Categoria Interna */}
-                    {isInternalCategory ? (
-                      <div
-                        style={{
-                          width: '100%',
-                          height: 44,
-                          background: '#181818',
-                          border: '1px solid #313131',
-                          color: '#7D7D7D',
-                          fontFamily: "'Barlow Condensed', sans-serif",
-                          fontWeight: 700,
-                          fontSize: 12,
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.1em',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: 6,
-                          marginTop: 'auto',
-                        }}
-                      >
-                        <Shield size={14} color="#29ABE2" />
-                        <span>Avaliação Técnica Interna</span>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => handleVoto(carro.id)}
-                        disabled={disabled}
-                        style={{
-                          width: '100%',
-                          height: 44,
-                          background: isVotadoPorMim
-                            ? '#FFC000'
-                            : votoNestaCategoria || !votacaoAberta
-                              ? '#181818'
-                              : 'transparent',
-                          color: isVotadoPorMim
-                            ? '#000000'
-                            : votoNestaCategoria || !votacaoAberta
-                              ? '#313131'
-                              : '#FFC000',
-                          border: isVotadoPorMim
-                            ? 'none'
-                            : votoNestaCategoria || !votacaoAberta
-                              ? '1px solid #313131'
-                              : '1px solid #FFC000',
-                          cursor: disabled ? 'not-allowed' : 'pointer',
-                          fontFamily: "'Barlow Condensed', sans-serif",
-                          fontWeight: 700,
-                          fontSize: 13,
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.12em',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: 8,
-                          transition: 'background 0.15s ease, color 0.15s ease',
-                          marginTop: 'auto',
-                        }}
-                        onMouseEnter={e => {
-                          if (!disabled && !isVotadoPorMim) {
-                            e.currentTarget.style.background = '#FFC000';
-                            e.currentTarget.style.color = '#000000';
-                          }
-                        }}
-                        onMouseLeave={e => {
-                          if (!disabled && !isVotadoPorMim) {
-                            e.currentTarget.style.background = 'transparent';
-                            e.currentTarget.style.color = '#FFC000';
-                          }
-                        }}
-                      >
-                        {isVotadoPorMim ? (
-                          <>
-                            <Trophy size={16} color="#000000" />
-                            <span>Votado!</span>
-                          </>
-                        ) : votoNestaCategoria ? (
-                          <>
-                            <CheckCircle2 size={16} color="#313131" />
-                            <span>Voto Já Realizado</span>
-                          </>
-                        ) : !votacaoAberta ? (
-                          <span>Votação Encerrada</span>
-                        ) : (
-                          <>
-                            <Vote size={16} color="#FFC000" />
-                            <span>Confirmar Voto</span>
-                          </>
-                        )}
-                      </button>
-                    )}
+                      }}
+                    >
+                      {eq.nome}
+                    </h3>
+                    <span
+                      style={{
+                        fontFamily: "'Barlow Condensed', sans-serif",
+                        fontSize: 13,
+                        color: index === 0 ? '#22c55e' : '#969696',
+                        fontWeight: index === 0 ? 700 : 500,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                      }}
+                    >
+                      {eq.total} Integrantes
+                    </span>
                   </div>
                 </div>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+          )
+        ) : (
+          eventCarros.length === 0 ? (
+            <div
+              style={{
+                background: '#181818',
+                border: '1px solid #202020',
+                padding: '48px 24px',
+                textAlign: 'center',
+                margin: '0 0',
+              }}
+            >
+              <Car size={36} color="#313131" style={{ margin: '0 auto 12px' }} />
+              <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 14, color: '#7D7D7D', margin: 0 }}>
+                Nenhum veículo encontrado nesta categoria.
+              </p>
+            </div>
+          ) : (
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                gap: 2,
+              }}
+            >
+              {eventCarros.slice(0, visibleCount).map((carro) => {
+                const isVotadoPorMim = votoNestaCategoria?.carro_id === carro.id;
+                const disabled = !votacaoAberta || !!votoNestaCategoria || isLoading;
+
+                return (
+                  <div
+                    key={carro.id}
+                    style={{
+                      background: isVotadoPorMim ? '#181818' : '#181818',
+                      border: isVotadoPorMim
+                        ? '1px solid #FFC000'
+                        : '1px solid #202020',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      transition: 'border-color 0.15s ease',
+                      outline: isVotadoPorMim ? '1px solid rgba(255,192,0,0.3)' : 'none',
+                      outlineOffset: '-1px',
+                      position: 'relative',
+                    }}
+                  >
+                    {/* Foto ou Placeholder sem foto */}
+                    <div
+                      style={{ position: 'relative', height: 200, background: '#0a0a0a', overflow: 'hidden', cursor: carro.url_foto ? 'zoom-in' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      onClick={() => {
+                        if (carro.url_foto) {
+                          setZoomPhoto({ url: carro.url_foto, modelo: carro.modelo, numero: carro.numero_inscricao });
+                        }
+                      }}
+                      title={carro.url_foto ? "Clique para ampliar" : "Sem foto cadastrada"}
+                    >
+                      {carro.url_foto ? (
+                        <img
+                          src={carro.url_foto}
+                          alt={carro.modelo}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.2s ease' }}
+                          loading="lazy"
+                          onMouseEnter={e => { (e.currentTarget as HTMLImageElement).style.transform = 'scale(1.04)'; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLImageElement).style.transform = 'scale(1)'; }}
+                        />
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, color: '#313131' }}>
+                          <Car size={48} strokeWidth={1.5} color="#555555" />
+                          <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, color: '#666666', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Sem foto enviada</span>
+                        </div>
+                      )}
+
+                      {/* Ícone zoom hint se houver foto */}
+                      {carro.url_foto && (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            bottom: 8,
+                            right: 8,
+                            background: 'rgba(0,0,0,0.65)',
+                            border: '1px solid rgba(255,192,0,0.4)',
+                            borderRadius: 2,
+                            padding: '4px 6px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 4,
+                            pointerEvents: 'none',
+                          }}
+                        >
+                          <ZoomIn size={12} color="#FFC000" />
+                        </div>
+                      )}
+
+                      {/* Badge número */}
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          background: '#000000',
+                          borderBottom: '1px solid #FFC000',
+                          borderRight: '1px solid #FFC000',
+                          padding: '6px 12px',
+                          fontFamily: "'Barlow Condensed', sans-serif",
+                          fontSize: 11,
+                          fontWeight: 700,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.12em',
+                          color: '#FFC000',
+                        }}
+                      >
+                        {carro.numero_inscricao}
+                      </div>
+
+                      {/* Overlay "Votado" */}
+                      {isVotadoPorMim && (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            inset: 0,
+                            background: 'rgba(0,0,0,0.75)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <div
+                            style={{
+                              background: '#FFC000',
+                              color: '#000000',
+                              padding: '10px 20px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 8,
+                              fontFamily: "'Barlow Condensed', sans-serif",
+                              fontWeight: 700,
+                              fontSize: 14,
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.1em',
+                            }}
+                          >
+                            <Trophy size={18} color="#000000" />
+                            Seu Voto Registrado
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Info */}
+                    <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      <div>
+                        <h3 style={{
+                          fontFamily: "'Barlow Condensed', sans-serif",
+                          fontWeight: 700,
+                          fontSize: 20,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.05em',
+                          color: '#FFFFFF',
+                          margin: '0 0 4px 0',
+                          lineHeight: 1.1,
+                        }}>
+                          {carro.modelo}
+                        </h3>
+                        <p style={{
+                          fontFamily: "'Barlow', sans-serif",
+                          fontSize: 12,
+                          color: '#7D7D7D',
+                          margin: 0,
+                        }}>
+                          {carro.nome_dono}{carro.equipe ? ` · ${carro.equipe}` : ''}
+                        </p>
+                      </div>
+
+                      {/* Specs */}
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                        <span
+                          style={{
+                            background: '#202020',
+                            border: '1px solid #313131',
+                            padding: '4px 10px',
+                            fontFamily: "'Barlow Condensed', sans-serif",
+                            fontSize: 11,
+                            color: '#969696',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 5,
+                          }}
+                        >
+                          <Calendar size={11} color="#FFC000" />
+                          {carro.ano}
+                        </span>
+                        {carro.altura_mm !== undefined && carro.altura_mm > 0 && (
+                          <span
+                            style={{
+                              background: '#202020',
+                              border: '1px solid #313131',
+                              padding: '4px 10px',
+                              fontFamily: "'Barlow Condensed', sans-serif",
+                              fontSize: 11,
+                              color: '#969696',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 5,
+                            }}
+                          >
+                            <Ruler size={11} color="#FFC000" />
+                            {carro.altura_mm}mm
+                          </span>
+                        )}
+                        {carro.km_rodado !== undefined && carro.km_rodado > 0 && (
+                          <span
+                            style={{
+                              background: '#202020',
+                              border: '1px solid #313131',
+                              padding: '4px 10px',
+                              fontFamily: "'Barlow Condensed', sans-serif",
+                              fontSize: 11,
+                              color: '#969696',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 5,
+                            }}
+                          >
+                            <Gauge size={11} color="#FFC000" />
+                            {carro.km_rodado}km
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Botão de Voto / Aviso Categoria Interna */}
+                      {isInternalCategory ? (
+                        <div
+                          style={{
+                            width: '100%',
+                            height: 44,
+                            background: '#181818',
+                            border: '1px solid #313131',
+                            color: '#7D7D7D',
+                            fontFamily: "'Barlow Condensed', sans-serif",
+                            fontWeight: 700,
+                            fontSize: 12,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.1em',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 6,
+                            marginTop: 'auto',
+                          }}
+                        >
+                          <Shield size={14} color="#29ABE2" />
+                          <span>Avaliação Técnica Interna</span>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => handleVoto(carro.id)}
+                          disabled={disabled}
+                          style={{
+                            width: '100%',
+                            height: 44,
+                            background: isVotadoPorMim
+                              ? '#FFC000'
+                              : votoNestaCategoria || !votacaoAberta
+                                ? '#181818'
+                                : 'transparent',
+                            color: isVotadoPorMim
+                              ? '#000000'
+                              : votoNestaCategoria || !votacaoAberta
+                                ? '#313131'
+                                : '#FFC000',
+                            border: isVotadoPorMim
+                              ? 'none'
+                              : votoNestaCategoria || !votacaoAberta
+                                ? '1px solid #313131'
+                                : '1px solid #FFC000',
+                            cursor: disabled ? 'not-allowed' : 'pointer',
+                            fontFamily: "'Barlow Condensed', sans-serif",
+                            fontWeight: 700,
+                            fontSize: 13,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.12em',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 8,
+                            transition: 'background 0.15s ease, color 0.15s ease',
+                            marginTop: 'auto',
+                          }}
+                          onMouseEnter={e => {
+                            if (!disabled && !isVotadoPorMim) {
+                              e.currentTarget.style.background = '#FFC000';
+                              e.currentTarget.style.color = '#000000';
+                            }
+                          }}
+                          onMouseLeave={e => {
+                            if (!disabled && !isVotadoPorMim) {
+                              e.currentTarget.style.background = 'transparent';
+                              e.currentTarget.style.color = '#FFC000';
+                            }
+                          }}
+                        >
+                          {isVotadoPorMim ? (
+                            <>
+                              <Trophy size={16} color="#000000" />
+                              <span>Votado!</span>
+                            </>
+                          ) : votoNestaCategoria ? (
+                            <>
+                              <CheckCircle2 size={16} color="#313131" />
+                              <span>Voto Já Realizado</span>
+                            </>
+                          ) : !votacaoAberta ? (
+                            <span>Votação Encerrada</span>
+                          ) : (
+                            <>
+                              <Vote size={16} color="#FFC000" />
+                              <span>Confirmar Voto</span>
+                            </>
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )
         )}
-        {visibleCount < eventCarros.length && (
+        {visibleCount < (isMaiorEquipeCategory ? equipesUniformizadas.length : eventCarros.length) && (
           <div style={{ display: 'flex', justifyContent: 'center', marginTop: 24 }}>
             <button
               onClick={() => setVisibleCount((prev) => prev + 10)}
@@ -1177,7 +1318,7 @@ export function GalleryView({
               onMouseEnter={e => e.currentTarget.style.background = '#313131'}
               onMouseLeave={e => e.currentTarget.style.background = '#202020'}
             >
-              Ver Mais Carros ({eventCarros.length - visibleCount} restantes)
+              Ver Mais {isMaiorEquipeCategory ? 'Equipes' : 'Carros'} ({(isMaiorEquipeCategory ? equipesUniformizadas.length : eventCarros.length) - visibleCount} restantes)
             </button>
           </div>
         )}
