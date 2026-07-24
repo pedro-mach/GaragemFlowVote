@@ -85,15 +85,15 @@ export function GalleryView({
         groups[name] = Math.max(groups[name] || 0, c.pessoas_equipe);
       }
     });
-    
+
     let list = Object.entries(groups)
       .map(([nome, total]) => ({ nome, total }));
-      
+
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase().trim();
       list = list.filter(item => item.nome.toLowerCase().includes(term));
     }
-    
+
     return list.sort((a, b) => b.total - a.total);
   }, [safeCarros, searchTerm]);
 
@@ -585,7 +585,7 @@ export function GalleryView({
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                       <Users size={16} color="#22c55e" />
                       <h5 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 14, textTransform: 'uppercase', color: '#22c55e', margin: 0 }}>
-                        Maior Equipe Uniformizada
+                        Maior Equipe
                       </h5>
                     </div>
                     {equipeLider ? (
@@ -727,603 +727,603 @@ export function GalleryView({
             )}
           </div>
 
-      {/* ===== ALERTA ENCERRADA ===== */}
-      {!votacaoAberta && (
-        <div
-          style={{
-            background: 'rgba(180,0,0,0.12)',
-            borderBottom: '1px solid rgba(200,50,50,0.3)',
-            borderLeft: '3px solid #ef4444',
-            padding: '12px 20px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-          }}
-        >
-          <AlertCircle size={15} color="#ef4444" style={{ flexShrink: 0 }} />
-          <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: '#fca5a5' }}>
-            A votação deste evento foi encerrada pelos organizadores.
-          </span>
-        </div>
-      )}
-
-      {/* ===== TABS DE CATEGORIAS ===== */}
-      <div
-        style={{
-          background: '#181818',
-          borderBottom: '1px solid #202020',
-          padding: '12px 20px',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Trophy size={14} color="#FFC000" />
-            <span className="label-ds">Categorias de Votação</span>
-          </div>
-          <span style={{
-            fontFamily: "'Barlow Condensed', sans-serif",
-            fontSize: 12,
-            fontWeight: 600,
-            textTransform: 'uppercase',
-            letterSpacing: '0.1em',
-            color: '#FFC000',
-            background: 'rgba(255,192,0,0.08)',
-            border: '1px solid rgba(255,192,0,0.2)',
-            padding: '4px 12px',
-          }}>
-            {safeUserVotos.length} voto(s)
-          </span>
-        </div>
-
-        <div className="no-scrollbar" style={{ display: 'flex', gap: 4, overflowX: 'auto', paddingBottom: 2 }}>
-          {visibleCategorias.map((cat) => {
-            const isSelected = cat.id === activeCategoryId;
-            const jaVotou = safeUserVotos.some((v) => v.categoria_id === cat.id);
-            const isInterna = cat.tipo === 'interna';
-            return (
-              <button
-                key={cat.id}
-                onClick={() => setActiveCategoryId(cat.id)}
-                style={{
-                  flexShrink: 0,
-                  padding: '10px 16px',
-                  background: isSelected ? '#FFC000' : '#202020',
-                  color: isSelected ? '#000000' : '#FFFFFF',
-                  border: 'none',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  fontFamily: "'Barlow Condensed', sans-serif",
-                  fontWeight: 700,
-                  fontSize: 13,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.08em',
-                  transition: 'background 0.12s ease, color 0.12s ease',
-                }}
-                onMouseEnter={e => {
-                  if (!isSelected) e.currentTarget.style.background = '#313131';
-                }}
-                onMouseLeave={e => {
-                  if (!isSelected) e.currentTarget.style.background = '#202020';
-                }}
-              >
-                <span>{cat.nome}</span>
-                {isInterna ? (
-                  <span style={{
-                    fontSize: 9,
-                    fontWeight: 700,
-                    padding: '2px 5px',
-                    background: isSelected ? 'rgba(0,0,0,0.15)' : 'rgba(41,171,226,0.15)',
-                    color: isSelected ? '#000000' : '#29ABE2',
-                    border: `1px solid ${isSelected ? 'rgba(0,0,0,0.3)' : 'rgba(41,171,226,0.3)'}`,
-                    borderRadius: 2,
-                    letterSpacing: '0.05em',
-                  }}>
-                    TÉCNICA
-                  </span>
-                ) : jaVotou ? (
-                  <CheckCircle2 size={13} color={isSelected ? '#000000' : '#FFC000'} />
-                ) : null}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ===== STATUS BAR ===== */}
-      <div
-        style={{
-          padding: '10px 20px',
-          background: '#000000',
-          borderBottom: '1px solid #181818',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
-        <span className="label-ds">
-          {isMaiorEquipeCategory
-            ? `${equipesUniformizadas.length} equipe(s)`
-            : `${eventCarros.length} veículo(s)`}
-        </span>
-        {votoNestaCategoria && (
-          <span style={{
-            fontFamily: "'Barlow Condensed', sans-serif",
-            fontSize: 12,
-            fontWeight: 600,
-            textTransform: 'uppercase',
-            letterSpacing: '0.1em',
-            color: '#FFC000',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-          }}>
-            <CheckCircle2 size={13} />
-            Voto registrado nesta categoria
-          </span>
-        )}
-      </div>
-
-      {/* ===== GRID DE CARROS / EQUIPES ===== */}
-      <div style={{ padding: '20px 0', flex: 1 }}>
-        {isMaiorEquipeCategory ? (
-          equipesUniformizadas.length === 0 ? (
+          {/* ===== ALERTA ENCERRADA ===== */}
+          {!votacaoAberta && (
             <div
               style={{
-                background: '#181818',
-                border: '1px solid #202020',
-                padding: '48px 24px',
-                textAlign: 'center',
-                margin: '0 0',
+                background: 'rgba(180,0,0,0.12)',
+                borderBottom: '1px solid rgba(200,50,50,0.3)',
+                borderLeft: '3px solid #ef4444',
+                padding: '12px 20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
               }}
             >
-              <Users size={36} color="#313131" style={{ margin: '0 auto 12px' }} />
-              <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 14, color: '#7D7D7D', margin: 0 }}>
-                Nenhuma equipe com integrantes cadastrada neste evento.
-              </p>
+              <AlertCircle size={15} color="#ef4444" style={{ flexShrink: 0 }} />
+              <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: '#fca5a5' }}>
+                A votação deste evento foi encerrada pelos organizadores.
+              </span>
             </div>
-          ) : (
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-                gap: 16,
-              }}
-            >
-              {equipesUniformizadas.slice(0, visibleCount).map((eq, index) => (
-                <div
-                  key={eq.nome}
-                  className="card-surface"
-                  style={{
-                    padding: '24px 20px',
-                    borderTop: index === 0 ? '3px solid #22c55e' : '1px solid #202020',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 16,
-                    position: 'relative',
-                  }}
-                >
-                  {/* Rank Badge para a maior equipe */}
-                  {index === 0 && (
-                    <div
-                      style={{
-                        position: 'absolute',
-                        top: 0,
-                        right: 0,
-                        background: '#22c55e',
-                        color: '#000000',
-                        padding: '2px 8px',
-                        fontFamily: "'Barlow Condensed', sans-serif",
-                        fontSize: 10,
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.08em',
-                      }}
-                    >
-                      Líder
-                    </div>
-                  )}
+          )}
 
-                  <div
+          {/* ===== TABS DE CATEGORIAS ===== */}
+          <div
+            style={{
+              background: '#181818',
+              borderBottom: '1px solid #202020',
+              padding: '12px 20px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Trophy size={14} color="#FFC000" />
+                <span className="label-ds">Categorias de Votação</span>
+              </div>
+              <span style={{
+                fontFamily: "'Barlow Condensed', sans-serif",
+                fontSize: 12,
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em',
+                color: '#FFC000',
+                background: 'rgba(255,192,0,0.08)',
+                border: '1px solid rgba(255,192,0,0.2)',
+                padding: '4px 12px',
+              }}>
+                {safeUserVotos.length} voto(s)
+              </span>
+            </div>
+
+            <div className="no-scrollbar" style={{ display: 'flex', gap: 4, overflowX: 'auto', paddingBottom: 2 }}>
+              {visibleCategorias.map((cat) => {
+                const isSelected = cat.id === activeCategoryId;
+                const jaVotou = safeUserVotos.some((v) => v.categoria_id === cat.id);
+                const isInterna = cat.tipo === 'interna';
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => setActiveCategoryId(cat.id)}
                     style={{
-                      width: 52,
-                      height: 52,
-                      background: '#0a0a0a',
-                      border: `1px solid ${index === 0 ? 'rgba(34, 197, 94, 0.4)' : '#313131'}`,
+                      flexShrink: 0,
+                      padding: '10px 16px',
+                      background: isSelected ? '#FFC000' : '#202020',
+                      color: isSelected ? '#000000' : '#FFFFFF',
+                      border: 'none',
+                      cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
+                      gap: 6,
+                      fontFamily: "'Barlow Condensed', sans-serif",
+                      fontWeight: 700,
+                      fontSize: 13,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.08em',
+                      transition: 'background 0.12s ease, color 0.12s ease',
+                    }}
+                    onMouseEnter={e => {
+                      if (!isSelected) e.currentTarget.style.background = '#313131';
+                    }}
+                    onMouseLeave={e => {
+                      if (!isSelected) e.currentTarget.style.background = '#202020';
                     }}
                   >
-                    <Users size={24} color={index === 0 ? '#22c55e' : '#7D7D7D'} />
-                  </div>
-
-                  <div>
-                    <h3
-                      style={{
-                        fontFamily: "'Barlow Condensed', sans-serif",
+                    <span>{cat.nome}</span>
+                    {isInterna ? (
+                      <span style={{
+                        fontSize: 9,
                         fontWeight: 700,
-                        fontSize: 18,
-                        textTransform: 'uppercase',
+                        padding: '2px 5px',
+                        background: isSelected ? 'rgba(0,0,0,0.15)' : 'rgba(41,171,226,0.15)',
+                        color: isSelected ? '#000000' : '#29ABE2',
+                        border: `1px solid ${isSelected ? 'rgba(0,0,0,0.3)' : 'rgba(41,171,226,0.3)'}`,
+                        borderRadius: 2,
                         letterSpacing: '0.05em',
-                        color: '#FFFFFF',
-                        margin: '0 0 4px 0',
-                        lineHeight: 1.1,
-                      }}
-                    >
-                      {eq.nome}
-                    </h3>
-                    <span
-                      style={{
-                        fontFamily: "'Barlow Condensed', sans-serif",
-                        fontSize: 13,
-                        color: index === 0 ? '#22c55e' : '#969696',
-                        fontWeight: index === 0 ? 700 : 500,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                      }}
-                    >
-                      {eq.total} Integrantes
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )
-        ) : (
-          eventCarros.length === 0 ? (
-            <div
-              style={{
-                background: '#181818',
-                border: '1px solid #202020',
-                padding: '48px 24px',
-                textAlign: 'center',
-                margin: '0 0',
-              }}
-            >
-              <Car size={36} color="#313131" style={{ margin: '0 auto 12px' }} />
-              <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 14, color: '#7D7D7D', margin: 0 }}>
-                Nenhum veículo encontrado nesta categoria.
-              </p>
-            </div>
-          ) : (
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-                gap: 2,
-              }}
-            >
-              {eventCarros.slice(0, visibleCount).map((carro) => {
-                const isVotadoPorMim = votoNestaCategoria?.carro_id === carro.id;
-                const disabled = !votacaoAberta || !!votoNestaCategoria || isLoading;
-
-                return (
-                  <div
-                    key={carro.id}
-                    style={{
-                      background: isVotadoPorMim ? '#181818' : '#181818',
-                      border: isVotadoPorMim
-                        ? '1px solid #FFC000'
-                        : '1px solid #202020',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      transition: 'border-color 0.15s ease',
-                      outline: isVotadoPorMim ? '1px solid rgba(255,192,0,0.3)' : 'none',
-                      outlineOffset: '-1px',
-                      position: 'relative',
-                    }}
-                  >
-                    {/* Foto ou Placeholder sem foto */}
-                    <div
-                      style={{ position: 'relative', height: 200, background: '#0a0a0a', overflow: 'hidden', cursor: carro.url_foto ? 'zoom-in' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                      onClick={() => {
-                        if (carro.url_foto) {
-                          setZoomPhoto({ url: carro.url_foto, modelo: carro.modelo, numero: carro.numero_inscricao });
-                        }
-                      }}
-                      title={carro.url_foto ? "Clique para ampliar" : "Sem foto cadastrada"}
-                    >
-                      {carro.url_foto ? (
-                        <img
-                          src={carro.url_foto}
-                          alt={carro.modelo}
-                          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.2s ease' }}
-                          loading="lazy"
-                          onMouseEnter={e => { (e.currentTarget as HTMLImageElement).style.transform = 'scale(1.04)'; }}
-                          onMouseLeave={e => { (e.currentTarget as HTMLImageElement).style.transform = 'scale(1)'; }}
-                        />
-                      ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, color: '#313131' }}>
-                          <Car size={48} strokeWidth={1.5} color="#555555" />
-                          <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, color: '#666666', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Sem foto enviada</span>
-                        </div>
-                      )}
-
-                      {/* Ícone zoom hint se houver foto */}
-                      {carro.url_foto && (
-                        <div
-                          style={{
-                            position: 'absolute',
-                            bottom: 8,
-                            right: 8,
-                            background: 'rgba(0,0,0,0.65)',
-                            border: '1px solid rgba(255,192,0,0.4)',
-                            borderRadius: 2,
-                            padding: '4px 6px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 4,
-                            pointerEvents: 'none',
-                          }}
-                        >
-                          <ZoomIn size={12} color="#FFC000" />
-                        </div>
-                      )}
-
-                      {/* Badge número */}
-                      <div
-                        style={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          background: '#000000',
-                          borderBottom: '1px solid #FFC000',
-                          borderRight: '1px solid #FFC000',
-                          padding: '6px 12px',
-                          fontFamily: "'Barlow Condensed', sans-serif",
-                          fontSize: 11,
-                          fontWeight: 700,
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.12em',
-                          color: '#FFC000',
-                        }}
-                      >
-                        {carro.numero_inscricao}
-                      </div>
-
-                      {/* Overlay "Votado" */}
-                      {isVotadoPorMim && (
-                        <div
-                          style={{
-                            position: 'absolute',
-                            inset: 0,
-                            background: 'rgba(0,0,0,0.75)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}
-                        >
-                          <div
-                            style={{
-                              background: '#FFC000',
-                              color: '#000000',
-                              padding: '10px 20px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 8,
-                              fontFamily: "'Barlow Condensed', sans-serif",
-                              fontWeight: 700,
-                              fontSize: 14,
-                              textTransform: 'uppercase',
-                              letterSpacing: '0.1em',
-                            }}
-                          >
-                            <Trophy size={18} color="#000000" />
-                            Seu Voto Registrado
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Info */}
-                    <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
-                      <div>
-                        <h3 style={{
-                          fontFamily: "'Barlow Condensed', sans-serif",
-                          fontWeight: 700,
-                          fontSize: 20,
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.05em',
-                          color: '#FFFFFF',
-                          margin: '0 0 4px 0',
-                          lineHeight: 1.1,
-                        }}>
-                          {carro.modelo}
-                        </h3>
-                        <p style={{
-                          fontFamily: "'Barlow', sans-serif",
-                          fontSize: 12,
-                          color: '#7D7D7D',
-                          margin: 0,
-                        }}>
-                          {carro.nome_dono}{carro.equipe ? ` · ${carro.equipe}` : ''}
-                        </p>
-                      </div>
-
-                      {/* Specs */}
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                        <span
-                          style={{
-                            background: '#202020',
-                            border: '1px solid #313131',
-                            padding: '4px 10px',
-                            fontFamily: "'Barlow Condensed', sans-serif",
-                            fontSize: 11,
-                            color: '#969696',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 5,
-                          }}
-                        >
-                          <Calendar size={11} color="#FFC000" />
-                          {carro.ano}
-                        </span>
-                        {carro.altura_mm !== undefined && carro.altura_mm > 0 && (
-                          <span
-                            style={{
-                              background: '#202020',
-                              border: '1px solid #313131',
-                              padding: '4px 10px',
-                              fontFamily: "'Barlow Condensed', sans-serif",
-                              fontSize: 11,
-                              color: '#969696',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 5,
-                            }}
-                          >
-                            <Ruler size={11} color="#FFC000" />
-                            {carro.altura_mm}mm
-                          </span>
-                        )}
-                        {carro.km_rodado !== undefined && carro.km_rodado > 0 && (
-                          <span
-                            style={{
-                              background: '#202020',
-                              border: '1px solid #313131',
-                              padding: '4px 10px',
-                              fontFamily: "'Barlow Condensed', sans-serif",
-                              fontSize: 11,
-                              color: '#969696',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 5,
-                            }}
-                          >
-                            <Gauge size={11} color="#FFC000" />
-                            {carro.km_rodado}km
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Botão de Voto / Aviso Categoria Interna */}
-                      {isInternalCategory ? (
-                        <div
-                          style={{
-                            width: '100%',
-                            height: 44,
-                            background: '#181818',
-                            border: '1px solid #313131',
-                            color: '#7D7D7D',
-                            fontFamily: "'Barlow Condensed', sans-serif",
-                            fontWeight: 700,
-                            fontSize: 12,
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.1em',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: 6,
-                            marginTop: 'auto',
-                          }}
-                        >
-                          <Shield size={14} color="#29ABE2" />
-                          <span>Avaliação Técnica Interna</span>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => handleVoto(carro.id)}
-                          disabled={disabled}
-                          style={{
-                            width: '100%',
-                            height: 44,
-                            background: isVotadoPorMim
-                              ? '#FFC000'
-                              : votoNestaCategoria || !votacaoAberta
-                                ? '#181818'
-                                : 'transparent',
-                            color: isVotadoPorMim
-                              ? '#000000'
-                              : votoNestaCategoria || !votacaoAberta
-                                ? '#313131'
-                                : '#FFC000',
-                            border: isVotadoPorMim
-                              ? 'none'
-                              : votoNestaCategoria || !votacaoAberta
-                                ? '1px solid #313131'
-                                : '1px solid #FFC000',
-                            cursor: disabled ? 'not-allowed' : 'pointer',
-                            fontFamily: "'Barlow Condensed', sans-serif",
-                            fontWeight: 700,
-                            fontSize: 13,
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.12em',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: 8,
-                            transition: 'background 0.15s ease, color 0.15s ease',
-                            marginTop: 'auto',
-                          }}
-                          onMouseEnter={e => {
-                            if (!disabled && !isVotadoPorMim) {
-                              e.currentTarget.style.background = '#FFC000';
-                              e.currentTarget.style.color = '#000000';
-                            }
-                          }}
-                          onMouseLeave={e => {
-                            if (!disabled && !isVotadoPorMim) {
-                              e.currentTarget.style.background = 'transparent';
-                              e.currentTarget.style.color = '#FFC000';
-                            }
-                          }}
-                        >
-                          {isVotadoPorMim ? (
-                            <>
-                              <Trophy size={16} color="#000000" />
-                              <span>Votado!</span>
-                            </>
-                          ) : votoNestaCategoria ? (
-                            <>
-                              <CheckCircle2 size={16} color="#313131" />
-                              <span>Voto Já Realizado</span>
-                            </>
-                          ) : !votacaoAberta ? (
-                            <span>Votação Encerrada</span>
-                          ) : (
-                            <>
-                              <Vote size={16} color="#FFC000" />
-                              <span>Confirmar Voto</span>
-                            </>
-                          )}
-                        </button>
-                      )}
-                    </div>
-                  </div>
+                      }}>
+                        TÉCNICA
+                      </span>
+                    ) : jaVotou ? (
+                      <CheckCircle2 size={13} color={isSelected ? '#000000' : '#FFC000'} />
+                    ) : null}
+                  </button>
                 );
               })}
             </div>
-          )
-        )}
-        {visibleCount < (isMaiorEquipeCategory ? equipesUniformizadas.length : eventCarros.length) && (
-          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 24 }}>
-            <button
-              onClick={() => setVisibleCount((prev) => prev + 10)}
-              style={{
-                background: '#202020',
-                color: '#FFC000',
-                border: '1px solid #313131',
-                padding: '12px 32px',
-                fontFamily: "'Barlow Condensed', sans-serif",
-                fontWeight: 600,
-                fontSize: 14,
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                cursor: 'pointer',
-                transition: 'background 0.2s',
-              }}
-              onMouseEnter={e => e.currentTarget.style.background = '#313131'}
-              onMouseLeave={e => e.currentTarget.style.background = '#202020'}
-            >
-              Ver Mais {isMaiorEquipeCategory ? 'Equipes' : 'Carros'} ({(isMaiorEquipeCategory ? equipesUniformizadas.length : eventCarros.length) - visibleCount} restantes)
-            </button>
           </div>
-        )}
-      </div>
-      </>
+
+          {/* ===== STATUS BAR ===== */}
+          <div
+            style={{
+              padding: '10px 20px',
+              background: '#000000',
+              borderBottom: '1px solid #181818',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <span className="label-ds">
+              {isMaiorEquipeCategory
+                ? `${equipesUniformizadas.length} equipe(s)`
+                : `${eventCarros.length} veículo(s)`}
+            </span>
+            {votoNestaCategoria && (
+              <span style={{
+                fontFamily: "'Barlow Condensed', sans-serif",
+                fontSize: 12,
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em',
+                color: '#FFC000',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+              }}>
+                <CheckCircle2 size={13} />
+                Voto registrado nesta categoria
+              </span>
+            )}
+          </div>
+
+          {/* ===== GRID DE CARROS / EQUIPES ===== */}
+          <div style={{ padding: '20px 0', flex: 1 }}>
+            {isMaiorEquipeCategory ? (
+              equipesUniformizadas.length === 0 ? (
+                <div
+                  style={{
+                    background: '#181818',
+                    border: '1px solid #202020',
+                    padding: '48px 24px',
+                    textAlign: 'center',
+                    margin: '0 0',
+                  }}
+                >
+                  <Users size={36} color="#313131" style={{ margin: '0 auto 12px' }} />
+                  <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 14, color: '#7D7D7D', margin: 0 }}>
+                    Nenhuma equipe com integrantes cadastrada neste evento.
+                  </p>
+                </div>
+              ) : (
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                    gap: 16,
+                  }}
+                >
+                  {equipesUniformizadas.slice(0, visibleCount).map((eq, index) => (
+                    <div
+                      key={eq.nome}
+                      className="card-surface"
+                      style={{
+                        padding: '24px 20px',
+                        borderTop: index === 0 ? '3px solid #22c55e' : '1px solid #202020',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 16,
+                        position: 'relative',
+                      }}
+                    >
+                      {/* Rank Badge para a maior equipe */}
+                      {index === 0 && (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: 0,
+                            right: 0,
+                            background: '#22c55e',
+                            color: '#000000',
+                            padding: '2px 8px',
+                            fontFamily: "'Barlow Condensed', sans-serif",
+                            fontSize: 10,
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.08em',
+                          }}
+                        >
+                          Líder
+                        </div>
+                      )}
+
+                      <div
+                        style={{
+                          width: 52,
+                          height: 52,
+                          background: '#0a0a0a',
+                          border: `1px solid ${index === 0 ? 'rgba(34, 197, 94, 0.4)' : '#313131'}`,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <Users size={24} color={index === 0 ? '#22c55e' : '#7D7D7D'} />
+                      </div>
+
+                      <div>
+                        <h3
+                          style={{
+                            fontFamily: "'Barlow Condensed', sans-serif",
+                            fontWeight: 700,
+                            fontSize: 18,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
+                            color: '#FFFFFF',
+                            margin: '0 0 4px 0',
+                            lineHeight: 1.1,
+                          }}
+                        >
+                          {eq.nome}
+                        </h3>
+                        <span
+                          style={{
+                            fontFamily: "'Barlow Condensed', sans-serif",
+                            fontSize: 13,
+                            color: index === 0 ? '#22c55e' : '#969696',
+                            fontWeight: index === 0 ? 700 : 500,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
+                          }}
+                        >
+                          {eq.total} Integrantes
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
+            ) : (
+              eventCarros.length === 0 ? (
+                <div
+                  style={{
+                    background: '#181818',
+                    border: '1px solid #202020',
+                    padding: '48px 24px',
+                    textAlign: 'center',
+                    margin: '0 0',
+                  }}
+                >
+                  <Car size={36} color="#313131" style={{ margin: '0 auto 12px' }} />
+                  <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 14, color: '#7D7D7D', margin: 0 }}>
+                    Nenhum veículo encontrado nesta categoria.
+                  </p>
+                </div>
+              ) : (
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                    gap: 2,
+                  }}
+                >
+                  {eventCarros.slice(0, visibleCount).map((carro) => {
+                    const isVotadoPorMim = votoNestaCategoria?.carro_id === carro.id;
+                    const disabled = !votacaoAberta || !!votoNestaCategoria || isLoading;
+
+                    return (
+                      <div
+                        key={carro.id}
+                        style={{
+                          background: isVotadoPorMim ? '#181818' : '#181818',
+                          border: isVotadoPorMim
+                            ? '1px solid #FFC000'
+                            : '1px solid #202020',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          transition: 'border-color 0.15s ease',
+                          outline: isVotadoPorMim ? '1px solid rgba(255,192,0,0.3)' : 'none',
+                          outlineOffset: '-1px',
+                          position: 'relative',
+                        }}
+                      >
+                        {/* Foto ou Placeholder sem foto */}
+                        <div
+                          style={{ position: 'relative', height: 200, background: '#0a0a0a', overflow: 'hidden', cursor: carro.url_foto ? 'zoom-in' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                          onClick={() => {
+                            if (carro.url_foto) {
+                              setZoomPhoto({ url: carro.url_foto, modelo: carro.modelo, numero: carro.numero_inscricao });
+                            }
+                          }}
+                          title={carro.url_foto ? "Clique para ampliar" : "Sem foto cadastrada"}
+                        >
+                          {carro.url_foto ? (
+                            <img
+                              src={carro.url_foto}
+                              alt={carro.modelo}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.2s ease' }}
+                              loading="lazy"
+                              onMouseEnter={e => { (e.currentTarget as HTMLImageElement).style.transform = 'scale(1.04)'; }}
+                              onMouseLeave={e => { (e.currentTarget as HTMLImageElement).style.transform = 'scale(1)'; }}
+                            />
+                          ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, color: '#313131' }}>
+                              <Car size={48} strokeWidth={1.5} color="#555555" />
+                              <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, color: '#666666', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Sem foto enviada</span>
+                            </div>
+                          )}
+
+                          {/* Ícone zoom hint se houver foto */}
+                          {carro.url_foto && (
+                            <div
+                              style={{
+                                position: 'absolute',
+                                bottom: 8,
+                                right: 8,
+                                background: 'rgba(0,0,0,0.65)',
+                                border: '1px solid rgba(255,192,0,0.4)',
+                                borderRadius: 2,
+                                padding: '4px 6px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 4,
+                                pointerEvents: 'none',
+                              }}
+                            >
+                              <ZoomIn size={12} color="#FFC000" />
+                            </div>
+                          )}
+
+                          {/* Badge número */}
+                          <div
+                            style={{
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              background: '#000000',
+                              borderBottom: '1px solid #FFC000',
+                              borderRight: '1px solid #FFC000',
+                              padding: '6px 12px',
+                              fontFamily: "'Barlow Condensed', sans-serif",
+                              fontSize: 11,
+                              fontWeight: 700,
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.12em',
+                              color: '#FFC000',
+                            }}
+                          >
+                            {carro.numero_inscricao}
+                          </div>
+
+                          {/* Overlay "Votado" */}
+                          {isVotadoPorMim && (
+                            <div
+                              style={{
+                                position: 'absolute',
+                                inset: 0,
+                                background: 'rgba(0,0,0,0.75)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                              }}
+                            >
+                              <div
+                                style={{
+                                  background: '#FFC000',
+                                  color: '#000000',
+                                  padding: '10px 20px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 8,
+                                  fontFamily: "'Barlow Condensed', sans-serif",
+                                  fontWeight: 700,
+                                  fontSize: 14,
+                                  textTransform: 'uppercase',
+                                  letterSpacing: '0.1em',
+                                }}
+                              >
+                                <Trophy size={18} color="#000000" />
+                                Seu Voto Registrado
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Info */}
+                        <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                          <div>
+                            <h3 style={{
+                              fontFamily: "'Barlow Condensed', sans-serif",
+                              fontWeight: 700,
+                              fontSize: 20,
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.05em',
+                              color: '#FFFFFF',
+                              margin: '0 0 4px 0',
+                              lineHeight: 1.1,
+                            }}>
+                              {carro.modelo}
+                            </h3>
+                            <p style={{
+                              fontFamily: "'Barlow', sans-serif",
+                              fontSize: 12,
+                              color: '#7D7D7D',
+                              margin: 0,
+                            }}>
+                              {carro.nome_dono}{carro.equipe ? ` · ${carro.equipe}` : ''}
+                            </p>
+                          </div>
+
+                          {/* Specs */}
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                            <span
+                              style={{
+                                background: '#202020',
+                                border: '1px solid #313131',
+                                padding: '4px 10px',
+                                fontFamily: "'Barlow Condensed', sans-serif",
+                                fontSize: 11,
+                                color: '#969696',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 5,
+                              }}
+                            >
+                              <Calendar size={11} color="#FFC000" />
+                              {carro.ano}
+                            </span>
+                            {carro.altura_mm !== undefined && carro.altura_mm > 0 && (
+                              <span
+                                style={{
+                                  background: '#202020',
+                                  border: '1px solid #313131',
+                                  padding: '4px 10px',
+                                  fontFamily: "'Barlow Condensed', sans-serif",
+                                  fontSize: 11,
+                                  color: '#969696',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 5,
+                                }}
+                              >
+                                <Ruler size={11} color="#FFC000" />
+                                {carro.altura_mm}mm
+                              </span>
+                            )}
+                            {carro.km_rodado !== undefined && carro.km_rodado > 0 && (
+                              <span
+                                style={{
+                                  background: '#202020',
+                                  border: '1px solid #313131',
+                                  padding: '4px 10px',
+                                  fontFamily: "'Barlow Condensed', sans-serif",
+                                  fontSize: 11,
+                                  color: '#969696',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 5,
+                                }}
+                              >
+                                <Gauge size={11} color="#FFC000" />
+                                {carro.km_rodado}km
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Botão de Voto / Aviso Categoria Interna */}
+                          {isInternalCategory ? (
+                            <div
+                              style={{
+                                width: '100%',
+                                height: 44,
+                                background: '#181818',
+                                border: '1px solid #313131',
+                                color: '#7D7D7D',
+                                fontFamily: "'Barlow Condensed', sans-serif",
+                                fontWeight: 700,
+                                fontSize: 12,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.1em',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 6,
+                                marginTop: 'auto',
+                              }}
+                            >
+                              <Shield size={14} color="#29ABE2" />
+                              <span>Avaliação Técnica Interna</span>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => handleVoto(carro.id)}
+                              disabled={disabled}
+                              style={{
+                                width: '100%',
+                                height: 44,
+                                background: isVotadoPorMim
+                                  ? '#FFC000'
+                                  : votoNestaCategoria || !votacaoAberta
+                                    ? '#181818'
+                                    : 'transparent',
+                                color: isVotadoPorMim
+                                  ? '#000000'
+                                  : votoNestaCategoria || !votacaoAberta
+                                    ? '#313131'
+                                    : '#FFC000',
+                                border: isVotadoPorMim
+                                  ? 'none'
+                                  : votoNestaCategoria || !votacaoAberta
+                                    ? '1px solid #313131'
+                                    : '1px solid #FFC000',
+                                cursor: disabled ? 'not-allowed' : 'pointer',
+                                fontFamily: "'Barlow Condensed', sans-serif",
+                                fontWeight: 700,
+                                fontSize: 13,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.12em',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 8,
+                                transition: 'background 0.15s ease, color 0.15s ease',
+                                marginTop: 'auto',
+                              }}
+                              onMouseEnter={e => {
+                                if (!disabled && !isVotadoPorMim) {
+                                  e.currentTarget.style.background = '#FFC000';
+                                  e.currentTarget.style.color = '#000000';
+                                }
+                              }}
+                              onMouseLeave={e => {
+                                if (!disabled && !isVotadoPorMim) {
+                                  e.currentTarget.style.background = 'transparent';
+                                  e.currentTarget.style.color = '#FFC000';
+                                }
+                              }}
+                            >
+                              {isVotadoPorMim ? (
+                                <>
+                                  <Trophy size={16} color="#000000" />
+                                  <span>Votado!</span>
+                                </>
+                              ) : votoNestaCategoria ? (
+                                <>
+                                  <CheckCircle2 size={16} color="#313131" />
+                                  <span>Voto Já Realizado</span>
+                                </>
+                              ) : !votacaoAberta ? (
+                                <span>Votação Encerrada</span>
+                              ) : (
+                                <>
+                                  <Vote size={16} color="#FFC000" />
+                                  <span>Confirmar Voto</span>
+                                </>
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )
+            )}
+            {visibleCount < (isMaiorEquipeCategory ? equipesUniformizadas.length : eventCarros.length) && (
+              <div style={{ display: 'flex', justifyContent: 'center', marginTop: 24 }}>
+                <button
+                  onClick={() => setVisibleCount((prev) => prev + 10)}
+                  style={{
+                    background: '#202020',
+                    color: '#FFC000',
+                    border: '1px solid #313131',
+                    padding: '12px 32px',
+                    fontFamily: "'Barlow Condensed', sans-serif",
+                    fontWeight: 600,
+                    fontSize: 14,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    cursor: 'pointer',
+                    transition: 'background 0.2s',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#313131'}
+                  onMouseLeave={e => e.currentTarget.style.background = '#202020'}
+                >
+                  Ver Mais {isMaiorEquipeCategory ? 'Equipes' : 'Carros'} ({(isMaiorEquipeCategory ? equipesUniformizadas.length : eventCarros.length) - visibleCount} restantes)
+                </button>
+              </div>
+            )}
+          </div>
+        </>
       )}
 
       {/* ===== FOOTER ===== */}
@@ -1612,20 +1612,18 @@ export function GalleryView({
                       : equipeValidationMsg.type === 'warning'
                         ? 'rgba(255,192,0,0.12)'
                         : 'rgba(0,120,60,0.15)',
-                    border: `1px solid ${
-                      equipeValidationMsg.type === 'error'
+                    border: `1px solid ${equipeValidationMsg.type === 'error'
                         ? 'rgba(220,50,50,0.3)'
                         : equipeValidationMsg.type === 'warning'
                           ? 'rgba(255,192,0,0.3)'
                           : 'rgba(74,222,128,0.3)'
-                    }`,
-                    borderLeft: `3px solid ${
-                      equipeValidationMsg.type === 'error'
+                      }`,
+                    borderLeft: `3px solid ${equipeValidationMsg.type === 'error'
                         ? '#ef4444'
                         : equipeValidationMsg.type === 'warning'
                           ? '#FFC000'
                           : '#4ade80'
-                    }`,
+                      }`,
                     padding: '12px 14px',
                     display: 'flex',
                     flexDirection: 'column',
