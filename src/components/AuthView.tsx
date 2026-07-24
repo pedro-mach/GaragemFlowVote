@@ -136,21 +136,33 @@ export function AuthView({ evento, login, loginAsOrganizer, isLoading, error }: 
               >
                 <img
                   src="/Logo-evento.jpeg"
-                  alt="Logo Regional das Equipes"
+                  alt="Logo Regional das Equipes em Valinhos - GaragemFlow, Los Felas, Low Mafia"
                   style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                   onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
                 />
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <h1 style={{
                   fontFamily: "'Barlow Condensed', sans-serif",
-                  fontSize: 14,
-                  fontWeight: 700,
+                  fontSize: 18,
+                  fontWeight: 800,
                   textTransform: 'uppercase',
                   letterSpacing: '0.12em',
                   color: '#FFC000',
+                  margin: 0,
+                  lineHeight: 1.1,
                 }}>
-                  {evento?.nome || 'REGIONAL DAS EQUIPES'}
+                  {evento?.nome ? `${evento.nome} em Valinhos` : 'REGIONAL DAS EQUIPES EM VALINHOS'}
+                </h1>
+                <span style={{
+                  fontFamily: "'Barlow Condensed', sans-serif",
+                  fontSize: 11,
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.1em',
+                  color: '#A0A0A0',
+                }}>
+                  GaragemFlow • Los Felas • Low Mafia
                 </span>
               </div>
             </div>
@@ -161,14 +173,15 @@ export function AuthView({ evento, login, loginAsOrganizer, isLoading, error }: 
             <p style={{
               fontFamily: "'Barlow', sans-serif",
               fontSize: 15,
-              color: '#7D7D7D',
+              color: '#999999',
               lineHeight: 1.6,
               maxWidth: 480,
               fontWeight: 400,
               marginBottom: 24,
             }}>
-              Plataforma oficial de votação em tempo real para eventos de carros.
+              Votação oficial em tempo real do <strong>Regional das Equipes em Valinhos</strong>. Evento promovido por <strong>GaragemFlow</strong>, <strong>Los Felas</strong> e <strong>Low Mafia</strong>.
             </p>
+
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-px" style={{ background: '#202020' }}>
               {[
                 { label: 'Apuração ao Vivo', sub: 'Resultados imediatos' },

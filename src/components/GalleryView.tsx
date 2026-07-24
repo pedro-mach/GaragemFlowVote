@@ -225,7 +225,7 @@ export function GalleryView({
           >
             <img
               src="/Logo-evento.jpeg"
-              alt="Logo do Evento"
+              alt="Logo Regional das Equipes em Valinhos - GaragemFlow, Los Felas, Low Mafia"
               style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
               onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
             />
@@ -254,10 +254,10 @@ export function GalleryView({
                 color: '#FFC000',
                 whiteSpace: 'nowrap',
               }}>
-                {votacaoAberta ? 'Votação Popular Aberta' : 'Votação Encerrada'}
+                {votacaoAberta ? 'Votação Popular Aberta' : 'Votação Encerrada'} • Valinhos
               </span>
             </div>
-            <h2 style={{
+            <h1 style={{
               fontFamily: "'Barlow Condensed', sans-serif",
               fontWeight: 700,
               fontSize: 16,
@@ -270,9 +270,20 @@ export function GalleryView({
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
             }}>
-              {evento?.nome || 'Regional das Equipes'}
-            </h2>
+              {evento?.nome || 'Regional das Equipes em Valinhos'}
+            </h1>
+            <div style={{
+              fontFamily: "'Barlow Condensed', sans-serif",
+              fontSize: 10,
+              color: '#888888',
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              marginTop: 2,
+            }}>
+              Organização: GaragemFlow • Los Felas • Low Mafia
+            </div>
           </div>
+
 
           {/* Ações: Cadastrar Equipe + Sair */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>

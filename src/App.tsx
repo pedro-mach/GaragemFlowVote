@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useAuth } from './hooks/useAuth';
 import { useCarros } from './hooks/useCarros';
 import { useVotos } from './hooks/useVotos';
@@ -7,6 +8,7 @@ import { GalleryView } from './components/GalleryView';
 import { DashboardView } from './components/DashboardView';
 
 function App() {
+
   const {
     user,
     isOrganizer,
@@ -51,7 +53,13 @@ function App() {
   const globalLoading = authLoading || dataLoading;
   const globalError = authError || dataError || votingError;
 
+  useEffect(() => {
+    const nomeEvento = evento?.nome || 'Regional das Equipes em Valinhos';
+    document.title = `${nomeEvento} | GaragemFlow, Los Felas & Low Mafia`;
+  }, [evento?.nome]);
+
   // Carregamento da sessão inicial
+
   if (authLoading) {
     return (
       <Layout>
