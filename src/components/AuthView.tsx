@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Shield, KeyRound, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Shield, KeyRound, AlertTriangle, CheckCircle2, Lock } from 'lucide-react';
 import type { Evento } from '../data/mockData';
+import { validateCPF } from '../utils/cpfValidation';
 
 interface AuthViewProps {
   evento?: Evento | null;
   login: (cpf: string, birthdate: string) => Promise<void>;
-  loginAsOrganizer: () => void;
+  loginAsOrganizer: (cpf: string, password: string) => { success: boolean; error?: string };
   isLoading: boolean;
   error: string | null;
 }
@@ -15,6 +16,12 @@ export function AuthView({ evento, login, loginAsOrganizer, isLoading, error }: 
   const [birthdate, setBirthdate] = useState('');
   const [lgpdConsent, setLgpdConsent] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  // Estados do Modal do Organizador
+  const [showOrgModal, setShowOrgModal] = useState(false);
+  const [orgCpf, setOrgCpf] = useState('');
+  const [orgPassword, setOrgPassword] = useState('');
+  const [orgError, setOrgError] = useState<string | null>(null);
 
   const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.replace(/\D/g, '');
@@ -30,6 +37,22 @@ export function AuthView({ evento, login, loginAsOrganizer, isLoading, error }: 
 
     setCpf(value);
     setFormError(null);
+  };
+
+  const handleOrgCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length > 11) value = value.slice(0, 11);
+
+    if (value.length > 9) {
+      value = `${value.slice(0, 3)}.${value.slice(3, 6)}.${value.slice(6, 9)}-${value.slice(9)}`;
+    } else if (value.length > 6) {
+      value = `${value.slice(0, 3)}.${value.slice(3, 6)}.${value.slice(6)}`;
+    } else if (value.length > 3) {
+      value = `${value.slice(0, 3)}.${value.slice(3)}`;
+    }
+
+    setOrgCpf(value);
+    setOrgError(null);
   };
 
   const handleBirthdateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -50,9 +73,8 @@ export function AuthView({ evento, login, loginAsOrganizer, isLoading, error }: 
     e.preventDefault();
     setFormError(null);
 
-    const cleanCpf = cpf.replace(/\D/g, '');
-    if (cleanCpf.length !== 11) {
-      setFormError('Por favor, informe um CPF válido com 11 dígitos.');
+    if (!validateCPF(cpf)) {
+      setFormError('CPF inválido. Por favor, informe um CPF válido com 11 dígitos.');
       return;
     }
 
@@ -72,8 +94,28 @@ export function AuthView({ evento, login, loginAsOrganizer, isLoading, error }: 
     await login(cpf, formattedDate);
   };
 
+  const handleOrgSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setOrgError(null);
+
+    if (!validateCPF(orgCpf)) {
+      setOrgError('CPF de organizador inválido. Por favor, informe um CPF válido.');
+      return;
+    }
+
+    if (!orgPassword.trim()) {
+      setOrgError('Informe a senha de acesso.');
+      return;
+    }
+
+    const res = loginAsOrganizer(orgCpf, orgPassword);
+    if (!res.success) {
+      setOrgError(res.error || 'Senha ou credenciais de organizador incorretas.');
+    }
+  };
+
   return (
-    <div className="w-full flex-1 flex flex-col justify-center py-6 lg:py-12">
+    <div className="w-full flex-1 flex flex-col justify-center py-6 lg:py-12 relative">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-y-10 lg:gap-x-16 items-start">
 
         {/* ===== LADO ESQUERDO (Desktop) / ITENS (Mobile) ===== */}
@@ -339,7 +381,12 @@ export function AuthView({ evento, login, loginAsOrganizer, isLoading, error }: 
               }}
             >
               <button
-                onClick={loginAsOrganizer}
+                onClick={() => {
+                  setShowOrgModal(true);
+                  setOrgError(null);
+                  setOrgCpf('');
+                  setOrgPassword('');
+                }}
                 style={{
                   background: 'none',
                   border: 'none',
@@ -360,7 +407,7 @@ export function AuthView({ evento, login, loginAsOrganizer, isLoading, error }: 
                 onMouseLeave={e => (e.currentTarget.style.color = '#29ABE2')}
               >
                 <KeyRound size={14} />
-                <span>Painel do Organizador (Privado)</span>
+                <span>Painel do Organizador (Restrito)</span>
               </button>
 
               <span style={{
@@ -377,7 +424,141 @@ export function AuthView({ evento, login, loginAsOrganizer, isLoading, error }: 
         </div>
 
       </div>
+
+      {/* ===== MODAL DE AUTENTICAÇÃO DO ORGANIZADOR ===== */}
+      {showOrgModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div
+            style={{
+              background: '#181818',
+              border: '1px solid #313131',
+              borderTop: '2px solid #FFC000',
+              width: '100%',
+              maxWidth: 420,
+              padding: '28px',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)',
+            }}
+          >
+            <div className="flex items-center justify-between pb-4 mb-5 border-b border-[#202020]">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-[#FFC000]/10 border border-[#FFC000]/30 rounded">
+                  <Lock size={20} color="#FFC000" />
+                </div>
+                <div>
+                  <h3 style={{
+                    fontFamily: "'Barlow Condensed', sans-serif",
+                    fontWeight: 700,
+                    fontSize: 18,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.08em',
+                    color: '#FFFFFF',
+                    margin: 0,
+                  }}>
+                    Acesso do Organizador
+                  </h3>
+                  <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#7D7D7D', margin: 0 }}>
+                    Informe CPF e senha autorizados
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <form onSubmit={handleOrgSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {/* CPF do Organizador */}
+              <div>
+                <label className="label-ds" style={{ display: 'block', marginBottom: 8 }}>
+                  CPF do Organizador
+                </label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="000.000.000-00"
+                  value={orgCpf}
+                  onChange={handleOrgCpfChange}
+                  autoFocus
+                  disabled={isLoading}
+                  className="input-ds"
+                />
+              </div>
+
+              {/* Senha do Organizador */}
+              <div>
+                <label className="label-ds" style={{ display: 'block', marginBottom: 8 }}>
+                  Senha de Acesso
+                </label>
+                <input
+                  type="password"
+                  placeholder="Digite a senha autorizada"
+                  value={orgPassword}
+                  onChange={(e) => {
+                    setOrgPassword(e.target.value);
+                    setOrgError(null);
+                  }}
+                  disabled={isLoading}
+                  className="w-full h-12 bg-[#16161A] border border-white/10 focus:border-[#F5A623] focus:ring-1 focus:ring-[#F5A623] rounded-xl px-4 text-white placeholder-gray-500 outline-none text-sm transition-all"
+                />
+              </div>
+
+              {orgError && (
+                <div
+                  style={{
+                    background: 'rgba(180,0,0,0.15)',
+                    border: '1px solid rgba(220,50,50,0.4)',
+                    padding: '10px 14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                  }}
+                >
+                  <AlertTriangle size={15} color="#FFC000" style={{ flexShrink: 0 }} />
+                  <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#ffaaaa' }}>
+                    {orgError}
+                  </span>
+                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-3 mt-3 pt-3 border-t border-[#202020]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowOrgModal(false);
+                    setOrgCpf('');
+                    setOrgPassword('');
+                    setOrgError(null);
+                  }}
+                  style={{
+                    background: 'transparent',
+                    border: '1px solid #313131',
+                    color: '#A0A0A0',
+                    padding: '10px 18px',
+                    borderRadius: '8px',
+                    fontSize: 13,
+                    fontFamily: "'Barlow Condensed', sans-serif",
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="btn-gold"
+                  style={{
+                    height: 42,
+                    padding: '0 20px',
+                    fontSize: 13,
+                    borderRadius: '8px',
+                  }}
+                >
+                  Acessar Painel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-

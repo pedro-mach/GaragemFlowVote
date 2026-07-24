@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase, isSupabaseConfigured } from '../supabaseClient';
 import type { Eleitor } from '../data/mockData';
+import { validateCPF } from '../utils/cpfValidation';
 
 // Função para gerar o hash SHA-256 do CPF para privacidade dos dados
 export async function hashCPF(cpf: string): Promise<string> {
@@ -40,6 +41,13 @@ export function useAuth() {
   const login = async (cpf: string, dataNascimento: string) => {
     setIsLoading(true);
     setError(null);
+
+    if (!validateCPF(cpf)) {
+      setError('CPF inválido. Por favor, forneça um número de CPF válido.');
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const cpfHash = await hashCPF(cpf);
 
@@ -86,7 +94,7 @@ export function useAuth() {
         const localDb: Eleitor[] = JSON.parse(
           localStorage.getItem('regional_db_eleitores') || localStorage.getItem('garagemflow_db_eleitores') || '[]'
         );
-        
+
         const existing = localDb.find((e) => e.cpf_hash === cpfHash);
 
         if (existing) {
@@ -107,7 +115,7 @@ export function useAuth() {
           };
           localDb.push(newEleitor);
           localStorage.setItem('regional_db_eleitores', JSON.stringify(localDb));
-          
+
           setUser(newEleitor);
           setIsOrganizer(false);
           localStorage.setItem('regional_user', JSON.stringify(newEleitor));
@@ -122,14 +130,50 @@ export function useAuth() {
     }
   };
 
-  const loginAsOrganizer = () => {
+  const loginAsOrganizer = (cpf: string, password: string): { success: boolean; error?: string } => {
     setIsLoading(true);
-    setIsOrganizer(true);
-    setUser(null);
-    localStorage.setItem('regional_role', 'organizer');
-    localStorage.removeItem('regional_user');
-    localStorage.removeItem('garagemflow_user');
-    setIsLoading(false);
+    setError(null);
+
+    if (!validateCPF(cpf)) {
+      const msg = 'CPF de organizador inválido.';
+      setError(msg);
+      setIsLoading(false);
+      return { success: false, error: msg };
+    }
+
+    const validPasswords = [
+      import.meta.env.VITE_ORGANIZER_PASSWORD,
+    ].filter(Boolean);
+
+    const cleanCpf = cpf.replace(/\D/g, '');
+
+    // Se houver lista de CPFs autorizados configurada no ambiente:
+    const envCpfs = import.meta.env.VITE_ORGANIZER_CPFS;
+    if (envCpfs) {
+      const allowedCpfs = envCpfs.split(',').map((c: string) => c.replace(/\D/g, '').trim());
+      if (!allowedCpfs.includes(cleanCpf)) {
+        const msg = 'Este CPF não possui permissão de acesso ao painel de organizadores.';
+        setError(msg);
+        setIsLoading(false);
+        return { success: false, error: msg };
+      }
+    }
+
+    if (validPasswords.includes(password.trim())) {
+      setIsOrganizer(true);
+      setUser(null);
+      localStorage.setItem('regional_role', 'organizer');
+      localStorage.setItem('regional_organizer_cpf', cleanCpf);
+      localStorage.removeItem('regional_user');
+      localStorage.removeItem('garagemflow_user');
+      setIsLoading(false);
+      return { success: true };
+    } else {
+      const msg = 'Senha de acesso do organizador incorreta.';
+      setError(msg);
+      setIsLoading(false);
+      return { success: false, error: msg };
+    }
   };
 
   const logout = () => {
@@ -139,6 +183,7 @@ export function useAuth() {
     localStorage.removeItem('garagemflow_user');
     localStorage.removeItem('regional_role');
     localStorage.removeItem('garagemflow_role');
+    localStorage.removeItem('regional_organizer_cpf');
   };
 
   return {
@@ -151,3 +196,5 @@ export function useAuth() {
     logout,
   };
 }
+
+
