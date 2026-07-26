@@ -117,28 +117,35 @@ export function useCarros() {
           // Carregamento inicial rápido (sem url_foto)
           setCarros(formattedCarros);
 
-          // Carrega fotos em background em lotes de 10 para não timeout
-          const BATCH = 10;
+          // Carrega fotos em background em micro-lotes de 3 para não estourar payload/timeout com base64
+          const BATCH = 3;
           (async () => {
-            try {
-              const ids = formattedCarros.map((c) => c.id);
-              const fotoMap: Record<string, string> = {};
-              for (let i = 0; i < ids.length; i += BATCH) {
-                const batchIds = ids.slice(i, i + BATCH);
-                const { data: fotoData } = await supabase!
+            const ids = formattedCarros.map((c) => c.id);
+            for (let i = 0; i < ids.length; i += BATCH) {
+              const batchIds = ids.slice(i, i + BATCH);
+              try {
+                const { data: fotoData, error: fotoError } = await supabase!
                   .from('carros')
                   .select('id, url_foto')
                   .in('id', batchIds);
-                (fotoData || []).forEach((f: { id: string; url_foto?: string }) => {
-                  if (f.url_foto) fotoMap[f.id] = f.url_foto;
-                });
-                // Merge parcial a cada lote
-                setCarros((prev) =>
-                  prev.map((c) => (fotoMap[c.id] ? { ...c, url_foto: fotoMap[c.id] } : c))
-                );
+
+                if (fotoError) {
+                  console.warn('Erro ao carregar lote de fotos:', fotoError);
+                  continue;
+                }
+
+                if (fotoData && fotoData.length > 0) {
+                  const fotoMap: Record<string, string> = {};
+                  fotoData.forEach((f: { id: string; url_foto?: string }) => {
+                    if (f.url_foto) fotoMap[f.id] = f.url_foto;
+                  });
+                  setCarros((prev) =>
+                    prev.map((c) => (fotoMap[c.id] ? { ...c, url_foto: fotoMap[c.id] } : c))
+                  );
+                }
+              } catch (batchErr) {
+                console.warn('Exceção ao carregar lote de fotos:', batchErr);
               }
-            } catch (fotoErr) {
-              console.warn('Erro ao carregar fotos em background:', fotoErr);
             }
           })();
         }
