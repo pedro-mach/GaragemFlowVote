@@ -158,17 +158,6 @@ export function GalleryView({
     })
     .filter((c) => {
       const catObj = safeCategorias.find((cat) => cat.id === activeCategoryId);
-      const catName = (catObj?.nome || '').toLowerCase();
-      const isDestaqueOuPopular = catObj?.tipo === 'popular' || catName.includes('destaque');
-
-      // Se for categoria de destaque/popular de voto direto por visual, exige foto real
-      if (isDestaqueOuPopular && (!c.url_foto || c.url_foto.trim() === '')) {
-        return false;
-      }
-      return true;
-    })
-    .filter((c) => {
-      const catObj = safeCategorias.find((cat) => cat.id === activeCategoryId);
       if (catObj) {
         const catName = (catObj.nome || '').toLowerCase();
         if (catName.includes('masculino') && c.genero !== 'M') return false;
