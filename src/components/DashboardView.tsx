@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   ToggleLeft, ToggleRight, Car, BarChart3, ShieldCheck,
-  Plus, LogOut, RefreshCw, Layers, Camera, Trash2, Trophy, Award,
+  Plus, LogOut, RefreshCw, Layers, Camera, Image as ImageIcon, Trash2, Trophy, Award,
   Edit2, Eye, EyeOff, Check, Tag, X, Menu, Users, UserPlus
 } from 'lucide-react';
 import type { Carro, Categoria, CampoRequerido, Equipe, Evento } from '../data/mockData';
@@ -258,6 +258,7 @@ export function DashboardView({
         img.src = event.target?.result as string;
       };
       reader.readAsDataURL(file);
+      e.target.value = '';
     }
   };
 
@@ -424,6 +425,7 @@ export function DashboardView({
         img.src = event.target?.result as string;
       };
       reader.readAsDataURL(file);
+      e.target.value = '';
     }
   };
 
@@ -999,17 +1001,30 @@ export function DashboardView({
                             </button>
                           </div>
                         )}
-                        <button
-                          type="button"
-                          onClick={() => document.getElementById('camera-file-input')?.click()}
-                          style={{ ...S.input, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer', background: '#202020', borderColor: '#313131', marginBottom: 6 }}
-                        >
-                          <Camera size={14} color="#FFC000" />
-                          <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                            Capturar Foto
-                          </span>
-                        </button>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 6 }}>
+                          <button
+                            type="button"
+                            onClick={() => document.getElementById('camera-file-input')?.click()}
+                            style={{ ...S.input, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer', background: '#202020', borderColor: '#313131' }}
+                          >
+                            <Camera size={15} color="#FFC000" />
+                            <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                              Tirar Foto
+                            </span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => document.getElementById('gallery-file-input')?.click()}
+                            style={{ ...S.input, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer', background: '#202020', borderColor: '#313131' }}
+                          >
+                            <ImageIcon size={15} color="#FFC000" />
+                            <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                              Galeria
+                            </span>
+                          </button>
+                        </div>
                         <input id="camera-file-input" type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handleCameraCapture} />
+                        <input id="gallery-file-input" type="file" accept="image/*" style={{ display: 'none' }} onChange={handleCameraCapture} />
                         <input
                           type="text"
                           placeholder="Ou cole uma URL..."
@@ -1817,12 +1832,20 @@ export function DashboardView({
               {/* Foto */}
               <div>
                 <label style={S.label}>Foto do Veículo</label>
-                <button type="button" onClick={() => document.getElementById('camera-edit-input')?.click()}
-                  style={{ ...S.input, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer', background: '#202020', borderColor: '#313131', marginBottom: 6 }}>
-                  <Camera size={14} color="#FFC000" />
-                  <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Capturar / Trocar Foto</span>
-                </button>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 6 }}>
+                  <button type="button" onClick={() => document.getElementById('camera-edit-input')?.click()}
+                    style={{ ...S.input, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer', background: '#202020', borderColor: '#313131' }}>
+                    <Camera size={15} color="#FFC000" />
+                    <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tirar Foto</span>
+                  </button>
+                  <button type="button" onClick={() => document.getElementById('gallery-edit-input')?.click()}
+                    style={{ ...S.input, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer', background: '#202020', borderColor: '#313131' }}>
+                    <ImageIcon size={15} color="#FFC000" />
+                    <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Galeria</span>
+                  </button>
+                </div>
                 <input id="camera-edit-input" type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handleCameraEditCapture} />
+                <input id="gallery-edit-input" type="file" accept="image/*" style={{ display: 'none' }} onChange={handleCameraEditCapture} />
                 <input type="text" placeholder="Ou cole uma URL..." value={editUrlFoto.startsWith('data:image') ? '' : editUrlFoto}
                   onChange={e => setEditUrlFoto(e.target.value)} style={{ ...S.input, height: 36 }}
                   onFocus={e => { e.target.style.borderColor = '#FFC000'; }} onBlur={e => { e.target.style.borderColor = '#313131'; }} />
