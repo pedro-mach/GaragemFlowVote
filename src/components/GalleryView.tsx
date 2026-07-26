@@ -149,6 +149,13 @@ export function GalleryView({
   const eventCarros = safeCarros
     .filter((c) => Boolean(c))
     .filter((c) => !evento || c.evento_id === evento.id)
+    // Filtra por categorias_ids: só exibe carros inscritos na categoria ativa.
+    // Se o carro não tiver categorias_ids (dados legados), exibe normalmente para compatibilidade.
+    .filter((c) => {
+      if (!activeCategoryId) return true;
+      if (!c.categorias_ids || c.categorias_ids.length === 0) return true;
+      return c.categorias_ids.includes(activeCategoryId);
+    })
     .filter((c) => {
       const catObj = safeCategorias.find((cat) => cat.id === activeCategoryId);
       const catName = (catObj?.nome || '').toLowerCase();
