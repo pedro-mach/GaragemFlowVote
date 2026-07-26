@@ -544,7 +544,7 @@ export function GalleryView({
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
               <Award size={16} color="#FFC000" />
               <h4 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 18, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#FFFFFF', margin: 0 }}>
-                Destaques & Categorias Automotivas Especiais
+                Destaques Técnicos
               </h4>
             </div>
 
@@ -1624,16 +1624,16 @@ export function GalleryView({
                         ? 'rgba(255,192,0,0.12)'
                         : 'rgba(0,120,60,0.15)',
                     border: `1px solid ${equipeValidationMsg.type === 'error'
-                        ? 'rgba(220,50,50,0.3)'
-                        : equipeValidationMsg.type === 'warning'
-                          ? 'rgba(255,192,0,0.3)'
-                          : 'rgba(74,222,128,0.3)'
+                      ? 'rgba(220,50,50,0.3)'
+                      : equipeValidationMsg.type === 'warning'
+                        ? 'rgba(255,192,0,0.3)'
+                        : 'rgba(74,222,128,0.3)'
                       }`,
                     borderLeft: `3px solid ${equipeValidationMsg.type === 'error'
-                        ? '#ef4444'
-                        : equipeValidationMsg.type === 'warning'
-                          ? '#FFC000'
-                          : '#4ade80'
+                      ? '#ef4444'
+                      : equipeValidationMsg.type === 'warning'
+                        ? '#FFC000'
+                        : '#4ade80'
                       }`,
                     padding: '12px 14px',
                     display: 'flex',
