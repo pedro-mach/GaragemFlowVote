@@ -234,20 +234,23 @@ export function DashboardView({
         const img = new Image();
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          const maxDim = 1600;
+          const maxDim = 900; // Resolução ideal para celular (reduz drasticamente o peso do base64)
           let width = img.width;
           let height = img.height;
           if (width > height) {
-            if (width > maxDim) { height = (height * maxDim) / width; width = maxDim; }
+            if (width > maxDim) { height = Math.round((height * maxDim) / width); width = maxDim; }
           } else {
-            if (height > maxDim) { width = (width * maxDim) / height; height = maxDim; }
+            if (height > maxDim) { width = Math.round((width * maxDim) / height); height = maxDim; }
           }
           canvas.width = width;
           canvas.height = height;
           const ctx = canvas.getContext('2d');
           if (ctx) {
             ctx.drawImage(img, 0, 0, width, height);
-            setUrlFoto(canvas.toDataURL('image/jpeg', 0.92));
+            // Tenta gerar WebP 78% ou cai para JPEG 78% (super leve ~70-100KB em base64)
+            const webpUrl = canvas.toDataURL('image/webp', 0.78);
+            const finalUrl = webpUrl.startsWith('data:image/webp') ? webpUrl : canvas.toDataURL('image/jpeg', 0.78);
+            setUrlFoto(finalUrl);
           }
         };
         img.src = event.target?.result as string;
@@ -395,17 +398,22 @@ export function DashboardView({
         const img = new Image();
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          const maxDim = 1600;
+          const maxDim = 900;
           let width = img.width;
           let height = img.height;
           if (width > height) {
-            if (width > maxDim) { height = (height * maxDim) / width; width = maxDim; }
+            if (width > maxDim) { height = Math.round((height * maxDim) / width); width = maxDim; }
           } else {
-            if (height > maxDim) { width = (width * maxDim) / height; height = maxDim; }
+            if (height > maxDim) { width = Math.round((width * maxDim) / height); height = maxDim; }
           }
           canvas.width = width; canvas.height = height;
           const ctx = canvas.getContext('2d');
-          if (ctx) { ctx.drawImage(img, 0, 0, width, height); setEditUrlFoto(canvas.toDataURL('image/jpeg', 0.92)); }
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            const webpUrl = canvas.toDataURL('image/webp', 0.78);
+            const finalUrl = webpUrl.startsWith('data:image/webp') ? webpUrl : canvas.toDataURL('image/jpeg', 0.78);
+            setEditUrlFoto(finalUrl);
+          }
         };
         img.src = event.target?.result as string;
       };
