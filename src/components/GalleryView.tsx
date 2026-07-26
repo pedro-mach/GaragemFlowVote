@@ -482,9 +482,11 @@ export function GalleryView({
                                     </span>
                                   </div>
 
-                                  {carro && (carro.nome_dono || carro.equipe) && (
+                                  {carro && ((carro.nome_dono && carro.nome_dono !== 'Não informado') || carro.equipe) && (
                                     <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#7D7D7D', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                      {carro.nome_dono}{carro.equipe ? ` • Equipe: ${carro.equipe}` : ''}
+                                      {carro.nome_dono && carro.nome_dono !== 'Não informado' ? carro.nome_dono : ''}
+                                      {carro.nome_dono && carro.nome_dono !== 'Não informado' && carro.equipe ? ' • Equipe: ' : carro.equipe ? 'Equipe: ' : ''}
+                                      {carro.equipe || ''}
                                     </div>
                                   )}
                                 </div>
@@ -542,9 +544,11 @@ export function GalleryView({
                           <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, color: '#FFC000' }}>
                             Inscrição {antigo.numero_inscricao}
                           </div>
-                          <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#7D7D7D' }}>
-                            Dono: {antigo.nome_dono}
-                          </div>
+                          {antigo.nome_dono && antigo.nome_dono !== 'Não informado' && (
+                            <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#7D7D7D' }}>
+                              Dono: {antigo.nome_dono}
+                            </div>
+                          )}
                         </div>
                       </div>
                     ) : (
@@ -613,48 +617,11 @@ export function GalleryView({
                           <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, color: '#eab308', fontWeight: 700 }}>
                             {rodagemLider.km_rodado?.toLocaleString('pt-BR')} KM Rodados
                           </div>
-                          <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#7D7D7D' }}>
-                            Dono: {rodagemLider.nome_dono}
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <span style={{ fontSize: 12, color: '#7D7D7D' }}>Sem dados suficientes</span>
-                    )}
-                  </div>
-                );
-              })()}
-
-              {/* Menor Altura / Mais Baixo */}
-              {(() => {
-                const rebaixadoLider = safeCarros.filter(c => c.altura_mm && c.altura_mm > 0).sort((a, b) => (a.altura_mm || 0) - (b.altura_mm || 0))[0];
-                return (
-                  <div style={{ background: '#181818', border: '1px solid #202020', borderTop: '2px solid #a855f7', padding: '16px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                      <Ruler size={16} color="#a855f7" />
-                      <h5 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 14, textTransform: 'uppercase', color: '#a855f7', margin: 0 }}>
-                        Menor Altura (Mais Baixo)
-                      </h5>
-                    </div>
-                    {rebaixadoLider ? (
-                      <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                        {rebaixadoLider.url_foto ? (
-                          <img src={rebaixadoLider.url_foto} alt={rebaixadoLider.modelo} style={{ width: 56, height: 56, objectFit: 'cover', border: '1px solid #313131', flexShrink: 0 }} />
-                        ) : (
-                          <div style={{ width: 56, height: 56, background: '#0a0a0a', border: '1px solid #313131', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                            <Car size={24} color="#7D7D7D" />
-                          </div>
-                        )}
-                        <div>
-                          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 15, color: '#FFFFFF' }}>
-                            {rebaixadoLider.modelo} ({rebaixadoLider.numero_inscricao})
-                          </div>
-                          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, color: '#a855f7', fontWeight: 700 }}>
-                            {rebaixadoLider.altura_mm} mm de altura
-                          </div>
-                          <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#7D7D7D' }}>
-                            Dono: {rebaixadoLider.nome_dono}
-                          </div>
+                          {rodagemLider.nome_dono && rodagemLider.nome_dono !== 'Não informado' && (
+                            <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#7D7D7D' }}>
+                              Dono: {rodagemLider.nome_dono}
+                            </div>
+                          )}
                         </div>
                       </div>
                     ) : (
@@ -1110,14 +1077,18 @@ export function GalleryView({
                             }}>
                               {carro.modelo}
                             </h3>
-                            <p style={{
-                              fontFamily: "'Barlow', sans-serif",
-                              fontSize: 12,
-                              color: '#7D7D7D',
-                              margin: 0,
-                            }}>
-                              {carro.nome_dono}{carro.equipe ? ` · ${carro.equipe}` : ''}
-                            </p>
+                            {((carro.nome_dono && carro.nome_dono !== 'Não informado') || carro.equipe) && (
+                              <p style={{
+                                fontFamily: "'Barlow', sans-serif",
+                                fontSize: 12,
+                                color: '#7D7D7D',
+                                margin: 0,
+                              }}>
+                                {carro.nome_dono && carro.nome_dono !== 'Não informado' ? carro.nome_dono : ''}
+                                {carro.nome_dono && carro.nome_dono !== 'Não informado' && carro.equipe ? ' · ' : ''}
+                                {carro.equipe || ''}
+                              </p>
+                            )}
                           </div>
 
                           {/* Specs */}
