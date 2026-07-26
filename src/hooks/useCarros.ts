@@ -117,35 +117,45 @@ export function useCarros() {
           // Carregamento inicial rápido (sem url_foto)
           setCarros(formattedCarros);
 
-          // Carrega fotos em background em micro-lotes de 3 para não estourar payload/timeout com base64
-          const BATCH = 3;
+          // Carrega fotos em background com processamento paralelo (4 lotes de 4 em paralelo)
+          const BATCH_SIZE = 4;
+          const CONCURRENCY = 4;
           (async () => {
             const ids = formattedCarros.map((c) => c.id);
-            for (let i = 0; i < ids.length; i += BATCH) {
-              const batchIds = ids.slice(i, i + BATCH);
-              try {
-                const { data: fotoData, error: fotoError } = await supabase!
-                  .from('carros')
-                  .select('id, url_foto')
-                  .in('id', batchIds);
+            const chunks: string[][] = [];
+            for (let i = 0; i < ids.length; i += BATCH_SIZE) {
+              chunks.push(ids.slice(i, i + BATCH_SIZE));
+            }
 
-                if (fotoError) {
-                  console.warn('Erro ao carregar lote de fotos:', fotoError);
-                  continue;
-                }
+            for (let i = 0; i < chunks.length; i += CONCURRENCY) {
+              const currentGroup = chunks.slice(i, i + CONCURRENCY);
+              await Promise.all(
+                currentGroup.map(async (batchIds) => {
+                  try {
+                    const { data: fotoData, error: fotoError } = await supabase!
+                      .from('carros')
+                      .select('id, url_foto')
+                      .in('id', batchIds);
 
-                if (fotoData && fotoData.length > 0) {
-                  const fotoMap: Record<string, string> = {};
-                  fotoData.forEach((f: { id: string; url_foto?: string }) => {
-                    if (f.url_foto) fotoMap[f.id] = f.url_foto;
-                  });
-                  setCarros((prev) =>
-                    prev.map((c) => (fotoMap[c.id] ? { ...c, url_foto: fotoMap[c.id] } : c))
-                  );
-                }
-              } catch (batchErr) {
-                console.warn('Exceção ao carregar lote de fotos:', batchErr);
-              }
+                    if (fotoError) {
+                      console.warn('Erro ao carregar lote de fotos:', fotoError);
+                      return;
+                    }
+
+                    if (fotoData && fotoData.length > 0) {
+                      const fotoMap: Record<string, string> = {};
+                      fotoData.forEach((f: { id: string; url_foto?: string }) => {
+                        if (f.url_foto) fotoMap[f.id] = f.url_foto;
+                      });
+                      setCarros((prev) =>
+                        prev.map((c) => (fotoMap[c.id] ? { ...c, url_foto: fotoMap[c.id] } : c))
+                      );
+                    }
+                  } catch (batchErr) {
+                    console.warn('Exceção ao carregar lote de fotos:', batchErr);
+                  }
+                })
+              );
             }
           })();
         }
