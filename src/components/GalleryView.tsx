@@ -582,7 +582,7 @@ export function GalleryView({
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                       <Gauge size={16} color="#eab308" />
                       <h5 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 14, textTransform: 'uppercase', color: '#eab308', margin: 0 }}>
-                        Maior Rodagem / Quilometragem
+                        Maior Rodagem
                       </h5>
                     </div>
                     {rodagemLider ? (
@@ -596,7 +596,7 @@ export function GalleryView({
                         )}
                         <div>
                           <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 15, color: '#FFFFFF' }}>
-                            {rodagemLider.modelo} (#{rodagemLider.numero_inscricao})
+                            {rodagemLider.modelo} ({rodagemLider.numero_inscricao})
                           </div>
                           <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, color: '#eab308', fontWeight: 700 }}>
                             {rodagemLider.km_rodado?.toLocaleString('pt-BR')} KM Rodados
