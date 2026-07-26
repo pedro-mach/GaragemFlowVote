@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LogOut, Vote, AlertCircle, CheckCircle2, Trophy, Search, Gauge, Calendar, Ruler, Car, Shield, X, ZoomIn, UserPlus, AlertTriangle, RefreshCw, Award, Users, Sparkles } from 'lucide-react';
+import { LogOut, Vote, AlertCircle, CheckCircle2, Trophy, Search, Gauge, Calendar, Ruler, Car, Shield, X, ZoomIn, UserPlus, AlertTriangle, Award, Users, Sparkles } from 'lucide-react';
 import type { Carro, Categoria, Evento, Voto, Eleitor, Equipe } from '../data/mockData';
 import { validateTeamName } from '../utils/teamValidation';
 
@@ -28,7 +28,7 @@ export function GalleryView({
   equipes = [],
   userVotos = [],
   resultados = {},
-  totalVotos = 0,
+  totalVotos: _totalVotos = 0,
   fetchResultados,
   votar,
   cadastrarEquipe,
@@ -385,53 +385,7 @@ export function GalleryView({
 
       {activeMainTab === 'resultados' ? (
         <div style={{ padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 1100, margin: '0 auto', width: '100%' }}>
-          {/* Banner Placar Topo */}
-          <div style={{
-            background: 'linear-gradient(135deg, #1f1a08 0%, #121212 100%)',
-            border: '1px solid #332800',
-            borderTop: '3px solid #FFC000',
-            padding: '20px 24px',
-            display: 'flex',
-            flexWrap: 'wrap',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 16,
-          }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                <Trophy size={20} color="#FFC000" />
-                <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 22, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#FFC000', margin: 0 }}>
-                  Placar & Resultados Ao Vivo
-                </h3>
-              </div>
-              <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: '#A3A3A3', margin: 0 }}>
-                Acompanhe os mais votados pelo público e as categorias especiais automotivas em tempo real.
-              </p>
-            </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ background: '#000000', border: '1px solid #313131', padding: '8px 16px', textAlign: 'center' }}>
-                <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, color: '#7D7D7D', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
-                  Total de Votos
-                </div>
-                <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 22, color: '#FFC000', lineHeight: 1 }}>
-                  {totalVotos ?? 0}
-                </div>
-              </div>
-
-              {fetchResultados && (
-                <button
-                  onClick={() => fetchResultados()}
-                  className="btn-gold"
-                  style={{ height: 42, padding: '0 16px', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}
-                  title="Recarregar Contagem de Votos"
-                >
-                  <RefreshCw size={14} />
-                  <span>Atualizar Votos</span>
-                </button>
-              )}
-            </div>
-          </div>
 
           {/* Seção 1: Classificação por Votação Popular */}
           <div>
