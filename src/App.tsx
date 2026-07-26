@@ -38,6 +38,7 @@ function App() {
     deletarCategoria,
     toggleStatusVotacao,
     fetchFotoCarro,
+    fetchFotosParaCarros,
   } = useCarros();
 
   const {
@@ -116,6 +117,7 @@ function App() {
           resultados={resultados}
           totalVotos={totalVotos}
           fetchResultados={fetchResultados}
+          fetchFotosParaCarros={fetchFotosParaCarros}
           votar={votar}
           cadastrarEquipe={cadastrarEquipe}
           logout={logout}

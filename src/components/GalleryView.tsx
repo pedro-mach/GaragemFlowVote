@@ -13,6 +13,7 @@ interface GalleryViewProps {
   resultados?: Record<string, { carroId: string; votosCount: number }[]>;
   totalVotos?: number;
   fetchResultados?: () => Promise<void>;
+  fetchFotosParaCarros?: (carroIds: string[]) => Promise<void>;
   votar: (carroId: string, categoriaId: string) => Promise<void>;
   cadastrarEquipe?: (nome: string) => Promise<void>;
   logout: () => void;
@@ -30,6 +31,7 @@ export function GalleryView({
   resultados = {},
   totalVotos: _totalVotos = 0,
   fetchResultados,
+  fetchFotosParaCarros,
   votar,
   cadastrarEquipe,
   logout,
@@ -175,6 +177,20 @@ export function GalleryView({
         (c.equipe && c.equipe.toLowerCase().includes(term))
       );
     });
+
+  const visibleCarros = eventCarros.slice(0, visibleCount);
+
+  React.useEffect(() => {
+    if (fetchFotosParaCarros && visibleCarros.length > 0) {
+      const idsVisiveis = visibleCarros.map((c) => c.id);
+      fetchFotosParaCarros(idsVisiveis);
+    }
+  }, [visibleCarros.map((c) => c.id).join(','), fetchFotosParaCarros]);
+
+  React.useEffect(() => {
+    const comFoto = eventCarros.filter((c) => Boolean(c.url_foto && c.url_foto.trim() !== '')).length;
+    console.log(`🖼️ [GalleryView] Categoria "${currentCategory?.nome || activeCategoryId}": ${eventCarros.length} carros exibidos (${comFoto} com foto pronta).`);
+  }, [eventCarros.length, eventCarros.filter((c) => Boolean(c.url_foto)).length, activeCategoryId]);
 
   const votoNestaCategoria = safeUserVotos.find(
     (v) => v.categoria_id === activeCategoryId

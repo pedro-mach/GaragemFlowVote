@@ -114,50 +114,9 @@ export function useCarros() {
             categorias_ids: categoriasMap[c.id] || [],
           }));
 
-          // Carregamento inicial rápido (sem url_foto)
+          // Carregamento inicial rápido de metadados
+          console.log(`✅ [useCarros] ${carsData?.length} carros carregados (metadados leves). Lista inicial pronta.`);
           setCarros(formattedCarros);
-
-          // Carrega fotos em background com processamento paralelo (4 lotes de 4 em paralelo)
-          const BATCH_SIZE = 4;
-          const CONCURRENCY = 4;
-          (async () => {
-            const ids = formattedCarros.map((c) => c.id);
-            const chunks: string[][] = [];
-            for (let i = 0; i < ids.length; i += BATCH_SIZE) {
-              chunks.push(ids.slice(i, i + BATCH_SIZE));
-            }
-
-            for (let i = 0; i < chunks.length; i += CONCURRENCY) {
-              const currentGroup = chunks.slice(i, i + CONCURRENCY);
-              await Promise.all(
-                currentGroup.map(async (batchIds) => {
-                  try {
-                    const { data: fotoData, error: fotoError } = await supabase!
-                      .from('carros')
-                      .select('id, url_foto')
-                      .in('id', batchIds);
-
-                    if (fotoError) {
-                      console.warn('Erro ao carregar lote de fotos:', fotoError);
-                      return;
-                    }
-
-                    if (fotoData && fotoData.length > 0) {
-                      const fotoMap: Record<string, string> = {};
-                      fotoData.forEach((f: { id: string; url_foto?: string }) => {
-                        if (f.url_foto) fotoMap[f.id] = f.url_foto;
-                      });
-                      setCarros((prev) =>
-                        prev.map((c) => (fotoMap[c.id] ? { ...c, url_foto: fotoMap[c.id] } : c))
-                      );
-                    }
-                  } catch (batchErr) {
-                    console.warn('Exceção ao carregar lote de fotos:', batchErr);
-                  }
-                })
-              );
-            }
-          })();
         }
       } else {
         // Fluxo offline / Mock
@@ -651,6 +610,57 @@ export function useCarros() {
     }
   };
 
+  // Busca a url_foto sob demanda para uma lista específica de IDs de carros (ex: carros visíveis na tela)
+  // Usa busca individual sequencial por Primary Key (.eq('id', carroId).single()), evitando estouro do TOAST do Postgres por requisições concorrentes
+  const fetchFotosParaCarros = async (carroIds: string[]) => {
+    if (!isSupabaseConfigured || !supabase || !carroIds || carroIds.length === 0) return;
+
+    // Filtra apenas IDs que ainda não possuem foto carregada no estado
+    const idsSemFoto = carroIds.filter((id) => {
+      const c = carros.find((item) => item.id === id);
+      return c && (!c.url_foto || c.url_foto.trim() === '');
+    });
+
+    if (idsSemFoto.length === 0) return;
+
+    console.log(`📸 [fetchFotosParaCarros] Carregando fotos sob demanda sequencialmente para ${idsSemFoto.length} carros...`);
+
+    for (const carroId of idsSemFoto) {
+      try {
+        let res = await supabase!
+          .from('carros')
+          .select('id, url_foto')
+          .eq('id', carroId)
+          .single();
+
+        // Se der timeout 57014 por concorrência, faz retry imediato 1 vez
+        if (res.error && (res.error.code === '57014' || res.error.message?.includes('timeout'))) {
+          console.warn(`⏳ [fetchFotosParaCarros] Retry no ID ${carroId}...`);
+          res = await supabase!
+            .from('carros')
+            .select('id, url_foto')
+            .eq('id', carroId)
+            .single();
+        }
+
+        if (res.error) {
+          console.warn(`⚠️ [fetchFotosParaCarros] Não foi possível carregar a foto do ID ${carroId}:`, res.error);
+          continue;
+        }
+
+        if (res.data && res.data.url_foto && res.data.url_foto.trim() !== '') {
+          const foto = res.data.url_foto;
+          console.log(`✨ [fetchFotosParaCarros] Foto recebida com sucesso para o carro ${carroId}`);
+          setCarros((prev) =>
+            prev.map((c) => (c.id === carroId ? { ...c, url_foto: foto } : c))
+          );
+        }
+      } catch (err) {
+        console.error(`💥 [fetchFotosParaCarros] Exceção no ID ${carroId}:`, err);
+      }
+    }
+  };
+
   return {
     evento,
     carros,
@@ -671,5 +681,6 @@ export function useCarros() {
     deletarCategoria,
     toggleStatusVotacao,
     fetchFotoCarro,
+    fetchFotosParaCarros,
   };
 }
