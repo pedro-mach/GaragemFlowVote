@@ -563,7 +563,7 @@ export function GalleryView({
                             {equipeLider.equipe || 'Equipe Sem Nome'}
                           </div>
                           <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, color: '#22c55e', fontWeight: 700 }}>
-                            {equipeLider.pessoas_equipe} Integrantes Uniformizados
+                            {equipeLider.pessoas_equipe} Integrantes
                           </div>
                         </div>
                       </div>
