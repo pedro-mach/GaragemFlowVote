@@ -80,10 +80,12 @@ export function useCarros() {
         setEquipes(equipesData || []);
 
         // 4. Buscar carros do evento ativo com suas categorias inscritas
+        // NOTA: url_foto é excluída do SELECT para evitar timeout (base64 pesado).
+        // A foto é carregada individualmente apenas no modal de edição.
         if (activeEvent) {
           const { data: carsData, error: carsError } = await supabase
             .from('carros')
-            .select('*')
+            .select('id, evento_id, numero_inscricao, modelo, ano, altura_mm, nome_dono, telefone_dono, equipe, equipe_id, km_rodado, genero, pessoas_equipe, criado_em')
             .eq('evento_id', activeEvent.id)
             .order('numero_inscricao');
 
@@ -112,7 +114,33 @@ export function useCarros() {
             categorias_ids: categoriasMap[c.id] || [],
           }));
 
+          // Carregamento inicial rápido (sem url_foto)
           setCarros(formattedCarros);
+
+          // Carrega fotos em background em lotes de 10 para não timeout
+          const BATCH = 10;
+          (async () => {
+            try {
+              const ids = formattedCarros.map((c) => c.id);
+              const fotoMap: Record<string, string> = {};
+              for (let i = 0; i < ids.length; i += BATCH) {
+                const batchIds = ids.slice(i, i + BATCH);
+                const { data: fotoData } = await supabase!
+                  .from('carros')
+                  .select('id, url_foto')
+                  .in('id', batchIds);
+                (fotoData || []).forEach((f: { id: string; url_foto?: string }) => {
+                  if (f.url_foto) fotoMap[f.id] = f.url_foto;
+                });
+                // Merge parcial a cada lote
+                setCarros((prev) =>
+                  prev.map((c) => (fotoMap[c.id] ? { ...c, url_foto: fotoMap[c.id] } : c))
+                );
+              }
+            } catch (fotoErr) {
+              console.warn('Erro ao carregar fotos em background:', fotoErr);
+            }
+          })();
         }
       } else {
         // Fluxo offline / Mock
@@ -582,6 +610,30 @@ export function useCarros() {
     }
   };
 
+  // Busca a url_foto de um único carro (lazy — não vem no SELECT da lista)
+  const fetchFotoCarro = async (id: string): Promise<string | null> => {
+    if (!isSupabaseConfigured || !supabase) {
+      const stored = localStorage.getItem('regional_db_carros') || localStorage.getItem('garagemflow_db_carros');
+      if (stored) {
+        const all = JSON.parse(stored) as Carro[];
+        return all.find((c) => c.id === id)?.url_foto ?? null;
+      }
+      return null;
+    }
+    try {
+      const { data, error } = await supabase
+        .from('carros')
+        .select('url_foto')
+        .eq('id', id)
+        .single();
+      if (error) throw error;
+      return data?.url_foto ?? null;
+    } catch (err) {
+      console.error('Erro ao buscar foto do carro:', err);
+      return null;
+    }
+  };
+
   return {
     evento,
     carros,
@@ -601,5 +653,6 @@ export function useCarros() {
     toggleOcultarCategoria,
     deletarCategoria,
     toggleStatusVotacao,
+    fetchFotoCarro,
   };
 }

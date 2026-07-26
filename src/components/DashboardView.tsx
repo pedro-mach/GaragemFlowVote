@@ -60,6 +60,7 @@ interface DashboardViewProps {
   deletarEquipe?: (id: string) => Promise<void>;
   toggleStatusVotacao: () => Promise<void>;
   fetchResultados: () => Promise<void>;
+  fetchFotoCarro?: (id: string) => Promise<string | null>;
   logout: () => void;
 }
 
@@ -141,6 +142,7 @@ export function DashboardView({
   deletarEquipe: _deletarEquipe,
   toggleStatusVotacao,
   fetchResultados,
+  fetchFotoCarro,
   logout,
 }: DashboardViewProps) {
   const [activeTab, setActiveTab] = useState<TabType>('status');
@@ -339,7 +341,11 @@ export function DashboardView({
     setEditNomeDono(carro.nome_dono);
     setEditGenero(carro.genero || 'M');
     setEditTelefoneDono(carro.telefone_dono || '');
-    setEditUrlFoto(carro.url_foto || '');
+    // url_foto não vem na lista principal — carrega lazy aqui
+    setEditUrlFoto('');
+    if (fetchFotoCarro) {
+      fetchFotoCarro(carro.id).then((foto) => setEditUrlFoto(foto || ''));
+    }
     setEditKmRodado(carro.km_rodado ? String(carro.km_rodado) : '');
     setEditPessoasEquipe(carro.pessoas_equipe ? String(carro.pessoas_equipe) : '');
     setEditCategoriasIds(carro.categorias_ids || []);
