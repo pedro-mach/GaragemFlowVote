@@ -40,7 +40,7 @@ export function GalleryView({
   const [activeCategoryId, setActiveCategoryId] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [zoomPhoto, setZoomPhoto] = useState<{ url: string; modelo: string; numero: string } | null>(null);
-  const [visibleCount, setVisibleCount] = useState(10);
+  const [visibleCount, setVisibleCount] = useState(5);
 
   // States modal de cadastro de equipe por usuários normais
   const [showEquipeModal, setShowEquipeModal] = useState(false);
@@ -143,7 +143,7 @@ export function GalleryView({
   };
 
   useEffect(() => {
-    setVisibleCount(10);
+    setVisibleCount(5);
   }, [activeCategoryId, searchTerm]);
 
   const eventCarros = safeCarros
@@ -1273,7 +1273,7 @@ export function GalleryView({
             {visibleCount < (isMaiorEquipeCategory ? equipesUniformizadas.length : eventCarros.length) && (
               <div style={{ display: 'flex', justifyContent: 'center', marginTop: 24 }}>
                 <button
-                  onClick={() => setVisibleCount((prev) => prev + 10)}
+                  onClick={() => setVisibleCount((prev) => prev + 5)}
                   style={{
                     background: '#202020',
                     color: '#FFC000',
