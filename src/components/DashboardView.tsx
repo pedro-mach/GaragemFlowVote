@@ -1243,11 +1243,21 @@ export function DashboardView({
                     </form>
                   </div>
 
-                  {/* Lista */}
+                  {/* Lista / Contador */}
                   <div style={{ background: '#181818', border: '1px solid #202020', padding: '20px' }}>
-                    <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#FFFFFF', margin: '0 0 16px 0', paddingBottom: 14, borderBottom: '1px solid #202020' }}>
-                      Veículos Cadastrados({carros.length})
-                    </h3>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 14, marginBottom: 16, borderBottom: '1px solid #202020' }}>
+                      <div>
+                        <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#FFFFFF', margin: 0 }}>
+                          Veículos Cadastrados
+                        </h3>
+                        <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#7D7D7D' }}>
+                          Imagens desativadas para economizar dados
+                        </span>
+                      </div>
+                      <div style={{ background: '#FFC000', color: '#000000', padding: '6px 14px', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 18, borderRadius: 0 }}>
+                        {carros.length} {carros.length === 1 ? 'Inscrito' : 'Inscritos'}
+                      </div>
+                    </div>
 
                     <div style={{ maxHeight: 500, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }} className="no-scrollbar">
                       {carros.length === 0 ? (
@@ -1258,39 +1268,18 @@ export function DashboardView({
                         carros.map((carro) => (
                           <div
                             key={carro.id}
-                            style={{ background: '#000000', border: '1px solid #202020', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}
+                            style={{ background: '#000000', border: '1px solid #202020', padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}
                           >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-                              {carro.url_foto ? (
-                                <img
-                                  src={carro.url_foto}
-                                  alt={carro.modelo}
-                                  style={{ width: 52, height: 52, objectFit: 'cover', flexShrink: 0, display: 'block', border: '1px solid #202020' }}
-                                />
-                              ) : (
-                                <div style={{ width: 52, height: 52, flexShrink: 0, background: '#181818', border: '1px solid #202020', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                  <Camera size={18} color="#313131" />
-                                </div>
-                              )}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                              <span style={{ background: '#FFC000', color: '#000000', padding: '2px 8px', fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
+                                {carro.numero_inscricao}
+                              </span>
                               <div style={{ minWidth: 0 }}>
-                                <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 15, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#FFFFFF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                  {carro.modelo}
+                                <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#FFFFFF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                  {carro.modelo || 'Sem modelo informado'}
                                 </div>
-                                <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#7D7D7D', marginTop: 3 }}>
+                                <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#7D7D7D' }}>
                                   {carro.nome_dono}{carro.equipe ? ` · ${carro.equipe}` : ''}
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
-                                  <span style={{ background: '#FFC000', color: '#000000', padding: '2px 8px', fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, fontWeight: 700 }}>
-                                    {carro.numero_inscricao}
-                                  </span>
-                                  <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, color: '#7D7D7D' }}>
-                                    {carro.ano} {carro.altura_mm && carro.altura_mm > 0 ? `· ${carro.altura_mm}mm` : ''}
-                                  </span>
-                                  {carro.categorias_ids && carro.categorias_ids.length > 0 && (
-                                    <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, color: '#FFC000', background: 'rgba(255,192,0,0.08)', border: '1px solid rgba(255,192,0,0.2)', padding: '1px 6px' }}>
-                                      {carro.categorias_ids.length} cat.
-                                    </span>
-                                  )}
                                 </div>
                               </div>
                             </div>
@@ -1299,12 +1288,12 @@ export function DashboardView({
                               {editarCarro && (
                                 <button
                                   onClick={() => openEditModal(carro)}
-                                  style={{ background: 'rgba(255,192,0,0.1)', border: '1px solid rgba(255,192,0,0.3)', color: '#FFC000', padding: 8, cursor: 'pointer', display: 'flex', transition: 'background 0.12s' }}
+                                  style={{ background: 'rgba(255,192,0,0.1)', border: '1px solid rgba(255,192,0,0.3)', color: '#FFC000', padding: '6px 8px', cursor: 'pointer', display: 'flex', transition: 'background 0.12s' }}
                                   title="Editar"
                                   onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,192,0,0.25)'; }}
                                   onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,192,0,0.1)'; }}
                                 >
-                                  <Edit2 size={15} />
+                                  <Edit2 size={14} />
                                 </button>
                               )}
                               <button
@@ -1313,12 +1302,12 @@ export function DashboardView({
                                     await deletarCarro(carro.id);
                                   }
                                 }}
-                                style={{ background: 'rgba(180,0,0,0.1)', border: '1px solid rgba(200,50,50,0.3)', color: '#ef4444', padding: 8, cursor: 'pointer', display: 'flex', transition: 'background 0.12s' }}
+                                style={{ background: 'rgba(180,0,0,0.1)', border: '1px solid rgba(200,50,50,0.3)', color: '#ef4444', padding: '6px 8px', cursor: 'pointer', display: 'flex', transition: 'background 0.12s' }}
                                 title="Excluir"
                                 onMouseEnter={e => { e.currentTarget.style.background = 'rgba(180,0,0,0.25)'; }}
                                 onMouseLeave={e => { e.currentTarget.style.background = 'rgba(180,0,0,0.1)'; }}
                               >
-                                <Trash2 size={15} />
+                                <Trash2 size={14} />
                               </button>
                             </div>
                           </div>

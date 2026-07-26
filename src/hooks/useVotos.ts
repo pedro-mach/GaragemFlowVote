@@ -48,13 +48,19 @@ export function useVotos(eleitorId?: string, eventoId?: string) {
 
         if (votesError) throw votesError;
 
-        // Obter contagem total de eleitores cadastrados
-        const { count: eleitoresCount } = await supabase
-          .from('eleitores')
-          .select('*', { count: 'exact', head: true });
+        // Obter contagem total de eleitores (usa estimativa rápida para evitar timeout no Postgres)
+        let eleitoresCount: number | null = null;
+        try {
+          const { count } = await supabase
+            .from('eleitores')
+            .select('*', { count: 'estimated', head: true });
+          eleitoresCount = count;
+        } catch {
+          // Fallback silencioso se a contagem do banco falhar
+        }
 
         const uniqueVotersInVotes = new Set(data?.map((v: { eleitor_id: string }) => v.eleitor_id)).size;
-        setTotalUsuarios(eleitoresCount ?? uniqueVotersInVotes);
+        setTotalUsuarios(eleitoresCount || uniqueVotersInVotes);
         setTotalVotos(data?.length || 0);
 
         // Agrupar votos

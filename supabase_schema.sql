@@ -115,19 +115,18 @@ insert into public.categorias (nome, tipo, campos_requeridos) values
   ('Maior rodagem', 'interna', array['km_rodado'])
 on conflict (nome) do update set tipo = excluded.tipo, campos_requeridos = excluded.campos_requeridos;
 
--- ─── MIGRAÇÕES (para bancos já existentes) ────────────────────────────────────
--- Execute apenas se o banco já existia antes deste schema:
+-- ─── ÍNDICES DE ALTA PERFORMANCE (Evita Erro 57014 Statement Timeout) ─────────────────
+create index if not exists idx_carros_evento_id on public.carros(evento_id);
+create index if not exists idx_carros_equipe_id on public.carros(equipe_id);
 
--- Criar tabela equipes se não existir
--- (já coberto pelo "create table if not exists" acima)
+create index if not exists idx_carro_categorias_carro_id on public.carro_categorias(carro_id);
+create index if not exists idx_carro_categorias_categoria_id on public.carro_categorias(categoria_id);
 
--- Adicionar colunas novas na tabela carros (se já existir)
-alter table public.carros add column if not exists equipe_id uuid references public.equipes(id) on delete set null;
-alter table public.carros add column if not exists pessoas_equipe integer not null default 0;
+create index if not exists idx_votos_evento_id on public.votos(evento_id);
+create index if not exists idx_votos_eleitor_evento on public.votos(eleitor_id, evento_id);
+create index if not exists idx_votos_carro_id on public.votos(carro_id);
+create index if not exists idx_votos_categoria_id on public.votos(categoria_id);
 
--- Adicionar coluna campos_requeridos na tabela categorias (se já existir)
-alter table public.categorias add column if not exists campos_requeridos text[] not null default '{}'::text[];
+create index if not exists idx_eleitores_id on public.eleitores(id);
 
--- Criar tabela carro_categorias se não existir
--- (já coberto pelo "create table if not exists" acima)
 
