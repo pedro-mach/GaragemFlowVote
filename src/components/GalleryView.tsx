@@ -462,7 +462,7 @@ export function GalleryView({
                                         {medal.label}
                                       </span>
                                       <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 14, fontWeight: 700, color: '#FFFFFF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                        {carro ? `${carro.modelo} ${carro.numero_inscricao ? `(#${carro.numero_inscricao})` : ''}` : `ID: ${item.carroId}`}
+                                        {carro ? `${carro.modelo} ${carro.numero_inscricao ? `(${carro.numero_inscricao.startsWith('#') ? carro.numero_inscricao : `#${carro.numero_inscricao}`})` : ''}` : `ID: ${item.carroId}`}
                                       </span>
                                     </div>
                                     <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, fontWeight: 700, color: '#FFC000', flexShrink: 0 }}>
@@ -511,7 +511,7 @@ export function GalleryView({
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                       <Calendar size={16} color="#3b82f6" />
                       <h5 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 14, textTransform: 'uppercase', color: '#3b82f6', margin: 0 }}>
-                        Carro Mais Antigo Cadastrado
+                        Carro Mais Antigo
                       </h5>
                     </div>
                     {antigo ? (
@@ -528,7 +528,7 @@ export function GalleryView({
                             {antigo.modelo} ({antigo.ano})
                           </div>
                           <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, color: '#FFC000' }}>
-                            Inscrição #{antigo.numero_inscricao}
+                            Inscrição {antigo.numero_inscricao}
                           </div>
                           <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#7D7D7D' }}>
                             Dono: {antigo.nome_dono}
@@ -635,7 +635,7 @@ export function GalleryView({
                         )}
                         <div>
                           <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 15, color: '#FFFFFF' }}>
-                            {rebaixadoLider.modelo} (#{rebaixadoLider.numero_inscricao})
+                            {rebaixadoLider.modelo} ({rebaixadoLider.numero_inscricao})
                           </div>
                           <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, color: '#a855f7', fontWeight: 700 }}>
                             {rebaixadoLider.altura_mm} mm de altura
