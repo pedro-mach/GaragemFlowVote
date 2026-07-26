@@ -38,9 +38,50 @@ export function useAuth() {
     setIsLoading(false);
   }, []);
 
+  const MAX_ATTEMPTS = 3;
+  const LOCKOUT_TIME_MS = 5 * 60 * 1000; // 5 minutos
+
+  const checkLockout = (): { locked: boolean; message?: string } => {
+    const now = Date.now();
+    const lockoutUntil = parseInt(localStorage.getItem('login_lockout_until') || '0', 10);
+    if (now < lockoutUntil) {
+      const remainingMinutes = Math.ceil((lockoutUntil - now) / 60000);
+      return {
+        locked: true,
+        message: `Acesso incorreto, tente em ${remainingMinutes} min.`,
+      };
+    }
+    return { locked: false };
+  };
+
+  const recordFailedAttempt = (): string => {
+    const attempts = parseInt(localStorage.getItem('login_attempts') || '0', 10) + 1;
+    if (attempts >= MAX_ATTEMPTS) {
+      const lockoutUntil = Date.now() + LOCKOUT_TIME_MS;
+      localStorage.setItem('login_lockout_until', lockoutUntil.toString());
+      localStorage.setItem('login_attempts', '0');
+      return 'Acesso incorreto, tente em 5 min.';
+    } else {
+      localStorage.setItem('login_attempts', attempts.toString());
+      return 'Acesso incorreto. Tente novamente.';
+    }
+  };
+
+  const clearAttempts = () => {
+    localStorage.removeItem('login_attempts');
+    localStorage.removeItem('login_lockout_until');
+  };
+
   const login = async (cpf: string, dataNascimento: string) => {
     setIsLoading(true);
     setError(null);
+
+    const lock = checkLockout();
+    if (lock.locked) {
+      setError(lock.message!);
+      setIsLoading(false);
+      return;
+    }
 
     if (!validateCPF(cpf)) {
       setError('CPF inválido. Por favor, forneça um número de CPF válido.');
@@ -64,14 +105,14 @@ export function useAuth() {
 
         if (existing) {
           // Verifica se a data de nascimento coincide
-          // Supabase pode salvar 'YYYY-MM-DD', garantimos formatação equivalente
           if (existing.data_nascimento === dataNascimento) {
+            clearAttempts();
             setUser(existing);
             setIsOrganizer(false);
             localStorage.setItem('regional_user', JSON.stringify(existing));
             localStorage.setItem('regional_role', 'voter');
           } else {
-            throw new Error('Data de nascimento incorreta para este CPF.');
+            throw new Error('MISMATCH');
           }
         } else {
           // Cria novo eleitor (cadastro silencioso)
@@ -83,6 +124,7 @@ export function useAuth() {
 
           if (insertError) throw insertError;
 
+          clearAttempts();
           setUser(created);
           setIsOrganizer(false);
           localStorage.setItem('regional_user', JSON.stringify(created));
@@ -90,7 +132,6 @@ export function useAuth() {
         }
       } else {
         // Fluxo offline / Mock
-        // Usar banco simulado local no LocalStorage
         const localDb: Eleitor[] = JSON.parse(
           localStorage.getItem('regional_db_eleitores') || localStorage.getItem('garagemflow_db_eleitores') || '[]'
         );
@@ -99,12 +140,13 @@ export function useAuth() {
 
         if (existing) {
           if (existing.data_nascimento === dataNascimento) {
+            clearAttempts();
             setUser(existing);
             setIsOrganizer(false);
             localStorage.setItem('regional_user', JSON.stringify(existing));
             localStorage.setItem('regional_role', 'voter');
           } else {
-            throw new Error('Data de nascimento incorreta para este CPF.');
+            throw new Error('MISMATCH');
           }
         } else {
           const newEleitor: Eleitor = {
@@ -116,6 +158,7 @@ export function useAuth() {
           localDb.push(newEleitor);
           localStorage.setItem('regional_db_eleitores', JSON.stringify(localDb));
 
+          clearAttempts();
           setUser(newEleitor);
           setIsOrganizer(false);
           localStorage.setItem('regional_user', JSON.stringify(newEleitor));
@@ -124,7 +167,8 @@ export function useAuth() {
       }
     } catch (err: any) {
       console.error('Erro no login:', err);
-      setError(err.message || 'Erro ao realizar login.');
+      const msg = recordFailedAttempt();
+      setError(msg);
     } finally {
       setIsLoading(false);
     }
@@ -133,6 +177,13 @@ export function useAuth() {
   const loginAsOrganizer = (cpf: string, password: string): { success: boolean; error?: string } => {
     setIsLoading(true);
     setError(null);
+
+    const lock = checkLockout();
+    if (lock.locked) {
+      setError(lock.message!);
+      setIsLoading(false);
+      return { success: false, error: lock.message };
+    }
 
     if (!validateCPF(cpf)) {
       const msg = 'CPF de organizador inválido.';
@@ -152,7 +203,7 @@ export function useAuth() {
     if (envCpfs) {
       const allowedCpfs = envCpfs.split(',').map((c: string) => c.replace(/\D/g, '').trim());
       if (!allowedCpfs.includes(cleanCpf)) {
-        const msg = 'Este CPF não possui permissão de acesso ao painel de organizadores.';
+        const msg = recordFailedAttempt();
         setError(msg);
         setIsLoading(false);
         return { success: false, error: msg };
@@ -160,6 +211,7 @@ export function useAuth() {
     }
 
     if (validPasswords.includes(password.trim())) {
+      clearAttempts();
       setIsOrganizer(true);
       setUser(null);
       localStorage.setItem('regional_role', 'organizer');
@@ -169,7 +221,7 @@ export function useAuth() {
       setIsLoading(false);
       return { success: true };
     } else {
-      const msg = 'Senha de acesso do organizador incorreta.';
+      const msg = recordFailedAttempt();
       setError(msg);
       setIsLoading(false);
       return { success: false, error: msg };

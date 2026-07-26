@@ -51,10 +51,21 @@ export function useCarros() {
         const storedCatState = localStorage.getItem('regional_categorias_ocultas') || localStorage.getItem('garagemflow_categorias_ocultas');
         const ocultasMap: Record<string, boolean> = storedCatState ? JSON.parse(storedCatState) : {};
 
+        const getCamposRequeridos = (cat: { nome?: string; campos_requeridos?: CampoRequerido[] }): CampoRequerido[] => {
+          if (cat.campos_requeridos && Array.isArray(cat.campos_requeridos) && cat.campos_requeridos.length > 0) {
+            return cat.campos_requeridos;
+          }
+          const name = (cat.nome || '').toLowerCase();
+          if (name.includes('equipe')) return ['equipe'];
+          if (name.includes('rodagem') || name.includes('km')) return ['km_rodado'];
+          if (name.includes('masculino') || name.includes('feminino')) return ['genero', 'foto'];
+          return mockCategorias.find(mc => mc.nome.toLowerCase() === name)?.campos_requeridos || [];
+        };
+
         const formattedCats = (catData || []).map((c) => ({
           ...c,
           oculta: ocultasMap[c.id] ?? c.oculta ?? false,
-          campos_requeridos: c.campos_requeridos || mockCategorias.find(mc => mc.nome === c.nome)?.campos_requeridos || [],
+          campos_requeridos: getCamposRequeridos(c),
         }));
 
         setCategorias(formattedCats);
@@ -113,15 +124,25 @@ export function useCarros() {
           setEvento(mockEvento);
         }
 
+        const getCamposRequeridos = (cat: { nome?: string; campos_requeridos?: CampoRequerido[] }): CampoRequerido[] => {
+          if (cat.campos_requeridos && Array.isArray(cat.campos_requeridos) && cat.campos_requeridos.length > 0) {
+            return cat.campos_requeridos;
+          }
+          const name = (cat.nome || '').toLowerCase();
+          if (name.includes('equipe')) return ['equipe'];
+          if (name.includes('rodagem') || name.includes('km')) return ['km_rodado'];
+          if (name.includes('masculino') || name.includes('feminino')) return ['genero', 'foto'];
+          return mockCategorias.find(mc => mc.nome.toLowerCase() === name)?.campos_requeridos || [];
+        };
+
         const localCategorias = localStorage.getItem('regional_categorias') || localStorage.getItem('garagemflow_categorias');
         if (localCategorias) {
           const parsedCats = JSON.parse(localCategorias);
           const mergedCats = parsedCats.map((c: Categoria) => ({
             ...c,
-            campos_requeridos: c.campos_requeridos || mockCategorias.find(mc => mc.nome === c.nome)?.campos_requeridos || []
+            campos_requeridos: getCamposRequeridos(c)
           }));
           setCategorias(mergedCats);
-          // Opcionalmente atualiza o cache para ter os novos campos salvos
           localStorage.setItem('regional_categorias', JSON.stringify(mergedCats));
         } else {
           localStorage.setItem('regional_categorias', JSON.stringify(mockCategorias));

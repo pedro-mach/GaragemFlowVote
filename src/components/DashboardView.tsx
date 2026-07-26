@@ -886,8 +886,17 @@ export function DashboardView({
               const camposNecessarios = new Set<CampoRequerido>();
               categoriasIds.forEach((id) => {
                 const cat = categorias.find((c) => c.id === id);
-                if (cat?.campos_requeridos) {
-                  cat.campos_requeridos.forEach((c) => camposNecessarios.add(c));
+                if (cat) {
+                  if (cat.campos_requeridos && cat.campos_requeridos.length > 0) {
+                    cat.campos_requeridos.forEach((c) => camposNecessarios.add(c));
+                  }
+                  const nomeLower = cat.nome.toLowerCase();
+                  if (nomeLower.includes('equipe')) camposNecessarios.add('equipe');
+                  if (nomeLower.includes('rodagem') || nomeLower.includes('km')) camposNecessarios.add('km_rodado');
+                  if (nomeLower.includes('masculino') || nomeLower.includes('feminino')) {
+                    camposNecessarios.add('genero');
+                    camposNecessarios.add('foto');
+                  }
                 }
               });
               const temCamposComplementares = camposNecessarios.size > 0;
@@ -1180,7 +1189,7 @@ export function DashboardView({
                           )}
 
                           {/* Pessoas na equipe */}
-                          {camposNecessarios.has('equipe') && equipeId && (
+                          {camposNecessarios.has('equipe') && (
                             <div>
                               <label style={S.label}>Pessoas uniformizadas na equipe (neste carro)</label>
                               <input

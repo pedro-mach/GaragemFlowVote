@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LogOut, Vote, AlertCircle, CheckCircle2, Trophy, Search, Gauge, Calendar, Ruler, Car, Shield, X, ZoomIn, UserPlus, AlertTriangle, RefreshCw, Award, Users, Sparkles } from 'lucide-react';
+import { LogOut, Vote, AlertCircle, CheckCircle2, Trophy, Search, Gauge, Calendar, Ruler, Car, Shield, X, ZoomIn, UserPlus, AlertTriangle, Award, Users, Sparkles } from 'lucide-react';
 import type { Carro, Categoria, Evento, Voto, Eleitor, Equipe } from '../data/mockData';
 import { validateTeamName } from '../utils/teamValidation';
 
@@ -28,7 +28,7 @@ export function GalleryView({
   equipes = [],
   userVotos = [],
   resultados = {},
-  totalVotos = 0,
+  totalVotos: _totalVotos = 0,
   fetchResultados,
   votar,
   cadastrarEquipe,
@@ -392,53 +392,7 @@ export function GalleryView({
 
       {activeMainTab === 'resultados' ? (
         <div style={{ padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 1100, margin: '0 auto', width: '100%' }}>
-          {/* Banner Placar Topo */}
-          <div style={{
-            background: 'linear-gradient(135deg, #1f1a08 0%, #121212 100%)',
-            border: '1px solid #332800',
-            borderTop: '3px solid #FFC000',
-            padding: '20px 24px',
-            display: 'flex',
-            flexWrap: 'wrap',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 16,
-          }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                <Trophy size={20} color="#FFC000" />
-                <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 22, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#FFC000', margin: 0 }}>
-                  Placar & Resultados Ao Vivo
-                </h3>
-              </div>
-              <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: '#A3A3A3', margin: 0 }}>
-                Acompanhe os mais votados pelo público e as categorias especiais automotivas em tempo real.
-              </p>
-            </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ background: '#000000', border: '1px solid #313131', padding: '8px 16px', textAlign: 'center' }}>
-                <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, color: '#7D7D7D', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
-                  Total de Votos
-                </div>
-                <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: 22, color: '#FFC000', lineHeight: 1 }}>
-                  {totalVotos ?? 0}
-                </div>
-              </div>
-
-              {fetchResultados && (
-                <button
-                  onClick={() => fetchResultados()}
-                  className="btn-gold"
-                  style={{ height: 42, padding: '0 16px', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}
-                  title="Recarregar Contagem de Votos"
-                >
-                  <RefreshCw size={14} />
-                  <span>Atualizar Votos</span>
-                </button>
-              )}
-            </div>
-          </div>
 
           {/* Seção 1: Classificação por Votação Popular */}
           <div>
@@ -515,7 +469,7 @@ export function GalleryView({
                                         {medal.label}
                                       </span>
                                       <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 14, fontWeight: 700, color: '#FFFFFF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                        {carro ? `${carro.modelo} ${carro.numero_inscricao ? `(#${carro.numero_inscricao})` : ''}` : `ID: ${item.carroId}`}
+                                        {carro ? `${carro.modelo} ${carro.numero_inscricao ? `(${carro.numero_inscricao.startsWith('#') ? carro.numero_inscricao : `#${carro.numero_inscricao}`})` : ''}` : `ID: ${item.carroId}`}
                                       </span>
                                     </div>
                                     <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, fontWeight: 700, color: '#FFC000', flexShrink: 0 }}>
@@ -551,7 +505,7 @@ export function GalleryView({
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
               <Award size={16} color="#FFC000" />
               <h4 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 18, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#FFFFFF', margin: 0 }}>
-                Destaques & Categorias Automotivas Especiais
+                Destaques Técnicos
               </h4>
             </div>
 
@@ -564,7 +518,7 @@ export function GalleryView({
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                       <Calendar size={16} color="#3b82f6" />
                       <h5 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 14, textTransform: 'uppercase', color: '#3b82f6', margin: 0 }}>
-                        Carro Mais Antigo Cadastrado
+                        Carro Mais Antigo
                       </h5>
                     </div>
                     {antigo ? (
@@ -581,7 +535,7 @@ export function GalleryView({
                             {antigo.modelo} ({antigo.ano})
                           </div>
                           <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, color: '#FFC000' }}>
-                            Inscrição #{antigo.numero_inscricao}
+                            Inscrição {antigo.numero_inscricao}
                           </div>
                           <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#7D7D7D' }}>
                             Dono: {antigo.nome_dono}
@@ -616,7 +570,7 @@ export function GalleryView({
                             {equipeLider.equipe || 'Equipe Sem Nome'}
                           </div>
                           <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, color: '#22c55e', fontWeight: 700 }}>
-                            {equipeLider.pessoas_equipe} Integrantes Uniformizados
+                            {equipeLider.pessoas_equipe} Integrantes
                           </div>
                         </div>
                       </div>
@@ -635,7 +589,7 @@ export function GalleryView({
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                       <Gauge size={16} color="#eab308" />
                       <h5 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 14, textTransform: 'uppercase', color: '#eab308', margin: 0 }}>
-                        Maior Rodagem / Quilometragem
+                        Maior Rodagem
                       </h5>
                     </div>
                     {rodagemLider ? (
@@ -649,7 +603,7 @@ export function GalleryView({
                         )}
                         <div>
                           <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 15, color: '#FFFFFF' }}>
-                            {rodagemLider.modelo} (#{rodagemLider.numero_inscricao})
+                            {rodagemLider.modelo} ({rodagemLider.numero_inscricao})
                           </div>
                           <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, color: '#eab308', fontWeight: 700 }}>
                             {rodagemLider.km_rodado?.toLocaleString('pt-BR')} KM Rodados
@@ -688,7 +642,7 @@ export function GalleryView({
                         )}
                         <div>
                           <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 15, color: '#FFFFFF' }}>
-                            {rebaixadoLider.modelo} (#{rebaixadoLider.numero_inscricao})
+                            {rebaixadoLider.modelo} ({rebaixadoLider.numero_inscricao})
                           </div>
                           <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, color: '#a855f7', fontWeight: 700 }}>
                             {rebaixadoLider.altura_mm} mm de altura
@@ -1631,16 +1585,16 @@ export function GalleryView({
                         ? 'rgba(255,192,0,0.12)'
                         : 'rgba(0,120,60,0.15)',
                     border: `1px solid ${equipeValidationMsg.type === 'error'
-                        ? 'rgba(220,50,50,0.3)'
-                        : equipeValidationMsg.type === 'warning'
-                          ? 'rgba(255,192,0,0.3)'
-                          : 'rgba(74,222,128,0.3)'
+                      ? 'rgba(220,50,50,0.3)'
+                      : equipeValidationMsg.type === 'warning'
+                        ? 'rgba(255,192,0,0.3)'
+                        : 'rgba(74,222,128,0.3)'
                       }`,
                     borderLeft: `3px solid ${equipeValidationMsg.type === 'error'
-                        ? '#ef4444'
-                        : equipeValidationMsg.type === 'warning'
-                          ? '#FFC000'
-                          : '#4ade80'
+                      ? '#ef4444'
+                      : equipeValidationMsg.type === 'warning'
+                        ? '#FFC000'
+                        : '#4ade80'
                       }`,
                     padding: '12px 14px',
                     display: 'flex',
