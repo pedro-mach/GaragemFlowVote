@@ -78,6 +78,8 @@ export function GalleryView({
   const currentCategory = visibleCategorias.find((c) => c?.id === activeCategoryId);
   const isInternalCategory = currentCategory?.tipo === 'interna';
   const isMaiorEquipeCategory = currentCategory?.id === 'cat-4' || currentCategory?.nome?.toLowerCase().includes('equipe');
+  const isMaiorRodagemCategory = currentCategory?.nome?.toLowerCase().includes('rodagem') || currentCategory?.nome?.toLowerCase().includes('km');
+  const isMaisAntigoCategory = currentCategory?.nome?.toLowerCase().includes('antigo') || currentCategory?.nome?.toLowerCase().includes('ano');
 
   const equipesUniformizadas = React.useMemo(() => {
     const groups: Record<string, number> = {};
@@ -148,7 +150,7 @@ export function GalleryView({
     setVisibleCount(5);
   }, [activeCategoryId, searchTerm]);
 
-  const eventCarros = safeCarros
+  let eventCarros = safeCarros
     .filter((c) => Boolean(c))
     .filter((c) => !evento || c.evento_id === evento.id)
     // Filtra por categorias_ids: só exibe carros inscritos na categoria ativa.
@@ -177,6 +179,12 @@ export function GalleryView({
         (c.equipe && c.equipe.toLowerCase().includes(term))
       );
     });
+
+  if (isMaiorRodagemCategory) {
+    eventCarros = [...eventCarros].sort((a, b) => (Number(b.km_rodado) || 0) - (Number(a.km_rodado) || 0));
+  } else if (isMaisAntigoCategory) {
+    eventCarros = [...eventCarros].sort((a, b) => (Number(a.ano) || 9999) - (Number(b.ano) || 9999));
+  }
 
   const visibleCarros = eventCarros.slice(0, visibleCount);
 
@@ -592,40 +600,54 @@ export function GalleryView({
 
               {/* Maior Rodagem */}
               {(() => {
-                const rodagemLider = safeCarros.filter(c => c.km_rodado && c.km_rodado > 0).sort((a, b) => (b.km_rodado || 0) - (a.km_rodado || 0))[0];
+                const rodagemLider = safeCarros
+                  .filter(c => c && c.km_rodado !== undefined && c.km_rodado !== null && Number(c.km_rodado) > 0)
+                  .sort((a, b) => Number(b.km_rodado) - Number(a.km_rodado))[0];
                 return (
                   <div style={{ background: '#181818', border: '1px solid #202020', borderTop: '2px solid #eab308', padding: '16px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                      <Gauge size={16} color="#eab308" />
-                      <h5 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 14, textTransform: 'uppercase', color: '#eab308', margin: 0 }}>
-                        Maior Rodagem
-                      </h5>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Gauge size={16} color="#eab308" />
+                        <h5 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 14, textTransform: 'uppercase', color: '#eab308', margin: 0 }}>
+                          Maior Rodagem
+                        </h5>
+                      </div>
+                      <span style={{ background: '#eab308', color: '#000000', padding: '2px 8px', fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, fontWeight: 800, textTransform: 'uppercase' }}>
+                        1º LUGAR
+                      </span>
                     </div>
                     {rodagemLider ? (
                       <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                         {rodagemLider.url_foto ? (
-                          <img src={rodagemLider.url_foto} alt={rodagemLider.modelo} style={{ width: 56, height: 56, objectFit: 'cover', border: '1px solid #313131', flexShrink: 0 }} />
+                          <img src={rodagemLider.url_foto} alt={rodagemLider.modelo} style={{ width: 60, height: 60, objectFit: 'cover', border: '1px solid #eab308', flexShrink: 0 }} />
                         ) : (
-                          <div style={{ width: 56, height: 56, background: '#0a0a0a', border: '1px solid #313131', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                            <Car size={24} color="#7D7D7D" />
+                          <div style={{ width: 60, height: 60, background: '#0a0a0a', border: '1px solid #eab308', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <Car size={26} color="#eab308" />
                           </div>
                         )}
                         <div>
-                          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 15, color: '#FFFFFF' }}>
-                            {rodagemLider.modelo} ({rodagemLider.numero_inscricao})
+                          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, color: '#FFFFFF' }}>
+                            {rodagemLider.modelo} <span style={{ color: '#FFC000' }}>({rodagemLider.numero_inscricao.startsWith('#') ? rodagemLider.numero_inscricao : `#${rodagemLider.numero_inscricao}`})</span>
                           </div>
-                          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, color: '#eab308', fontWeight: 700 }}>
-                            {rodagemLider.km_rodado?.toLocaleString('pt-BR')} KM Rodados
+                          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 14, color: '#eab308', fontWeight: 700, marginTop: 2 }}>
+                            ⚡ {Number(rodagemLider.km_rodado).toLocaleString('pt-BR')} KM RODADOS
                           </div>
                           {rodagemLider.nome_dono && rodagemLider.nome_dono !== 'Não informado' && (
-                            <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#7D7D7D' }}>
-                              Dono: {rodagemLider.nome_dono}
+                            <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#7D7D7D', marginTop: 2 }}>
+                              Dono: {rodagemLider.nome_dono} {rodagemLider.equipe ? `· Equipe: ${rodagemLider.equipe}` : ''}
                             </div>
                           )}
                         </div>
                       </div>
                     ) : (
-                      <span style={{ fontSize: 12, color: '#7D7D7D' }}>Sem dados suficientes</span>
+                      <div style={{ background: '#0a0a0a', border: '1px dashed #313131', padding: '12px', textAlign: 'center' }}>
+                        <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#969696', display: 'block' }}>
+                          Nenhum veículo com KM rodado cadastrado (maior que 0).
+                        </span>
+                        <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#666666', marginTop: 2, display: 'block' }}>
+                          Informe a quilometragem no cadastro/edição do carro.
+                        </span>
+                      </div>
                     )}
                   </div>
                 );
@@ -1146,6 +1168,52 @@ export function GalleryView({
                               </span>
                             )}
                           </div>
+
+                          {/* Destaque destacado para Maior Rodagem */}
+                          {(isMaiorRodagemCategory || (carro.km_rodado !== undefined && carro.km_rodado !== null && Number(carro.km_rodado) > 0)) && (
+                            <div
+                              style={{
+                                background: isMaiorRodagemCategory ? 'rgba(234, 179, 8, 0.15)' : '#202020',
+                                border: `1px solid ${isMaiorRodagemCategory ? '#eab308' : '#313131'}`,
+                                padding: '8px 12px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                gap: 6,
+                                marginTop: 4,
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <Gauge size={15} color={isMaiorRodagemCategory ? '#eab308' : '#FFC000'} />
+                                <span
+                                  style={{
+                                    fontFamily: "'Barlow Condensed', sans-serif",
+                                    fontSize: 13,
+                                    fontWeight: 700,
+                                    color: isMaiorRodagemCategory ? '#eab308' : '#FFFFFF',
+                                    letterSpacing: '0.05em',
+                                  }}
+                                >
+                                  {carro.km_rodado !== undefined && carro.km_rodado !== null && Number(carro.km_rodado) > 0
+                                    ? `${Number(carro.km_rodado).toLocaleString('pt-BR')} KM RODADOS`
+                                    : 'KM NÃO INFORMADO'}
+                                </span>
+                              </div>
+                              {isMaiorRodagemCategory && eventCarros.indexOf(carro) === 0 && Number(carro.km_rodado) > 0 && (
+                                <span style={{
+                                  background: '#eab308',
+                                  color: '#000000',
+                                  padding: '2px 6px',
+                                  fontFamily: "'Barlow Condensed', sans-serif",
+                                  fontSize: 10,
+                                  fontWeight: 800,
+                                  textTransform: 'uppercase',
+                                }}>
+                                  LÍDER
+                                </span>
+                              )}
+                            </div>
+                          )}
 
                           {/* Botão de Voto / Aviso Categoria Interna */}
                           {isInternalCategory ? (

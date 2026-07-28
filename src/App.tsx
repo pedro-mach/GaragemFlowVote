@@ -6,6 +6,8 @@ import { Layout } from './components/Layout';
 import { AuthView } from './components/AuthView';
 import { GalleryView } from './components/GalleryView';
 import { DashboardView } from './components/DashboardView';
+import { MaintenanceView } from './components/MaintenanceView';
+import { IS_MAINTENANCE_MODE } from './config/maintenance';
 
 function App() {
 
@@ -72,7 +74,7 @@ function App() {
     );
   }
 
-  // 1. Tela do Organizador (Painel Administrativo)
+  // 1. Tela do Organizador (Painel Administrativo - permite acesso mesmo se em manutenção)
   if (isOrganizer) {
     return (
       <DashboardView
@@ -101,6 +103,11 @@ function App() {
         logout={logout}
       />
     );
+  }
+
+  // 2. Tela de Manutenção (Bloqueia todo acesso público/votantes se ativado)
+  if (IS_MAINTENANCE_MODE) {
+    return <MaintenanceView loginAsOrganizer={loginAsOrganizer} />;
   }
 
   // 2. Tela de Votação (Galeria de Carros)

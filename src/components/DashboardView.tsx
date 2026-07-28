@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { toPng } from 'html-to-image';
 import {
   ToggleLeft, ToggleRight, Car, BarChart3, ShieldCheck,
   Plus, LogOut, RefreshCw, Layers, Camera, Image as ImageIcon, Trash2, Trophy, Award,
-  Edit2, Eye, EyeOff, Check, Tag, X, Menu, Users, UserPlus
+  Edit2, Eye, EyeOff, Check, Tag, X, Menu, Users, UserPlus, Gauge, Calendar,
+  Share2, Download, Copy, Sparkles
 } from 'lucide-react';
 import type { Carro, Categoria, CampoRequerido, Equipe, Evento } from '../data/mockData';
 import { validateTeamName } from '../utils/teamValidation';
@@ -64,7 +66,7 @@ interface DashboardViewProps {
   logout: () => void;
 }
 
-type TabType = 'status' | 'resultados' | 'carros' | 'validacao' | 'categorias';
+type TabType = 'status' | 'resultados' | 'instagrammable' | 'carros' | 'validacao' | 'categorias';
 
 // ─── Style helpers ─────────────────────────────────────────────────
 const S = {
@@ -202,6 +204,14 @@ export function DashboardView({
   const [catEditingId, setCatEditingId] = useState<string | null>(null);
   const [catTempName, setCatTempName] = useState('');
 
+  // States para a aba Resultados Instagram
+  const [selectedInstaCatId, setSelectedInstaCatId] = useState<string>('all');
+  const [instaFormat, setInstaFormat] = useState<'story' | 'feed'>('story');
+  const [instaTheme, setInstaTheme] = useState<'gold' | 'dark' | 'red'>('gold');
+  const [copiedCaptionToast, setCopiedCaptionToast] = useState(false);
+  const [isExportingPng, setIsExportingPng] = useState(false);
+  const cardPreviewRef = useRef<HTMLDivElement>(null);
+
 
   const getNextSuggestedInscricao = () => {
     const numbers = carros
@@ -219,8 +229,190 @@ export function DashboardView({
   }, [carros, isManualInscricao]);
 
   useEffect(() => {
-    if (activeTab === 'resultados') fetchResultados();
+    if (activeTab === 'resultados' || activeTab === 'instagrammable') fetchResultados();
   }, [activeTab]);
+
+  // Helper para obter dados do vencedor de cada categoria ou destaque técnico
+  const getWinnerData = (catId: string) => {
+    if (catId === 'tech_antigo') {
+      const winner = carros.filter(c => c.ano && Number(c.ano) > 1900).sort((a, b) => Number(a.ano) - Number(b.ano))[0];
+      return {
+        tituloCategoria: 'CARRO MAIS ANTIGO',
+        tipoBadge: 'DESTAQUE TÉCNICO',
+        carro: winner || null,
+        metricaLabel: winner ? `Fabricado em ${winner.ano}` : 'Sem dados',
+        totalVotos: undefined,
+      };
+    }
+    if (catId === 'tech_equipe') {
+      const winner = carros.filter(c => c.pessoas_equipe && Number(c.pessoas_equipe) > 0).sort((a, b) => (Number(b.pessoas_equipe) || 0) - (Number(a.pessoas_equipe) || 0))[0];
+      return {
+        tituloCategoria: 'MAIOR EQUIPE UNIFORMIZADA',
+        tipoBadge: 'DESTAQUE TÉCNICO',
+        carro: winner || null,
+        metricaLabel: winner ? `${winner.pessoas_equipe} Integrantes` : 'Sem dados',
+        totalVotos: undefined,
+      };
+    }
+    if (catId === 'tech_rodagem') {
+      const winner = carros.filter(c => c.km_rodado !== undefined && c.km_rodado !== null && Number(c.km_rodado) > 0).sort((a, b) => Number(b.km_rodado) - Number(a.km_rodado))[0];
+      return {
+        tituloCategoria: 'MAIOR RODAGEM',
+        tipoBadge: 'DESTAQUE TÉCNICO',
+        carro: winner || null,
+        metricaLabel: winner ? `${Number(winner.km_rodado).toLocaleString('pt-BR')} KM Rodados` : 'Sem dados',
+        totalVotos: undefined,
+      };
+    }
+
+    const cat = categorias.find(c => c.id === catId);
+    const votosCat = resultados[catId] || [];
+    const topItem = votosCat[0];
+    const winnerCar = topItem ? carros.find(c => c.id === topItem.carroId) : null;
+    const totalVotosCat = votosCat.reduce((sum, item) => sum + item.votosCount, 0);
+    const percent = totalVotosCat > 0 && topItem ? ((topItem.votosCount / totalVotosCat) * 100).toFixed(0) : '0';
+
+    return {
+      tituloCategoria: cat ? cat.nome.toUpperCase() : 'CATEGORIA POPULAR',
+      tipoBadge: 'VOTAÇÃO POPULAR',
+      carro: winnerCar || null,
+      metricaLabel: topItem ? `${topItem.votosCount} VOTOS (${percent}%)` : 'Nenhum voto registrado',
+      totalVotos: totalVotosCat,
+    };
+  };
+
+  // Helper para formatar a data no padrão brasileiro (DD/MM/YYYY)
+  const formatarDataBR = (strData?: string) => {
+    if (!strData) return '';
+    const trimmed = strData.trim();
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(trimmed)) return trimmed;
+    const match = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (match) {
+      const [, ano, mes, dia] = match;
+      return `${dia}/${mes}/${ano}`;
+    }
+    try {
+      const d = new Date(trimmed);
+      if (!isNaN(d.getTime())) {
+        return d.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+      }
+    } catch (e) {
+      // fallback
+    }
+    return trimmed;
+  };
+
+  // Helper para obter a lista com TODOS os vencedores de TODAS as categorias e destaques
+  const getAllCategoryWinners = () => {
+    const list: { id: string; tituloCategoria: string; carro: Carro | null; metricaLabel: string; icone?: string }[] = [];
+
+    // Categorias populares
+    categorias.filter(c => c.tipo === 'popular' && !c.oculta).forEach((cat) => {
+      const data = getWinnerData(cat.id);
+      list.push({
+        id: cat.id,
+        tituloCategoria: data.tituloCategoria,
+        carro: data.carro,
+        metricaLabel: data.metricaLabel,
+        icone: '🥇',
+      });
+    });
+
+    // Destaques técnicos
+    const antigo = getWinnerData('tech_antigo');
+    if (antigo.carro) {
+      list.push({
+        id: 'tech_antigo',
+        tituloCategoria: antigo.tituloCategoria,
+        carro: antigo.carro,
+        metricaLabel: antigo.metricaLabel,
+        icone: '👴',
+      });
+    }
+
+    const equipe = getWinnerData('tech_equipe');
+    if (equipe.carro) {
+      list.push({
+        id: 'tech_equipe',
+        tituloCategoria: equipe.tituloCategoria,
+        carro: equipe.carro,
+        metricaLabel: equipe.metricaLabel,
+        icone: '👥',
+      });
+    }
+
+    const rodagem = getWinnerData('tech_rodagem');
+    if (rodagem.carro) {
+      list.push({
+        id: 'tech_rodagem',
+        tituloCategoria: rodagem.tituloCategoria,
+        carro: rodagem.carro,
+        metricaLabel: rodagem.metricaLabel,
+        icone: '⚡',
+      });
+    }
+
+    return list;
+  };
+
+  const handleCopyCaption = () => {
+    const eventName = evento?.nome || 'Garagem Flow Vote';
+    let caption = `🏆 RESULTADO OFICIAL - ${eventName.toUpperCase()} 🏆\n\n`;
+
+    if (selectedInstaCatId === 'all') {
+      caption += `Confira os grandes campeões do nosso encontro automotivo!\n\n`;
+      getAllCategoryWinners().forEach(item => {
+        if (item.carro) {
+          caption += `${item.icone || '🥇'} ${item.tituloCategoria}: ${item.carro.modelo} (${item.carro.numero_inscricao || `#${item.carro.ano}`}) - ${item.metricaLabel}\n`;
+        } else {
+          caption += `${item.icone || '🥇'} ${item.tituloCategoria}: Sem vencedor registrado\n`;
+        }
+      });
+    } else {
+      const data = getWinnerData(selectedInstaCatId);
+      caption += `📍 CATEGORIA: ${data.tituloCategoria}\n`;
+      if (data.carro) {
+        caption += `🥇 1º LUGAR: ${data.carro.modelo} (${data.carro.numero_inscricao})\n`;
+        if (data.carro.nome_dono && data.carro.nome_dono !== 'Não informado') {
+          caption += `👤 Proprietário: ${data.carro.nome_dono}\n`;
+        }
+        if (data.carro.equipe) {
+          caption += `🛡️ Equipe: ${data.carro.equipe}\n`;
+        }
+        caption += `🔥 Resultado: ${data.metricaLabel}\n`;
+      } else {
+        caption += `Vencedores em apuração.\n`;
+      }
+    }
+
+    caption += `\nParabéns aos vencedores e obrigado a todos pela presença! 🎉🚗💨\n\n#GaragemFlowVote #EncontroDeCarros #CarrosRebaixados #CarrosAntigos #Automotivo #Vencedores`;
+
+    navigator.clipboard.writeText(caption);
+    setCopiedCaptionToast(true);
+    setTimeout(() => setCopiedCaptionToast(false), 3000);
+  };
+
+  const handleDownloadInstaCard = async () => {
+    if (!cardPreviewRef.current) return;
+    setIsExportingPng(true);
+    try {
+      // Capturar a div de pré-visualização EXATAMENTE como é exibida na tela
+      const dataUrl = await toPng(cardPreviewRef.current, {
+        pixelRatio: 3, // Resolução ultra HD em alta definição (3x)
+        cacheBust: true,
+      });
+
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      const catSlug = selectedInstaCatId === 'all' ? 'quadro_geral' : selectedInstaCatId;
+      a.download = `resultado_instagram_${catSlug}_${instaFormat}.png`;
+      a.click();
+    } catch (err) {
+      console.error('Erro ao gerar PNG a partir da preview:', err);
+    } finally {
+      setIsExportingPng(false);
+    }
+  };
 
   const handleSaveEventName = async () => {
     if (!eventTempName.trim() || !atualizarNomeEvento) return;
@@ -479,6 +671,7 @@ export function DashboardView({
   const navItems: { id: TabType; icon: React.ReactNode; label: string }[] = [
     { id: 'status', icon: votacaoAberta ? <ToggleRight size={16} /> : <ToggleLeft size={16} />, label: 'Status da Votação' },
     { id: 'resultados', icon: <BarChart3 size={16} />, label: 'Resultados Ao Vivo' },
+    { id: 'instagrammable', icon: <Share2 size={16} />, label: 'Resultados Instagram' },
     { id: 'carros', icon: <Layers size={16} />, label: 'Gerenciar Veículos' },
     { id: 'categorias', icon: <Tag size={16} />, label: 'Gerenciar Categorias' },
     { id: 'validacao', icon: <ShieldCheck size={16} />, label: 'Validação Interna' },
@@ -666,7 +859,7 @@ export function DashboardView({
                     Evento Ativo
                   </span>
                   <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#7D7D7D', whiteSpace: 'nowrap' }}>
-                    {evento?.data}
+                    {formatarDataBR(evento?.data)}
                   </span>
                 </div>
 
@@ -893,10 +1086,623 @@ export function DashboardView({
                     );
                   })}
                 </div>
+
+                {/* Seção 2: Destaques Técnicos (Avaliação Interna) */}
+                <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 20, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#FFFFFF', margin: '24px 0 0 0' }}>
+                  Destaques Técnicos (Avaliação Interna)
+                </h3>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
+                  {/* Carro Mais Antigo */}
+                  {(() => {
+                    const antigo = carros.filter(c => c.ano && Number(c.ano) > 1900).sort((a, b) => Number(a.ano) - Number(b.ano))[0];
+                    return (
+                      <div style={{ background: '#181818', border: '1px solid #202020', borderTop: '2px solid #3b82f6', padding: '20px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <Calendar size={16} color="#3b82f6" />
+                            <h4 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, textTransform: 'uppercase', color: '#3b82f6', margin: 0 }}>
+                              Carro Mais Antigo
+                            </h4>
+                          </div>
+                          <span style={{ background: '#3b82f6', color: '#FFFFFF', padding: '2px 8px', fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, fontWeight: 700, textTransform: 'uppercase' }}>
+                            1º LUGAR
+                          </span>
+                        </div>
+                        {antigo ? (
+                          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                            <div style={{ width: 56, height: 56, background: '#0a0a0a', border: '1px solid #313131', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
+                              {antigo.url_foto ? (
+                                <img src={antigo.url_foto} alt={antigo.modelo} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              ) : (
+                                <Car size={24} color="#7D7D7D" />
+                              )}
+                            </div>
+                            <div>
+                              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, color: '#FFFFFF' }}>
+                                {antigo.modelo} ({antigo.numero_inscricao})
+                              </div>
+                              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, color: '#3b82f6', fontWeight: 700 }}>
+                                Fabricado em {antigo.ano}
+                              </div>
+                              {antigo.nome_dono && antigo.nome_dono !== 'Não informado' && (
+                                <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#7D7D7D', marginTop: 2 }}>
+                                  Dono: {antigo.nome_dono}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#7D7D7D' }}>Sem dados suficientes</div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {/* Maior Equipe Uniformizada */}
+                  {(() => {
+                    const equipeLider = carros.filter(c => c.pessoas_equipe && Number(c.pessoas_equipe) > 0).sort((a, b) => (Number(b.pessoas_equipe) || 0) - (Number(a.pessoas_equipe) || 0))[0];
+                    return (
+                      <div style={{ background: '#181818', border: '1px solid #202020', borderTop: '2px solid #22c55e', padding: '20px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <Users size={16} color="#22c55e" />
+                            <h4 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, textTransform: 'uppercase', color: '#22c55e', margin: 0 }}>
+                              Maior Equipe Uniformizada
+                            </h4>
+                          </div>
+                          <span style={{ background: '#22c55e', color: '#000000', padding: '2px 8px', fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, fontWeight: 700, textTransform: 'uppercase' }}>
+                            1º LUGAR
+                          </span>
+                        </div>
+                        {equipeLider ? (
+                          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                            <div style={{ width: 56, height: 56, background: '#0a0a0a', border: '1px solid rgba(34, 197, 94, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                              <Users size={24} color="#22c55e" />
+                            </div>
+                            <div>
+                              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, color: '#FFFFFF' }}>
+                                {equipeLider.equipe || 'Equipe Sem Nome'}
+                              </div>
+                              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, color: '#22c55e', fontWeight: 700 }}>
+                                {equipeLider.pessoas_equipe} Integrantes Uniformizados
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#7D7D7D' }}>Sem dados suficientes</div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {/* Maior Rodagem */}
+                  {(() => {
+                    const rodagemLider = carros.filter(c => c.km_rodado !== undefined && c.km_rodado !== null && Number(c.km_rodado) > 0).sort((a, b) => Number(b.km_rodado) - Number(a.km_rodado))[0];
+                    return (
+                      <div style={{ background: '#181818', border: '1px solid #202020', borderTop: '2px solid #eab308', padding: '20px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <Gauge size={16} color="#eab308" />
+                            <h4 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, textTransform: 'uppercase', color: '#eab308', margin: 0 }}>
+                              Maior Rodagem
+                            </h4>
+                          </div>
+                          <span style={{ background: '#eab308', color: '#000000', padding: '2px 8px', fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, fontWeight: 800, textTransform: 'uppercase' }}>
+                            1º LUGAR
+                          </span>
+                        </div>
+                        {rodagemLider ? (
+                          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                            <div style={{ width: 56, height: 56, background: '#0a0a0a', border: '1px solid #eab308', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
+                              {rodagemLider.url_foto ? (
+                                <img src={rodagemLider.url_foto} alt={rodagemLider.modelo} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              ) : (
+                                <Car size={24} color="#eab308" />
+                              )}
+                            </div>
+                            <div>
+                              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, color: '#FFFFFF' }}>
+                                {rodagemLider.modelo} ({rodagemLider.numero_inscricao})
+                              </div>
+                              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, color: '#eab308', fontWeight: 700 }}>
+                                ⚡ {Number(rodagemLider.km_rodado).toLocaleString('pt-BR')} KM RODADOS
+                              </div>
+                              {rodagemLider.nome_dono && rodagemLider.nome_dono !== 'Não informado' && (
+                                <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#7D7D7D', marginTop: 2 }}>
+                                  Dono: {rodagemLider.nome_dono}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <div style={{ background: '#0a0a0a', border: '1px dashed #313131', padding: '10px', textAlign: 'center' }}>
+                            <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#7D7D7D' }}>
+                              Nenhum veículo com KM rodado cadastrado (maior que 0).
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
               </div>
             )}
 
-            {/* ══════ TAB: GERENCIAR CARROS ══════ */}
+            {/* ══════ TAB: RESULTADOS INSTAGRAMMÁVEIS ══════ */}
+            {activeTab === 'instagrammable' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+
+                {/* Cabeçalho e Controles */}
+                <div style={{ background: '#181818', border: '1px solid #202020', borderLeft: '3px solid #FFC000', padding: '24px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, marginBottom: 16 }}>
+                    <div>
+                      <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 22, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#FFFFFF', margin: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <Share2 size={22} color="#FFC000" />
+                        Gerador de Cards Instagramáveis
+                      </h3>
+                      <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: '#7D7D7D', margin: '4px 0 0 0' }}>
+                        Gere layouts visuais dos campeões em alta resolução prontos para divulgar no Feed ou Stories.
+                      </p>
+                    </div>
+
+                    {/* Botões de Ação Principais */}
+                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                      <button
+                        onClick={handleCopyCaption}
+                        style={{
+                          background: '#202020',
+                          color: '#FFFFFF',
+                          border: '1px solid #313131',
+                          padding: '0 16px',
+                          height: 44,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 8,
+                          fontFamily: "'Barlow Condensed', sans-serif",
+                          fontWeight: 700,
+                          fontSize: 14,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.06em',
+                          transition: 'all 0.15s ease',
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.borderColor = '#FFC000'; e.currentTarget.style.color = '#FFC000'; }}
+                        onMouseLeave={e => { e.currentTarget.style.borderColor = '#313131'; e.currentTarget.style.color = '#FFFFFF'; }}
+                      >
+                        <Copy size={16} />
+                        <span>Copiar Legenda</span>
+                      </button>
+
+                      <button
+                        onClick={handleDownloadInstaCard}
+                        disabled={isExportingPng}
+                        style={{
+                          background: '#FFC000',
+                          color: '#000000',
+                          border: 'none',
+                          padding: '0 20px',
+                          height: 44,
+                          cursor: isExportingPng ? 'wait' : 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 8,
+                          fontFamily: "'Barlow Condensed', sans-serif",
+                          fontWeight: 700,
+                          fontSize: 14,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.08em',
+                          opacity: isExportingPng ? 0.7 : 1,
+                          transition: 'background 0.15s ease',
+                        }}
+                        onMouseEnter={e => { if (!isExportingPng) e.currentTarget.style.background = '#e6ad00'; }}
+                        onMouseLeave={e => { if (!isExportingPng) e.currentTarget.style.background = '#FFC000'; }}
+                      >
+                        <Download size={16} />
+                        <span>{isExportingPng ? 'Gerando PNG...' : 'Baixar Imagem PNG'}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Toast Feedback Copiado */}
+                  {copiedCaptionToast && (
+                    <div style={{ background: 'rgba(74, 222, 128, 0.15)', border: '1px solid rgba(74, 222, 128, 0.4)', padding: '10px 14px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Check size={16} color="#4ade80" />
+                      <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: '#4ade80', fontWeight: 600 }}>
+                        Legenda formatada para o Instagram copiada para a área de transferência!
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Barra de Seleção de Formato, Tema e Categoria */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, borderTop: '1px solid #202020', paddingTop: 16 }}>
+
+                    {/* Seleção de Categoria */}
+                    <div>
+                      <label style={S.label}>Categoria Selecionada</label>
+                      <select
+                        value={selectedInstaCatId}
+                        onChange={(e) => setSelectedInstaCatId(e.target.value)}
+                        style={{ ...S.input, cursor: 'pointer' }}
+                      >
+                        <option value="all">🏆 QUADRO GERAL (TODOS OS CAMPEÕES)</option>
+                        <optgroup label="Votação Popular">
+                          {categorias.filter(c => c.tipo === 'popular' && !c.oculta).map(cat => (
+                            <option key={cat.id} value={cat.id}>🥇 {cat.nome.toUpperCase()}</option>
+                          ))}
+                        </optgroup>
+                        <optgroup label="Destaques Técnicos">
+                          <option value="tech_antigo">👴 CARRO MAIS ANTIGO</option>
+                          <option value="tech_equipe">👥 MAIOR EQUIPE UNIFORMIZADA</option>
+                          <option value="tech_rodagem">⚡ MAIOR RODAGEM</option>
+                        </optgroup>
+                      </select>
+                    </div>
+
+                    {/* Formato do Card */}
+                    <div>
+                      <label style={S.label}>Formato de Exibição</label>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button
+                          onClick={() => setInstaFormat('story')}
+                          style={{
+                            flex: 1,
+                            height: 40,
+                            background: instaFormat === 'story' ? '#FFC000' : '#000000',
+                            color: instaFormat === 'story' ? '#000000' : '#7D7D7D',
+                            border: '1px solid #313131',
+                            fontFamily: "'Barlow Condensed', sans-serif",
+                            fontWeight: 700,
+                            fontSize: 13,
+                            textTransform: 'uppercase',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          📱 Story (9:16)
+                        </button>
+                        <button
+                          onClick={() => setInstaFormat('feed')}
+                          style={{
+                            flex: 1,
+                            height: 40,
+                            background: instaFormat === 'feed' ? '#FFC000' : '#000000',
+                            color: instaFormat === 'feed' ? '#000000' : '#7D7D7D',
+                            border: '1px solid #313131',
+                            fontFamily: "'Barlow Condensed', sans-serif",
+                            fontWeight: 700,
+                            fontSize: 13,
+                            textTransform: 'uppercase',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          🖼️ Feed (1:1)
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Estilo / Tema Visual */}
+                    <div>
+                      <label style={S.label}>Tema Visual</label>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        {[
+                          { id: 'gold', label: '🏆 Ouro', color: '#FFC000' },
+                          { id: 'dark', label: '⬛ Carbon', color: '#FFFFFF' },
+                          { id: 'red', label: '🏎️ Red', color: '#ef4444' },
+                        ].map((t) => (
+                          <button
+                            key={t.id}
+                            onClick={() => setInstaTheme(t.id as any)}
+                            style={{
+                              flex: 1,
+                              height: 40,
+                              background: instaTheme === t.id ? t.color : '#000000',
+                              color: instaTheme === t.id ? '#000000' : '#7D7D7D',
+                              border: `1px solid ${instaTheme === t.id ? t.color : '#313131'}`,
+                              fontFamily: "'Barlow Condensed', sans-serif",
+                              fontWeight: 700,
+                              fontSize: 12,
+                              textTransform: 'uppercase',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            {t.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+                {/* ===== PRÉ-VISUALIZAÇÃO DO CARD INSTAGRAMÁVEL ===== */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+                  <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, color: '#7D7D7D', textTransform: 'uppercase', letterSpacing: '0.12em', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Sparkles size={14} color="#FFC000" />
+                    <span>Pré-Visualização em Tempo Real ({instaFormat === 'story' ? 'Story 9:16' : 'Feed 1:1'})</span>
+                  </div>
+
+                  {/* Card Container Preview */}
+                  <div
+                    ref={cardPreviewRef}
+                    style={{
+                      width: '100%',
+                      maxWidth: instaFormat === 'story' ? 380 : 460,
+                      aspectRatio: instaFormat === 'story' ? '9/16' : '1/1',
+                      background: instaTheme === 'gold'
+                        ? 'linear-gradient(180deg, #1e1800 0%, #050505 100%)'
+                        : instaTheme === 'dark'
+                          ? 'linear-gradient(180deg, #262626 0%, #090909 100%)'
+                          : 'linear-gradient(180deg, #3b0a0a 0%, #050505 100%)',
+                      border: `2px solid ${instaTheme === 'gold' ? '#FFC000' : instaTheme === 'red' ? '#ef4444' : '#FFFFFF'}`,
+                      borderRadius: 4,
+                      boxShadow: '0 20px 40px rgba(0,0,0,0.8)',
+                      padding: instaFormat === 'story' ? '24px 20px' : '20px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      boxSizing: 'border-box',
+                    }}
+                  >
+                    {/* Moldura Interna */}
+                    <div style={{
+                      position: 'absolute',
+                      inset: 8,
+                      border: `1px solid ${instaTheme === 'gold' ? 'rgba(255,192,0,0.3)' : instaTheme === 'red' ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.2)'}`,
+                      pointerEvents: 'none',
+                    }} />
+
+                    {/* Topo do Card */}
+                    <div style={{ textAlign: 'center', zIndex: 2 }}>
+                      <div style={{
+                        fontFamily: "'Barlow Condensed', sans-serif",
+                        fontSize: 11,
+                        fontWeight: 700,
+                        letterSpacing: '0.16em',
+                        color: instaTheme === 'gold' ? '#FFC000' : instaTheme === 'red' ? '#ef4444' : '#FFFFFF',
+                        marginBottom: 4,
+                      }}>
+                        🏆 RESULTADO OFICIAL 🏆
+                      </div>
+
+                      <h2 style={{
+                        fontFamily: "'Barlow Condensed', sans-serif",
+                        fontWeight: 900,
+                        fontSize: instaFormat === 'story' ? 22 : 18,
+                        textTransform: 'uppercase',
+                        color: '#FFFFFF',
+                        margin: 0,
+                        lineHeight: 1.1,
+                      }}>
+                        {evento?.nome || 'GARAGEM FLOW VOTE'}
+                      </h2>
+
+                      {evento?.data && (
+                        <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, color: '#7D7D7D', letterSpacing: '0.12em', marginTop: 4 }}>
+                          {formatarDataBR(evento.data)}
+                        </div>
+                      )}
+
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 6 }}>
+                        <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, fontWeight: 700, color: '#FFC000', letterSpacing: '0.08em', background: 'rgba(255,192,0,0.12)', border: '1px solid rgba(255,192,0,0.3)', padding: '2px 8px', borderRadius: 2, whiteSpace: 'nowrap' }}>
+                          🚗 {carros.length} VEÍCULOS
+                        </span>
+                        {totalUsuarios > 0 && (
+                          <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, fontWeight: 700, color: '#4ade80', letterSpacing: '0.08em', background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.3)', padding: '2px 8px', borderRadius: 2, whiteSpace: 'nowrap' }}>
+                            👥 {totalUsuarios} PARTICIPANTES
+                          </span>
+                        )}
+                      </div>
+
+                      <div style={{ width: '80%', height: 1, background: 'rgba(255,255,255,0.15)', margin: '10px auto' }} />
+                    </div>
+
+                    {/* Conteúdo Central */}
+                    {selectedInstaCatId === 'all' ? (
+                      /* QUADRO GERAL DE CAMPEÕES (TODAS AS CATEGORIAS E DESTAQUES COM FOTO E DETALHES) */
+                      (() => {
+                        const winners = getAllCategoryWinners();
+                        const isFew = winners.length <= 4;
+                        return (
+                          <div style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: isFew ? 12 : 8,
+                            zIndex: 2,
+                            flex: 1,
+                            justifyContent: isFew ? 'center' : 'flex-start',
+                            overflowY: 'auto',
+                            maxHeight: '75%',
+                            paddingRight: 2,
+                          }}>
+                            <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, fontWeight: 700, textAlign: 'center', color: '#FFC000', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 2 }}>
+                              Quadro Geral de Premiações
+                            </div>
+
+                            {winners.map((item) => (
+                              <div
+                                key={item.id}
+                                style={{
+                                  background: 'rgba(0,0,0,0.65)',
+                                  border: '1px solid rgba(255,192,0,0.35)',
+                                  padding: isFew ? '8px 10px' : '6px 8px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 10,
+                                  borderRadius: 3,
+                                  flexShrink: 0,
+                                }}
+                              >
+                                {/* Foto / Miniatura do Veículo */}
+                                <div style={{
+                                  width: isFew ? 48 : 40,
+                                  height: isFew ? 48 : 40,
+                                  background: '#0a0a0a',
+                                  border: '1px solid rgba(255,192,0,0.4)',
+                                  borderRadius: 3,
+                                  overflow: 'hidden',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  flexShrink: 0,
+                                }}>
+                                  {item.carro?.url_foto ? (
+                                    <img src={item.carro.url_foto} alt={item.carro.modelo} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                  ) : (
+                                    <Car size={18} color="#FFC000" />
+                                  )}
+                                </div>
+
+                                {/* Dados da Categoria + Veículo + Piloto */}
+                                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                  <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, color: '#FFC000', fontWeight: 700, textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {item.icone || '🥇'} {item.tituloCategoria}
+                                  </div>
+                                  <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, color: '#FFFFFF', fontWeight: 800, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {item.carro ? `${item.carro.modelo} (${item.carro.numero_inscricao || `#${item.carro.ano}`})` : 'Sem vencedor registrado'}
+                                  </div>
+                                  {item.carro?.nome_dono && item.carro.nome_dono !== 'Não informado' && (
+                                    <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 10, color: '#A0A0A0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                      Dono: {item.carro.nome_dono} {item.carro.equipe ? `• ${item.carro.equipe}` : ''}
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Métrica / Votos Badge */}
+                                <div style={{
+                                  background: 'rgba(255,192,0,0.12)',
+                                  border: '1px solid rgba(255,192,0,0.3)',
+                                  padding: '3px 8px',
+                                  borderRadius: 2,
+                                  fontFamily: "'Barlow Condensed', sans-serif",
+                                  fontSize: 11,
+                                  color: '#FFC000',
+                                  fontWeight: 700,
+                                  whiteSpace: 'nowrap',
+                                  flexShrink: 0,
+                                }}>
+                                  {item.metricaLabel}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })()
+                    ) : (
+                      /* CARD CATEGORIA ESPECÍFICA */
+                      (() => {
+                        const data = getWinnerData(selectedInstaCatId);
+                        return (
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: instaFormat === 'story' ? 12 : 8, zIndex: 2, flex: 1, justifyContent: 'center' }}>
+                            {/* Nome da Categoria */}
+                            <div style={{ textAlign: 'center' }}>
+                              <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 9, color: instaTheme === 'gold' ? '#FFC000' : '#CCCCCC', letterSpacing: '0.14em', fontWeight: 700 }}>
+                                [{data.tipoBadge}]
+                              </span>
+                              <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900, fontSize: instaFormat === 'story' ? 24 : 20, color: '#FFFFFF', textTransform: 'uppercase', margin: '2px 0 0 0', lineHeight: 1.1 }}>
+                                {data.tituloCategoria}
+                              </h3>
+                            </div>
+
+                            {/* Foto em Destaque do Veículo */}
+                            <div style={{
+                              width: '100%',
+                              height: instaFormat === 'story' ? 200 : 130,
+                              background: '#0a0a0a',
+                              border: `2px solid ${instaTheme === 'gold' ? '#FFC000' : instaTheme === 'red' ? '#ef4444' : '#FFFFFF'}`,
+                              position: 'relative',
+                              overflow: 'hidden',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}>
+                              {data.carro?.url_foto ? (
+                                <img
+                                  src={data.carro.url_foto}
+                                  alt={data.carro.modelo}
+                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                />
+                              ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, color: '#7D7D7D' }}>
+                                  <Car size={36} color="#FFC000" />
+                                  <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, letterSpacing: '0.1em' }}>FOTO DO VEÍCULO</span>
+                                </div>
+                              )}
+
+                              {/* Stamp 1º Lugar */}
+                              <div style={{
+                                position: 'absolute',
+                                top: 8,
+                                left: 8,
+                                background: '#FFC000',
+                                color: '#000000',
+                                padding: '3px 8px',
+                                fontFamily: "'Barlow Condensed', sans-serif",
+                                fontWeight: 900,
+                                fontSize: 10,
+                                letterSpacing: '0.1em',
+                              }}>
+                                🥇 1º LUGAR
+                              </div>
+                            </div>
+
+                            {/* Informações do Campeão */}
+                            <div style={{ textAlign: 'center', width: '100%' }}>
+                              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900, fontSize: instaFormat === 'story' ? 20 : 17, color: '#FFFFFF', textTransform: 'uppercase', lineHeight: 1.1 }}>
+                                {data.carro ? `${data.carro.modelo} (${data.carro.numero_inscricao})` : 'Sem vencedor registrado'}
+                              </div>
+
+                              {data.carro?.nome_dono && data.carro.nome_dono !== 'Não informado' && (
+                                <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, color: '#CCCCCC', marginTop: 2 }}>
+                                  Piloto: {data.carro.nome_dono}
+                                </div>
+                              )}
+
+                              {data.carro?.equipe && (
+                                <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, color: '#7D7D7D' }}>
+                                  Equipe: {data.carro.equipe}
+                                </div>
+                              )}
+
+                              <div style={{
+                                marginTop: 6,
+                                background: 'rgba(255,192,0,0.1)',
+                                border: '1px solid rgba(255,192,0,0.3)',
+                                padding: '4px 10px',
+                                display: 'inline-block',
+                                fontFamily: "'Barlow Condensed', sans-serif",
+                                fontWeight: 800,
+                                fontSize: 13,
+                                color: '#FFC000',
+                                letterSpacing: '0.06em',
+                              }}>
+                                ⚡ {data.metricaLabel}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()
+                    )}
+
+                    {/* Rodapé do Card */}
+                    <div style={{ textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 8, zIndex: 2 }}>
+                      <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 9, color: '#7D7D7D', letterSpacing: '0.14em', textTransform: 'uppercase', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                        <span>Desenvolvido por</span>
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FFC000" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block' }}>
+                          <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+                          <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                          <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+                        </svg>
+                        <span style={{ color: '#FFC000', fontWeight: 700 }}>pedromachado.dev</span>
+                      </span>
+                    </div>
+
+                  </div>
+                </div>
+
+              </div>
+            )}
             {activeTab === 'carros' && (() => {
               // Computar quais campos extras são exigidos pelas categorias atualmente marcadas
               const camposNecessarios = new Set<CampoRequerido>();
