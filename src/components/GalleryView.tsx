@@ -77,9 +77,10 @@ export function GalleryView({
   const visibleCategorias = safeCategorias.filter((c) => !c?.oculta);
   const currentCategory = visibleCategorias.find((c) => c?.id === activeCategoryId);
   const isInternalCategory = currentCategory?.tipo === 'interna';
-  const isMaiorEquipeCategory = currentCategory?.id === 'cat-4' || currentCategory?.nome?.toLowerCase().includes('equipe');
-  const isMaiorRodagemCategory = currentCategory?.nome?.toLowerCase().includes('rodagem') || currentCategory?.nome?.toLowerCase().includes('km');
+  const isMaiorEquipeCategory = false;
+  const isMaiorRodagemCategory = false;
   const isMaisAntigoCategory = currentCategory?.nome?.toLowerCase().includes('antigo') || currentCategory?.nome?.toLowerCase().includes('ano');
+  const isJeepAlturaCategory = currentCategory?.nome?.toLowerCase().includes('jeep') || currentCategory?.nome?.toLowerCase().includes('altura');
 
   const equipesUniformizadas = React.useMemo(() => {
     const groups: Record<string, number> = {};
@@ -180,8 +181,8 @@ export function GalleryView({
       );
     });
 
-  if (isMaiorRodagemCategory) {
-    eventCarros = [...eventCarros].sort((a, b) => (Number(b.km_rodado) || 0) - (Number(a.km_rodado) || 0));
+  if (isJeepAlturaCategory) {
+    eventCarros = [...eventCarros].sort((a, b) => (Number(b.altura_mm) || 0) - (Number(a.altura_mm) || 0));
   } else if (isMaisAntigoCategory) {
     eventCarros = [...eventCarros].sort((a, b) => (Number(a.ano) || 9999) - (Number(b.ano) || 9999));
   }
@@ -221,8 +222,8 @@ export function GalleryView({
       {/* ===== HEADER ===== */}
       <div
         style={{
-          background: '#181818',
-          borderBottom: '1px solid #202020',
+          background: '#0D1117',
+          borderBottom: '1px solid #1E293B',
           padding: '14px 16px 12px',
           display: 'flex',
           flexDirection: 'column',
@@ -237,17 +238,16 @@ export function GalleryView({
             style={{
               width: 38,
               height: 38,
-              background: '#202020',
-              border: '1px solid rgba(255,192,0,0.25)',
+              background: '#141A24',
+              border: '1px solid rgba(0,153,255,0.4)',
               flexShrink: 0,
               overflow: 'hidden',
             }}
           >
             <img
-              src="/Logo-evento.jpeg"
-              alt="Logo Regional das Equipes em Valinhos - GaragemFlow, Los Felas, Low Mafia"
+              src="/Logo-evento.jpeg?v=2"
+              alt="Logo Los Felas"
               style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-              onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
             />
           </div>
 
@@ -259,7 +259,7 @@ export function GalleryView({
                   width: 6,
                   height: 6,
                   borderRadius: '50%',
-                  background: votacaoAberta ? '#4ade80' : '#ef4444',
+                  background: votacaoAberta ? '#0099FF' : '#ef4444',
                   display: 'inline-block',
                   flexShrink: 0,
                   animation: votacaoAberta ? 'pulse-dot 1.4s infinite' : 'none',
@@ -271,16 +271,16 @@ export function GalleryView({
                 fontWeight: 600,
                 textTransform: 'uppercase',
                 letterSpacing: '0.14em',
-                color: '#FFC000',
+                color: '#0099FF',
                 whiteSpace: 'nowrap',
               }}>
-                {votacaoAberta ? 'Votação Popular Aberta' : 'Votação Encerrada'} • Valinhos
+                {votacaoAberta ? 'Votação Popular Aberta' : 'Votação Encerrada'} • Los Felas
               </span>
             </div>
             <h1 style={{
               fontFamily: "'Barlow Condensed', sans-serif",
               fontWeight: 700,
-              fontSize: 16,
+              fontSize: 18,
               textTransform: 'uppercase',
               letterSpacing: '0.06em',
               color: '#FFFFFF',
@@ -290,17 +290,17 @@ export function GalleryView({
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
             }}>
-              {evento?.nome || 'Regional das Equipes em Valinhos'}
+              {evento?.nome || 'Encontro Los Felas'}
             </h1>
             <div style={{
               fontFamily: "'Barlow Condensed', sans-serif",
               fontSize: 10,
-              color: '#888888',
+              color: '#94A3B8',
               letterSpacing: '0.08em',
               textTransform: 'uppercase',
               marginTop: 2,
             }}>
-              Organização: GaragemFlow • Los Felas • Low Mafia
+              Organização: Los Felas
             </div>
           </div>
 
@@ -314,7 +314,7 @@ export function GalleryView({
                   setEquipeNomeInput('');
                   setEquipeValidationMsg(null);
                 }}
-                className="btn-gold"
+                className="btn-bmw"
                 style={{
                   height: 34,
                   padding: '0 10px',
@@ -348,14 +348,14 @@ export function GalleryView({
         </div>
 
         {/* Linha 2: Alternador de Tela (Votação vs Resultados) */}
-        <div style={{ display: 'flex', gap: 0, background: '#0a0a0a', padding: 3, border: '1px solid #202020' }}>
+        <div style={{ display: 'flex', gap: 0, background: '#000000', padding: 3, border: '1px solid #1E293B' }}>
           <button
             onClick={() => setActiveMainTab('votacao')}
             style={{
               flex: 1,
               height: 36,
-              background: activeMainTab === 'votacao' ? '#FFC000' : 'transparent',
-              color: activeMainTab === 'votacao' ? '#000000' : '#7D7D7D',
+              background: activeMainTab === 'votacao' ? '#0099FF' : 'transparent',
+              color: activeMainTab === 'votacao' ? '#FFFFFF' : '#94A3B8',
               border: 'none',
               fontFamily: "'Barlow Condensed', sans-serif",
               fontWeight: 700,
@@ -381,8 +381,8 @@ export function GalleryView({
             style={{
               flex: 1,
               height: 36,
-              background: activeMainTab === 'resultados' ? '#FFC000' : 'transparent',
-              color: activeMainTab === 'resultados' ? '#000000' : '#7D7D7D',
+              background: activeMainTab === 'resultados' ? '#0099FF' : 'transparent',
+              color: activeMainTab === 'resultados' ? '#FFFFFF' : '#94A3B8',
               border: 'none',
               fontFamily: "'Barlow Condensed', sans-serif",
               fontWeight: 700,
@@ -410,7 +410,7 @@ export function GalleryView({
           {/* Seção 1: Classificação por Votação Popular */}
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-              <Sparkles size={16} color="#FFC000" />
+              <Sparkles size={16} color="#0099FF" />
               <h4 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 18, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#FFFFFF', margin: 0 }}>
                 Categorias de Votação Popular (Mais Votados)
               </h4>
@@ -422,19 +422,19 @@ export function GalleryView({
                 const totalVotosCat = votosCat.reduce((sum, item) => sum + item.votosCount, 0);
 
                 return (
-                  <div key={cat.id} style={{ background: '#181818', border: '1px solid #202020', borderTop: '2px solid #FFC000', padding: '16px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #202020', paddingBottom: 10, marginBottom: 14 }}>
-                      <h5 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#FFC000', margin: 0 }}>
+                  <div key={cat.id} style={{ background: '#0D1117', border: '1px solid #1E293B', borderTop: '2px solid #0099FF', padding: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #1E293B', paddingBottom: 10, marginBottom: 14 }}>
+                      <h5 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#0099FF', margin: 0 }}>
                         {cat.nome}
                       </h5>
-                      <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, color: '#7D7D7D', background: '#0a0a0a', border: '1px solid #313131', padding: '3px 8px' }}>
+                      <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, color: '#94A3B8', background: '#000000', border: '1px solid #1E293B', padding: '3px 8px' }}>
                         {totalVotosCat} voto(s)
                       </span>
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                       {votosCat.length === 0 ? (
-                        <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: '#7D7D7D', textAlign: 'center', padding: '20px 0' }}>
+                        <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: '#94A3B8', textAlign: 'center', padding: '20px 0' }}>
                           Nenhum voto registrado nesta categoria ainda.
                         </div>
                       ) : (
@@ -442,27 +442,27 @@ export function GalleryView({
                           const carro = safeCarros.find((c) => c.id === item.carroId);
                           const percent = totalVotosCat > 0 ? (item.votosCount / totalVotosCat) * 100 : 0;
                           const medalColors = [
-                            { bg: '#FFC000', text: '#000000', label: '1º LUGAR' },
+                            { bg: '#0099FF', text: '#FFFFFF', label: '1º LUGAR' },
                             { bg: '#C0C0C0', text: '#000000', label: '2º LUGAR' },
                             { bg: '#CD7F32', text: '#FFFFFF', label: '3º LUGAR' },
                           ];
-                          const medal = medalColors[index] || { bg: '#313131', text: '#A3A3A3', label: `${index + 1}º` };
+                          const medal = medalColors[index] || { bg: '#1E293B', text: '#94A3B8', label: `${index + 1}º` };
 
                           return (
-                            <div key={item.carroId} style={{ background: '#0a0a0a', border: '1px solid #202020', padding: '10px 12px' }}>
+                            <div key={item.carroId} style={{ background: '#000000', border: '1px solid #1E293B', padding: '10px 12px' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                                 {/* Miniatura do carro */}
                                 {carro?.url_foto ? (
                                   <div
                                     onClick={() => carro?.url_foto && setZoomPhoto({ url: carro.url_foto, modelo: carro.modelo, numero: carro.numero_inscricao })}
-                                    style={{ width: 48, height: 48, background: '#181818', border: '1px solid #313131', cursor: 'pointer', flexShrink: 0, overflow: 'hidden' }}
+                                    style={{ width: 48, height: 48, background: '#0D1117', border: '1px solid #1E293B', cursor: 'pointer', flexShrink: 0, overflow: 'hidden' }}
                                     title="Clique para ampliar foto"
                                   >
                                     <img src={carro.url_foto} alt={carro.modelo} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                   </div>
                                 ) : (
-                                  <div style={{ width: 48, height: 48, background: '#181818', border: '1px solid #313131', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <Car size={20} color="#7D7D7D" />
+                                  <div style={{ width: 48, height: 48, background: '#0D1117', border: '1px solid #1E293B', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Car size={20} color="#94A3B8" />
                                   </div>
                                 )}
 
@@ -485,13 +485,13 @@ export function GalleryView({
                                         {carro ? `${carro.modelo} ${carro.numero_inscricao ? `(${carro.numero_inscricao.startsWith('#') ? carro.numero_inscricao : `#${carro.numero_inscricao}`})` : ''}` : `ID: ${item.carroId}`}
                                       </span>
                                     </div>
-                                    <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, fontWeight: 700, color: '#FFC000', flexShrink: 0 }}>
+                                    <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, fontWeight: 700, color: '#0099FF', flexShrink: 0 }}>
                                       {item.votosCount} vts ({percent.toFixed(0)}%)
                                     </span>
                                   </div>
 
                                   {carro && ((carro.nome_dono && carro.nome_dono !== 'Não informado') || carro.equipe) && (
-                                    <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#7D7D7D', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#94A3B8', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                       {carro.nome_dono && carro.nome_dono !== 'Não informado' ? carro.nome_dono : ''}
                                       {carro.nome_dono && carro.nome_dono !== 'Não informado' && carro.equipe ? ' • Equipe: ' : carro.equipe ? 'Equipe: ' : ''}
                                       {carro.equipe || ''}
@@ -501,8 +501,8 @@ export function GalleryView({
                               </div>
 
                               {/* Barra de progresso */}
-                              <div style={{ width: '100%', height: 4, background: '#181818', overflow: 'hidden' }}>
-                                <div style={{ width: `${percent}%`, height: '100%', background: index === 0 ? '#FFC000' : index === 1 ? '#C0C0C0' : '#CD7F32', transition: 'width 0.4s ease' }} />
+                              <div style={{ width: '100%', height: 4, background: '#0D1117', overflow: 'hidden' }}>
+                                <div style={{ width: `${percent}%`, height: '100%', background: index === 0 ? '#0099FF' : index === 1 ? '#C0C0C0' : '#CD7F32', transition: 'width 0.4s ease' }} />
                               </div>
                             </div>
                           );
@@ -518,7 +518,7 @@ export function GalleryView({
           {/* Seção 2: Categorias Automotivas Especiais da Organização */}
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-              <Award size={16} color="#FFC000" />
+              <Award size={16} color="#0099FF" />
               <h4 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 18, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#FFFFFF', margin: 0 }}>
                 Destaques Técnicos
               </h4>
@@ -529,125 +529,91 @@ export function GalleryView({
               {(() => {
                 const antigo = safeCarros.filter(c => c.ano && c.ano > 1900).sort((a, b) => a.ano - b.ano)[0];
                 return (
-                  <div style={{ background: '#181818', border: '1px solid #202020', borderTop: '2px solid #3b82f6', padding: '16px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                      <Calendar size={16} color="#3b82f6" />
-                      <h5 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 14, textTransform: 'uppercase', color: '#3b82f6', margin: 0 }}>
-                        Carro Mais Antigo
-                      </h5>
+                  <div style={{ background: '#0D1117', border: '1px solid #1E293B', borderTop: '2px solid #0099FF', padding: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Calendar size={16} color="#0099FF" />
+                        <h5 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 14, textTransform: 'uppercase', color: '#0099FF', margin: 0 }}>
+                          Carro Mais Antigo
+                        </h5>
+                      </div>
+                      <span style={{ background: '#0099FF', color: '#FFFFFF', padding: '2px 8px', fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, fontWeight: 800, textTransform: 'uppercase' }}>
+                        1º LUGAR
+                      </span>
                     </div>
                     {antigo ? (
                       <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                         {antigo.url_foto ? (
-                          <img src={antigo.url_foto} alt={antigo.modelo} style={{ width: 56, height: 56, objectFit: 'cover', border: '1px solid #313131', flexShrink: 0 }} />
+                          <img src={antigo.url_foto} alt={antigo.modelo} style={{ width: 56, height: 56, objectFit: 'cover', border: '1px solid #1E293B', flexShrink: 0 }} />
                         ) : (
-                          <div style={{ width: 56, height: 56, background: '#0a0a0a', border: '1px solid #313131', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                            <Car size={24} color="#7D7D7D" />
+                          <div style={{ width: 56, height: 56, background: '#000000', border: '1px solid #1E293B', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <Car size={24} color="#94A3B8" />
                           </div>
                         )}
                         <div>
                           <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 15, color: '#FFFFFF' }}>
                             {antigo.modelo} ({antigo.ano})
                           </div>
-                          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, color: '#FFC000' }}>
+                          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, color: '#38BDF8', fontWeight: 700 }}>
                             Inscrição {antigo.numero_inscricao}
                           </div>
                           {antigo.nome_dono && antigo.nome_dono !== 'Não informado' && (
-                            <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#7D7D7D' }}>
+                            <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#94A3B8' }}>
                               Dono: {antigo.nome_dono}
                             </div>
                           )}
                         </div>
                       </div>
                     ) : (
-                      <span style={{ fontSize: 12, color: '#7D7D7D' }}>Sem dados suficientes</span>
+                      <span style={{ fontSize: 12, color: '#94A3B8' }}>Sem dados suficientes</span>
                     )}
                   </div>
                 );
               })()}
 
-              {/* Maior Equipe Uniformizada */}
+              {/* Destaque Jeep (Altura) */}
               {(() => {
-                const equipeLider = safeCarros.filter(c => c.pessoas_equipe && c.pessoas_equipe > 0).sort((a, b) => (b.pessoas_equipe || 0) - (a.pessoas_equipe || 0))[0];
+                const jeepLider = safeCarros
+                  .filter(c => c && c.altura_mm !== undefined && c.altura_mm !== null && Number(c.altura_mm) > 0)
+                  .sort((a, b) => Number(b.altura_mm) - Number(a.altura_mm))[0];
                 return (
-                  <div style={{ background: '#181818', border: '1px solid #202020', borderTop: '2px solid #22c55e', padding: '16px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                      <Users size={16} color="#22c55e" />
-                      <h5 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 14, textTransform: 'uppercase', color: '#22c55e', margin: 0 }}>
-                        Maior Equipe
-                      </h5>
-                    </div>
-                    {equipeLider ? (
-                      <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                        <div style={{ width: 56, height: 56, background: '#0a0a0a', border: '1px solid rgba(34, 197, 94, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          <Users size={24} color="#22c55e" />
-                        </div>
-                        <div>
-                          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 15, color: '#FFFFFF' }}>
-                            {equipeLider.equipe || 'Equipe Sem Nome'}
-                          </div>
-                          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, color: '#22c55e', fontWeight: 700 }}>
-                            {equipeLider.pessoas_equipe} Integrantes
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <span style={{ fontSize: 12, color: '#7D7D7D' }}>Sem dados suficientes</span>
-                    )}
-                  </div>
-                );
-              })()}
-
-              {/* Maior Rodagem */}
-              {(() => {
-                const rodagemLider = safeCarros
-                  .filter(c => c && c.km_rodado !== undefined && c.km_rodado !== null && Number(c.km_rodado) > 0)
-                  .sort((a, b) => Number(b.km_rodado) - Number(a.km_rodado))[0];
-                return (
-                  <div style={{ background: '#181818', border: '1px solid #202020', borderTop: '2px solid #eab308', padding: '16px' }}>
+                  <div style={{ background: '#0D1117', border: '1px solid #1E293B', borderTop: '2px solid #0099FF', padding: '16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <Gauge size={16} color="#eab308" />
-                        <h5 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 14, textTransform: 'uppercase', color: '#eab308', margin: 0 }}>
-                          Maior Rodagem
+                        <Ruler size={16} color="#0099FF" />
+                        <h5 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 14, textTransform: 'uppercase', color: '#0099FF', margin: 0 }}>
+                          Destaque Jeep (Altura)
                         </h5>
                       </div>
-                      <span style={{ background: '#eab308', color: '#000000', padding: '2px 8px', fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, fontWeight: 800, textTransform: 'uppercase' }}>
+                      <span style={{ background: '#0099FF', color: '#FFFFFF', padding: '2px 8px', fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, fontWeight: 800, textTransform: 'uppercase' }}>
                         1º LUGAR
                       </span>
                     </div>
-                    {rodagemLider ? (
+                    {jeepLider ? (
                       <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                        {rodagemLider.url_foto ? (
-                          <img src={rodagemLider.url_foto} alt={rodagemLider.modelo} style={{ width: 60, height: 60, objectFit: 'cover', border: '1px solid #eab308', flexShrink: 0 }} />
+                        {jeepLider.url_foto ? (
+                          <img src={jeepLider.url_foto} alt={jeepLider.modelo} style={{ width: 56, height: 56, objectFit: 'cover', border: '1px solid #1E293B', flexShrink: 0 }} />
                         ) : (
-                          <div style={{ width: 60, height: 60, background: '#0a0a0a', border: '1px solid #eab308', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                            <Car size={26} color="#eab308" />
+                          <div style={{ width: 56, height: 56, background: '#000000', border: '1px solid #1E293B', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <Car size={24} color="#94A3B8" />
                           </div>
                         )}
                         <div>
-                          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, color: '#FFFFFF' }}>
-                            {rodagemLider.modelo} <span style={{ color: '#FFC000' }}>({rodagemLider.numero_inscricao.startsWith('#') ? rodagemLider.numero_inscricao : `#${rodagemLider.numero_inscricao}`})</span>
+                          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 15, color: '#FFFFFF' }}>
+                            {jeepLider.modelo} <span style={{ color: '#0099FF' }}>({jeepLider.numero_inscricao.startsWith('#') ? jeepLider.numero_inscricao : `#${jeepLider.numero_inscricao}`})</span>
                           </div>
-                          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 14, color: '#eab308', fontWeight: 700, marginTop: 2 }}>
-                            ⚡ {Number(rodagemLider.km_rodado).toLocaleString('pt-BR')} KM RODADOS
+                          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, color: '#38BDF8', fontWeight: 700, marginTop: 2 }}>
+                            📏 {jeepLider.altura_mm} mm ALTURA
                           </div>
-                          {rodagemLider.nome_dono && rodagemLider.nome_dono !== 'Não informado' && (
-                            <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#7D7D7D', marginTop: 2 }}>
-                              Dono: {rodagemLider.nome_dono} {rodagemLider.equipe ? `· Equipe: ${rodagemLider.equipe}` : ''}
+                          {jeepLider.nome_dono && jeepLider.nome_dono !== 'Não informado' && (
+                            <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#94A3B8', marginTop: 2 }}>
+                              Dono: {jeepLider.nome_dono}
                             </div>
                           )}
                         </div>
                       </div>
                     ) : (
-                      <div style={{ background: '#0a0a0a', border: '1px dashed #313131', padding: '12px', textAlign: 'center' }}>
-                        <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#969696', display: 'block' }}>
-                          Nenhum veículo com KM rodado cadastrado (maior que 0).
-                        </span>
-                        <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#666666', marginTop: 2, display: 'block' }}>
-                          Informe a quilometragem no cadastro/edição do carro.
-                        </span>
-                      </div>
+                      <span style={{ fontSize: 12, color: '#94A3B8' }}>Nenhum veículo com altura cadastrada</span>
                     )}
                   </div>
                 );
@@ -716,14 +682,14 @@ export function GalleryView({
           {/* ===== TABS DE CATEGORIAS ===== */}
           <div
             style={{
-              background: '#181818',
-              borderBottom: '1px solid #202020',
+              background: '#0D1117',
+              borderBottom: '1px solid #1E293B',
               padding: '12px 20px',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Trophy size={14} color="#FFC000" />
+                <Trophy size={14} color="#0099FF" />
                 <span className="label-ds">Categorias de Votação</span>
               </div>
               <span style={{
@@ -732,9 +698,9 @@ export function GalleryView({
                 fontWeight: 600,
                 textTransform: 'uppercase',
                 letterSpacing: '0.1em',
-                color: '#FFC000',
-                background: 'rgba(255,192,0,0.08)',
-                border: '1px solid rgba(255,192,0,0.2)',
+                color: '#0099FF',
+                background: 'rgba(0,153,255,0.1)',
+                border: '1px solid rgba(0,153,255,0.3)',
                 padding: '4px 12px',
               }}>
                 {safeUserVotos.length} voto(s)
@@ -753,8 +719,8 @@ export function GalleryView({
                     style={{
                       flexShrink: 0,
                       padding: '10px 16px',
-                      background: isSelected ? '#FFC000' : '#202020',
-                      color: isSelected ? '#000000' : '#FFFFFF',
+                      background: isSelected ? '#0099FF' : '#141A24',
+                      color: isSelected ? '#FFFFFF' : '#94A3B8',
                       border: 'none',
                       cursor: 'pointer',
                       display: 'flex',
@@ -768,10 +734,10 @@ export function GalleryView({
                       transition: 'background 0.12s ease, color 0.12s ease',
                     }}
                     onMouseEnter={e => {
-                      if (!isSelected) e.currentTarget.style.background = '#313131';
+                      if (!isSelected) e.currentTarget.style.background = '#1E293B';
                     }}
                     onMouseLeave={e => {
-                      if (!isSelected) e.currentTarget.style.background = '#202020';
+                      if (!isSelected) e.currentTarget.style.background = '#141A24';
                     }}
                   >
                     <span>{cat.nome}</span>
@@ -780,16 +746,16 @@ export function GalleryView({
                         fontSize: 9,
                         fontWeight: 700,
                         padding: '2px 5px',
-                        background: isSelected ? 'rgba(0,0,0,0.15)' : 'rgba(41,171,226,0.15)',
-                        color: isSelected ? '#000000' : '#29ABE2',
-                        border: `1px solid ${isSelected ? 'rgba(0,0,0,0.3)' : 'rgba(41,171,226,0.3)'}`,
+                        background: isSelected ? 'rgba(0,0,0,0.25)' : 'rgba(0,153,255,0.15)',
+                        color: isSelected ? '#FFFFFF' : '#38BDF8',
+                        border: `1px solid ${isSelected ? 'rgba(255,255,255,0.3)' : 'rgba(0,153,255,0.3)'}`,
                         borderRadius: 2,
                         letterSpacing: '0.05em',
                       }}>
                         TÉCNICA
                       </span>
                     ) : jaVotou ? (
-                      <CheckCircle2 size={13} color={isSelected ? '#000000' : '#FFC000'} />
+                      <CheckCircle2 size={13} color={isSelected ? '#FFFFFF' : '#0099FF'} />
                     ) : null}
                   </button>
                 );
@@ -802,7 +768,7 @@ export function GalleryView({
             style={{
               padding: '10px 20px',
               background: '#000000',
-              borderBottom: '1px solid #181818',
+              borderBottom: '1px solid #141A24',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -820,7 +786,7 @@ export function GalleryView({
                 fontWeight: 600,
                 textTransform: 'uppercase',
                 letterSpacing: '0.1em',
-                color: '#FFC000',
+                color: '#0099FF',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 6,
@@ -837,16 +803,16 @@ export function GalleryView({
               equipesUniformizadas.length === 0 ? (
                 <div
                   style={{
-                    background: '#181818',
-                    border: '1px solid #202020',
+                    background: '#0D1117',
+                    border: '1px solid #1E293B',
                     padding: '48px 24px',
                     textAlign: 'center',
                     margin: '0 0',
                   }}
                 >
-                  <Users size={36} color="#313131" style={{ margin: '0 auto 12px' }} />
-                  <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 14, color: '#7D7D7D', margin: 0 }}>
-                    Nenhuma equipe com integrantes cadastrada neste evento.
+                  <Users size={36} color="#334155" style={{ margin: '0 auto 12px' }} />
+                  <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 14, color: '#94A3B8', margin: 0 }}>
+                    Nenhuma equipe cadastrada neste evento.
                   </p>
                 </div>
               ) : (
@@ -863,22 +829,21 @@ export function GalleryView({
                       className="card-surface"
                       style={{
                         padding: '24px 20px',
-                        borderTop: index === 0 ? '3px solid #22c55e' : '1px solid #202020',
+                        borderTop: index === 0 ? '3px solid #0099FF' : '1px solid #1E293B',
                         display: 'flex',
                         alignItems: 'center',
                         gap: 16,
                         position: 'relative',
                       }}
                     >
-                      {/* Rank Badge para a maior equipe */}
                       {index === 0 && (
                         <div
                           style={{
                             position: 'absolute',
                             top: 0,
                             right: 0,
-                            background: '#22c55e',
-                            color: '#000000',
+                            background: '#0099FF',
+                            color: '#FFFFFF',
                             padding: '2px 8px',
                             fontFamily: "'Barlow Condensed', sans-serif",
                             fontSize: 10,
@@ -895,15 +860,15 @@ export function GalleryView({
                         style={{
                           width: 52,
                           height: 52,
-                          background: '#0a0a0a',
-                          border: `1px solid ${index === 0 ? 'rgba(34, 197, 94, 0.4)' : '#313131'}`,
+                          background: '#000000',
+                          border: `1px solid ${index === 0 ? 'rgba(0, 153, 255, 0.4)' : '#1E293B'}`,
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           flexShrink: 0,
                         }}
                       >
-                        <Users size={24} color={index === 0 ? '#22c55e' : '#7D7D7D'} />
+                        <Users size={24} color={index === 0 ? '#0099FF' : '#94A3B8'} />
                       </div>
 
                       <div>
@@ -925,7 +890,7 @@ export function GalleryView({
                           style={{
                             fontFamily: "'Barlow Condensed', sans-serif",
                             fontSize: 13,
-                            color: index === 0 ? '#22c55e' : '#969696',
+                            color: index === 0 ? '#0099FF' : '#94A3B8',
                             fontWeight: index === 0 ? 700 : 500,
                             textTransform: 'uppercase',
                             letterSpacing: '0.05em',
@@ -942,15 +907,15 @@ export function GalleryView({
               eventCarros.length === 0 ? (
                 <div
                   style={{
-                    background: '#181818',
-                    border: '1px solid #202020',
+                    background: '#0D1117',
+                    border: '1px solid #1E293B',
                     padding: '48px 24px',
                     textAlign: 'center',
                     margin: '0 0',
                   }}
                 >
-                  <Car size={36} color="#313131" style={{ margin: '0 auto 12px' }} />
-                  <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 14, color: '#7D7D7D', margin: 0 }}>
+                  <Car size={36} color="#334155" style={{ margin: '0 auto 12px' }} />
+                  <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 14, color: '#94A3B8', margin: 0 }}>
                     Nenhum veículo encontrado nesta categoria.
                   </p>
                 </div>
@@ -959,7 +924,7 @@ export function GalleryView({
                   style={{
                     display: 'grid',
                     gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-                    gap: 2,
+                    gap: 16,
                   }}
                 >
                   {eventCarros.slice(0, visibleCount).map((carro) => {
@@ -970,21 +935,21 @@ export function GalleryView({
                       <div
                         key={carro.id}
                         style={{
-                          background: isVotadoPorMim ? '#181818' : '#181818',
+                          background: '#0D1117',
                           border: isVotadoPorMim
-                            ? '1px solid #FFC000'
-                            : '1px solid #202020',
+                            ? '1px solid #0099FF'
+                            : '1px solid #1E293B',
                           display: 'flex',
                           flexDirection: 'column',
                           transition: 'border-color 0.15s ease',
-                          outline: isVotadoPorMim ? '1px solid rgba(255,192,0,0.3)' : 'none',
+                          outline: isVotadoPorMim ? '1px solid rgba(0,153,255,0.4)' : 'none',
                           outlineOffset: '-1px',
                           position: 'relative',
                         }}
                       >
                         {/* Foto ou Placeholder sem foto */}
                         <div
-                          style={{ position: 'relative', height: 200, background: '#0a0a0a', overflow: 'hidden', cursor: carro.url_foto ? 'zoom-in' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                          style={{ position: 'relative', height: 200, background: '#000000', overflow: 'hidden', cursor: carro.url_foto ? 'zoom-in' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                           onClick={() => {
                             if (carro.url_foto) {
                               setZoomPhoto({ url: carro.url_foto, modelo: carro.modelo, numero: carro.numero_inscricao });
@@ -1002,9 +967,9 @@ export function GalleryView({
                               onMouseLeave={e => { (e.currentTarget as HTMLImageElement).style.transform = 'scale(1)'; }}
                             />
                           ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, color: '#313131' }}>
-                              <Car size={48} strokeWidth={1.5} color="#555555" />
-                              <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, color: '#666666', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Sem foto enviada</span>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, color: '#334155' }}>
+                              <Car size={48} strokeWidth={1.5} color="#475569" />
+                              <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Sem foto enviada</span>
                             </div>
                           )}
 
@@ -1015,8 +980,8 @@ export function GalleryView({
                                 position: 'absolute',
                                 bottom: 8,
                                 right: 8,
-                                background: 'rgba(0,0,0,0.65)',
-                                border: '1px solid rgba(255,192,0,0.4)',
+                                background: 'rgba(0,0,0,0.75)',
+                                border: '1px solid rgba(0,153,255,0.4)',
                                 borderRadius: 2,
                                 padding: '4px 6px',
                                 display: 'flex',
@@ -1025,7 +990,7 @@ export function GalleryView({
                                 pointerEvents: 'none',
                               }}
                             >
-                              <ZoomIn size={12} color="#FFC000" />
+                              <ZoomIn size={12} color="#0099FF" />
                             </div>
                           )}
 
@@ -1036,15 +1001,15 @@ export function GalleryView({
                               top: 0,
                               left: 0,
                               background: '#000000',
-                              borderBottom: '1px solid #FFC000',
-                              borderRight: '1px solid #FFC000',
+                              borderBottom: '1px solid #0099FF',
+                              borderRight: '1px solid #0099FF',
                               padding: '6px 12px',
                               fontFamily: "'Barlow Condensed', sans-serif",
                               fontSize: 11,
                               fontWeight: 700,
                               textTransform: 'uppercase',
                               letterSpacing: '0.12em',
-                              color: '#FFC000',
+                              color: '#0099FF',
                             }}
                           >
                             {carro.numero_inscricao}
@@ -1064,8 +1029,8 @@ export function GalleryView({
                             >
                               <div
                                 style={{
-                                  background: '#FFC000',
-                                  color: '#000000',
+                                  background: '#0099FF',
+                                  color: '#FFFFFF',
                                   padding: '10px 20px',
                                   display: 'flex',
                                   alignItems: 'center',
@@ -1077,7 +1042,7 @@ export function GalleryView({
                                   letterSpacing: '0.1em',
                                 }}
                               >
-                                <Trophy size={18} color="#000000" />
+                                <Trophy size={18} color="#FFFFFF" />
                                 Seu Voto Registrado
                               </div>
                             </div>
@@ -1103,7 +1068,7 @@ export function GalleryView({
                               <p style={{
                                 fontFamily: "'Barlow', sans-serif",
                                 fontSize: 12,
-                                color: '#7D7D7D',
+                                color: '#94A3B8',
                                 margin: 0,
                               }}>
                                 {carro.nome_dono && carro.nome_dono !== 'Não informado' ? carro.nome_dono : ''}
@@ -1114,106 +1079,61 @@ export function GalleryView({
                           </div>
 
                           {/* Specs */}
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                             <span
                               style={{
-                                background: '#202020',
-                                border: '1px solid #313131',
+                                background: '#141A24',
+                                border: '1px solid #1E293B',
                                 padding: '4px 10px',
                                 fontFamily: "'Barlow Condensed', sans-serif",
                                 fontSize: 11,
-                                color: '#969696',
+                                color: '#94A3B8',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: 5,
                               }}
                             >
-                              <Calendar size={11} color="#FFC000" />
+                              <Calendar size={11} color="#0099FF" />
                               {carro.ano}
                             </span>
                             {carro.altura_mm !== undefined && carro.altura_mm > 0 && (
                               <span
                                 style={{
-                                  background: '#202020',
-                                  border: '1px solid #313131',
+                                  background: '#141A24',
+                                  border: '1px solid #1E293B',
                                   padding: '4px 10px',
                                   fontFamily: "'Barlow Condensed', sans-serif",
                                   fontSize: 11,
-                                  color: '#969696',
+                                  color: '#38BDF8',
+                                  fontWeight: 600,
                                   display: 'flex',
                                   alignItems: 'center',
                                   gap: 5,
                                 }}
                               >
-                                <Ruler size={11} color="#FFC000" />
+                                <Ruler size={11} color="#0099FF" />
                                 {carro.altura_mm}mm
                               </span>
                             )}
                             {carro.km_rodado !== undefined && carro.km_rodado > 0 && (
                               <span
                                 style={{
-                                  background: '#202020',
-                                  border: '1px solid #313131',
+                                  background: '#141A24',
+                                  border: '1px solid #1E293B',
                                   padding: '4px 10px',
                                   fontFamily: "'Barlow Condensed', sans-serif",
                                   fontSize: 11,
-                                  color: '#969696',
+                                  color: '#94A3B8',
                                   display: 'flex',
                                   alignItems: 'center',
                                   gap: 5,
                                 }}
                               >
-                                <Gauge size={11} color="#FFC000" />
+                                <Gauge size={11} color="#0099FF" />
                                 {carro.km_rodado}km
                               </span>
                             )}
                           </div>
-
-                          {/* Destaque destacado para Maior Rodagem */}
-                          {(isMaiorRodagemCategory || (carro.km_rodado !== undefined && carro.km_rodado !== null && Number(carro.km_rodado) > 0)) && (
-                            <div
-                              style={{
-                                background: isMaiorRodagemCategory ? 'rgba(234, 179, 8, 0.15)' : '#202020',
-                                border: `1px solid ${isMaiorRodagemCategory ? '#eab308' : '#313131'}`,
-                                padding: '8px 12px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                gap: 6,
-                                marginTop: 4,
-                              }}
-                            >
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                <Gauge size={15} color={isMaiorRodagemCategory ? '#eab308' : '#FFC000'} />
-                                <span
-                                  style={{
-                                    fontFamily: "'Barlow Condensed', sans-serif",
-                                    fontSize: 13,
-                                    fontWeight: 700,
-                                    color: isMaiorRodagemCategory ? '#eab308' : '#FFFFFF',
-                                    letterSpacing: '0.05em',
-                                  }}
-                                >
-                                  {carro.km_rodado !== undefined && carro.km_rodado !== null && Number(carro.km_rodado) > 0
-                                    ? `${Number(carro.km_rodado).toLocaleString('pt-BR')} KM RODADOS`
-                                    : 'KM NÃO INFORMADO'}
-                                </span>
-                              </div>
-                              {isMaiorRodagemCategory && eventCarros.indexOf(carro) === 0 && Number(carro.km_rodado) > 0 && (
-                                <span style={{
-                                  background: '#eab308',
-                                  color: '#000000',
-                                  padding: '2px 6px',
-                                  fontFamily: "'Barlow Condensed', sans-serif",
-                                  fontSize: 10,
-                                  fontWeight: 800,
-                                  textTransform: 'uppercase',
-                                }}>
-                                  LÍDER
-                                </span>
-                              )}
-                            </div>
-                          )}
 
                           {/* Botão de Voto / Aviso Categoria Interna */}
                           {isInternalCategory ? (
@@ -1221,9 +1141,9 @@ export function GalleryView({
                               style={{
                                 width: '100%',
                                 height: 44,
-                                background: '#181818',
-                                border: '1px solid #313131',
-                                color: '#7D7D7D',
+                                background: '#141A24',
+                                border: '1px solid #1E293B',
+                                color: '#94A3B8',
                                 fontFamily: "'Barlow Condensed', sans-serif",
                                 fontWeight: 700,
                                 fontSize: 12,
@@ -1231,12 +1151,13 @@ export function GalleryView({
                                 letterSpacing: '0.1em',
                                 display: 'flex',
                                 alignItems: 'center',
+                                justifyCenter: 'center',
                                 justifyContent: 'center',
                                 gap: 6,
                                 marginTop: 'auto',
                               }}
                             >
-                              <Shield size={14} color="#29ABE2" />
+                              <Shield size={14} color="#0099FF" />
                               <span>Avaliação Técnica Interna</span>
                             </div>
                           ) : (
@@ -1247,20 +1168,20 @@ export function GalleryView({
                                 width: '100%',
                                 height: 44,
                                 background: isVotadoPorMim
-                                  ? '#FFC000'
+                                  ? '#0099FF'
                                   : votoNestaCategoria || !votacaoAberta
-                                    ? '#181818'
+                                    ? '#141A24'
                                     : 'transparent',
                                 color: isVotadoPorMim
-                                  ? '#000000'
+                                  ? '#FFFFFF'
                                   : votoNestaCategoria || !votacaoAberta
-                                    ? '#313131'
-                                    : '#FFC000',
+                                    ? '#64748B'
+                                    : '#0099FF',
                                 border: isVotadoPorMim
                                   ? 'none'
                                   : votoNestaCategoria || !votacaoAberta
-                                    ? '1px solid #313131'
-                                    : '1px solid #FFC000',
+                                    ? '1px solid #1E293B'
+                                    : '1px solid #0099FF',
                                 cursor: disabled ? 'not-allowed' : 'pointer',
                                 fontFamily: "'Barlow Condensed', sans-serif",
                                 fontWeight: 700,
@@ -1276,32 +1197,32 @@ export function GalleryView({
                               }}
                               onMouseEnter={e => {
                                 if (!disabled && !isVotadoPorMim) {
-                                  e.currentTarget.style.background = '#FFC000';
-                                  e.currentTarget.style.color = '#000000';
+                                  e.currentTarget.style.background = '#0099FF';
+                                  e.currentTarget.style.color = '#FFFFFF';
                                 }
                               }}
                               onMouseLeave={e => {
                                 if (!disabled && !isVotadoPorMim) {
                                   e.currentTarget.style.background = 'transparent';
-                                  e.currentTarget.style.color = '#FFC000';
+                                  e.currentTarget.style.color = '#0099FF';
                                 }
                               }}
                             >
                               {isVotadoPorMim ? (
                                 <>
-                                  <Trophy size={16} color="#000000" />
+                                  <Trophy size={16} color="#FFFFFF" />
                                   <span>Votado!</span>
                                 </>
                               ) : votoNestaCategoria ? (
                                 <>
-                                  <CheckCircle2 size={16} color="#313131" />
+                                  <CheckCircle2 size={16} color="#64748B" />
                                   <span>Voto Já Realizado</span>
                                 </>
                               ) : !votacaoAberta ? (
                                 <span>Votação Encerrada</span>
                               ) : (
                                 <>
-                                  <Vote size={16} color="#FFC000" />
+                                  <Vote size={16} color="#0099FF" />
                                   <span>Confirmar Voto</span>
                                 </>
                               )}
@@ -1319,9 +1240,9 @@ export function GalleryView({
                 <button
                   onClick={() => setVisibleCount((prev) => prev + 5)}
                   style={{
-                    background: '#202020',
-                    color: '#FFC000',
-                    border: '1px solid #313131',
+                    background: '#141A24',
+                    color: '#0099FF',
+                    border: '1px solid #1E293B',
                     padding: '12px 32px',
                     fontFamily: "'Barlow Condensed', sans-serif",
                     fontWeight: 600,
@@ -1331,10 +1252,10 @@ export function GalleryView({
                     cursor: 'pointer',
                     transition: 'background 0.2s',
                   }}
-                  onMouseEnter={e => e.currentTarget.style.background = '#313131'}
-                  onMouseLeave={e => e.currentTarget.style.background = '#202020'}
+                  onMouseEnter={e => e.currentTarget.style.background = '#1E293B'}
+                  onMouseLeave={e => e.currentTarget.style.background = '#141A24'}
                 >
-                  Ver Mais {isMaiorEquipeCategory ? 'Equipes' : 'Carros'} ({(isMaiorEquipeCategory ? equipesUniformizadas.length : eventCarros.length) - visibleCount} restantes)
+                  Ver Mais Carros ({eventCarros.length - visibleCount} restantes)
                 </button>
               </div>
             )}
@@ -1345,8 +1266,8 @@ export function GalleryView({
       {/* ===== FOOTER ===== */}
       <div
         style={{
-          background: '#181818',
-          borderTop: '1px solid #202020',
+          background: '#0D1117',
+          borderTop: '1px solid #1E293B',
           padding: '12px 20px',
           display: 'flex',
           alignItems: 'center',
@@ -1354,13 +1275,13 @@ export function GalleryView({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Shield size={14} color="#FFC000" />
+          <Shield size={14} color="#0099FF" />
           <span className="label-ds">Sessão auditada de votação popular</span>
         </div>
         <span style={{
           fontFamily: "'Barlow Condensed', sans-serif",
           fontSize: 11,
-          color: '#313131',
+          color: '#64748B',
           textTransform: 'uppercase',
           letterSpacing: '0.1em',
         }}>
@@ -1405,9 +1326,9 @@ export function GalleryView({
                   fontFamily: "'Barlow Condensed', sans-serif",
                   fontWeight: 700,
                   fontSize: 13,
-                  color: '#FFC000',
+                  color: '#0099FF',
                   background: '#000000',
-                  border: '1px solid #FFC000',
+                  border: '1px solid #0099FF',
                   padding: '3px 10px',
                   textTransform: 'uppercase',
                   letterSpacing: '0.1em',
@@ -1460,7 +1381,7 @@ export function GalleryView({
               objectFit: 'contain',
               display: 'block',
               boxShadow: '0 0 60px rgba(0,0,0,0.8)',
-              border: '1px solid rgba(255,192,0,0.2)',
+              border: '1px solid rgba(0,153,255,0.3)',
             }}
           />
 
@@ -1502,9 +1423,9 @@ export function GalleryView({
             style={{
               position: 'relative',
               zIndex: 1,
-              background: '#181818',
-              border: '1px solid #202020',
-              borderTop: '3px solid #FFC000',
+              background: '#0D1117',
+              border: '1px solid #1E293B',
+              borderTop: '3px solid #0099FF',
               width: '100%',
               maxWidth: 460,
               padding: '24px',
@@ -1515,22 +1436,22 @@ export function GalleryView({
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <UserPlus size={20} color="#FFC000" />
+                <UserPlus size={20} color="#0099FF" />
                 <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 18, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#FFFFFF', margin: 0 }}>
                   Cadastrar Nova Equipe
                 </h3>
               </div>
               <button
                 onClick={() => setShowEquipeModal(false)}
-                style={{ background: '#202020', border: '1px solid #313131', color: '#7D7D7D', padding: 6, cursor: 'pointer', display: 'flex' }}
+                style={{ background: '#141A24', border: '1px solid #1E293B', color: '#94A3B8', padding: 6, cursor: 'pointer', display: 'flex' }}
                 onMouseEnter={e => e.currentTarget.style.color = '#FFFFFF'}
-                onMouseLeave={e => e.currentTarget.style.color = '#7D7D7D'}
+                onMouseLeave={e => e.currentTarget.style.color = '#94A3B8'}
               >
                 <X size={16} />
               </button>
             </div>
 
-            <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: '#969696', margin: 0 }}>
+            <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: '#94A3B8', margin: 0 }}>
               Informe o nome completo da sua equipe/clube. Evite criar nomes duplicados ou com erros de digitação.
             </p>
 
@@ -1547,7 +1468,7 @@ export function GalleryView({
                   <label className="label-ds" style={{ margin: 0 }}>
                     Equipes Já Cadastradas ({safeEquipes.length})
                   </label>
-                  <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#7D7D7D' }}>
+                  <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#94A3B8' }}>
                     Clique para selecionar
                   </span>
                 </div>
@@ -1558,7 +1479,7 @@ export function GalleryView({
                     maxHeight: 120,
                     overflowY: 'auto',
                     background: '#000000',
-                    border: '1px solid #202020',
+                    border: '1px solid #1E293B',
                     padding: '8px',
                     display: 'flex',
                     flexWrap: 'wrap',
@@ -1566,7 +1487,7 @@ export function GalleryView({
                   }}
                 >
                   {safeEquipes.length === 0 ? (
-                    <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#7D7D7D', padding: '6px 4px' }}>
+                    <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#94A3B8', padding: '6px 4px' }}>
                       Nenhuma equipe cadastrada ainda.
                     </span>
                   ) : (
@@ -1585,9 +1506,9 @@ export function GalleryView({
                               fontFamily: "'Barlow Condensed', sans-serif",
                               fontSize: 12,
                               fontWeight: 600,
-                              color: isMatch ? '#000000' : '#FFC000',
-                              background: isMatch ? '#FFC000' : 'rgba(255,192,0,0.08)',
-                              border: `1px solid ${isMatch ? '#FFC000' : 'rgba(255,192,0,0.25)'}`,
+                              color: isMatch ? '#000000' : '#0099FF',
+                              background: isMatch ? '#0099FF' : 'rgba(0,153,255,0.1)',
+                              border: `1px solid ${isMatch ? '#0099FF' : 'rgba(0,153,255,0.3)'}`,
                               padding: '4px 10px',
                               cursor: 'pointer',
                               borderRadius: 2,
@@ -1607,7 +1528,7 @@ export function GalleryView({
                 <label className="label-ds" style={{ marginBottom: 6, display: 'block' }}>Nome da Nova Equipe</label>
                 <input
                   type="text"
-                  placeholder="Ex: Clube do Opala SP"
+                  placeholder="Ex: Los Felas Crew"
                   value={equipeNomeInput}
                   onChange={(e) => {
                     setEquipeNomeInput(e.target.value);
@@ -1624,20 +1545,20 @@ export function GalleryView({
                 <div
                   style={{
                     background: equipeValidationMsg.type === 'error'
-                      ? 'rgba(180,0,0,0.15)'
+                      ? 'rgba(229,25,55,0.12)'
                       : equipeValidationMsg.type === 'warning'
-                        ? 'rgba(255,192,0,0.12)'
+                        ? 'rgba(0,153,255,0.12)'
                         : 'rgba(0,120,60,0.15)',
                     border: `1px solid ${equipeValidationMsg.type === 'error'
-                      ? 'rgba(220,50,50,0.3)'
+                      ? 'rgba(229,25,55,0.3)'
                       : equipeValidationMsg.type === 'warning'
-                        ? 'rgba(255,192,0,0.3)'
+                        ? 'rgba(0,153,255,0.3)'
                         : 'rgba(74,222,128,0.3)'
                       }`,
                     borderLeft: `3px solid ${equipeValidationMsg.type === 'error'
-                      ? '#ef4444'
+                      ? '#E51937'
                       : equipeValidationMsg.type === 'warning'
-                        ? '#FFC000'
+                        ? '#0099FF'
                         : '#4ade80'
                       }`,
                     padding: '12px 14px',
@@ -1647,8 +1568,8 @@ export function GalleryView({
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    {equipeValidationMsg.type === 'error' && <AlertCircle size={16} color="#ef4444" />}
-                    {equipeValidationMsg.type === 'warning' && <AlertTriangle size={16} color="#FFC000" />}
+                    {equipeValidationMsg.type === 'error' && <AlertCircle size={16} color="#E51937" />}
+                    {equipeValidationMsg.type === 'warning' && <AlertTriangle size={16} color="#0099FF" />}
                     {equipeValidationMsg.type === 'success' && <CheckCircle2 size={16} color="#4ade80" />}
                     <span
                       style={{
@@ -1657,7 +1578,7 @@ export function GalleryView({
                         color: equipeValidationMsg.type === 'error'
                           ? '#fca5a5'
                           : equipeValidationMsg.type === 'warning'
-                            ? '#FFC000'
+                            ? '#38BDF8'
                             : '#86efac',
                       }}
                     >
@@ -1672,8 +1593,8 @@ export function GalleryView({
                         type="button"
                         onClick={() => handleCreateEquipeSubmit(true)}
                         style={{
-                          background: '#FFC000',
-                          color: '#000000',
+                          background: '#0099FF',
+                          color: '#FFFFFF',
                           border: 'none',
                           padding: '6px 12px',
                           cursor: 'pointer',
@@ -1693,9 +1614,9 @@ export function GalleryView({
                           setEquipeValidationMsg(null);
                         }}
                         style={{
-                          background: '#202020',
+                          background: '#141A24',
                           color: '#FFFFFF',
-                          border: '1px solid #313131',
+                          border: '1px solid #1E293B',
                           padding: '6px 12px',
                           cursor: 'pointer',
                           fontFamily: "'Barlow Condensed', sans-serif",
@@ -1714,7 +1635,7 @@ export function GalleryView({
               <button
                 type="submit"
                 disabled={submittingEquipe || !equipeNomeInput.trim()}
-                className="btn-gold"
+                className="btn-bmw"
                 style={{ width: '100%', height: 42, fontSize: 14, marginTop: 4 }}
               >
                 {submittingEquipe ? 'Cadastrando...' : 'Salvar Equipe'}

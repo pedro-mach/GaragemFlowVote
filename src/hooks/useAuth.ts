@@ -21,13 +21,14 @@ export function useAuth() {
 
   useEffect(() => {
     // Carregar sessão salva no LocalStorage
-    const storedUser = localStorage.getItem('regional_user') || localStorage.getItem('garagemflow_user');
-    const storedRole = localStorage.getItem('regional_role') || localStorage.getItem('garagemflow_role');
+    const storedUser = localStorage.getItem('losfelas_user') || localStorage.getItem('regional_user') || localStorage.getItem('garagemflow_user');
+    const storedRole = localStorage.getItem('losfelas_role') || localStorage.getItem('regional_role') || localStorage.getItem('garagemflow_role');
 
     if (storedUser) {
       try {
         setUser(JSON.parse(storedUser));
       } catch {
+        localStorage.removeItem('losfelas_user');
         localStorage.removeItem('regional_user');
         localStorage.removeItem('garagemflow_user');
       }
@@ -109,8 +110,8 @@ export function useAuth() {
             clearAttempts();
             setUser(existing);
             setIsOrganizer(false);
-            localStorage.setItem('regional_user', JSON.stringify(existing));
-            localStorage.setItem('regional_role', 'voter');
+            localStorage.setItem('losfelas_user', JSON.stringify(existing));
+            localStorage.setItem('losfelas_role', 'voter');
           } else {
             throw new Error('MISMATCH');
           }
@@ -127,13 +128,13 @@ export function useAuth() {
           clearAttempts();
           setUser(created);
           setIsOrganizer(false);
-          localStorage.setItem('regional_user', JSON.stringify(created));
-          localStorage.setItem('regional_role', 'voter');
+          localStorage.setItem('losfelas_user', JSON.stringify(created));
+          localStorage.setItem('losfelas_role', 'voter');
         }
       } else {
         // Fluxo offline / Mock
         const localDb: Eleitor[] = JSON.parse(
-          localStorage.getItem('regional_db_eleitores') || localStorage.getItem('garagemflow_db_eleitores') || '[]'
+          localStorage.getItem('losfelas_db_eleitores') || localStorage.getItem('regional_db_eleitores') || localStorage.getItem('garagemflow_db_eleitores') || '[]'
         );
 
         const existing = localDb.find((e) => e.cpf_hash === cpfHash);
@@ -143,8 +144,8 @@ export function useAuth() {
             clearAttempts();
             setUser(existing);
             setIsOrganizer(false);
-            localStorage.setItem('regional_user', JSON.stringify(existing));
-            localStorage.setItem('regional_role', 'voter');
+            localStorage.setItem('losfelas_user', JSON.stringify(existing));
+            localStorage.setItem('losfelas_role', 'voter');
           } else {
             throw new Error('MISMATCH');
           }
@@ -156,13 +157,13 @@ export function useAuth() {
             criado_em: new Date().toISOString(),
           };
           localDb.push(newEleitor);
-          localStorage.setItem('regional_db_eleitores', JSON.stringify(localDb));
+          localStorage.setItem('losfelas_db_eleitores', JSON.stringify(localDb));
 
           clearAttempts();
           setUser(newEleitor);
           setIsOrganizer(false);
-          localStorage.setItem('regional_user', JSON.stringify(newEleitor));
-          localStorage.setItem('regional_role', 'voter');
+          localStorage.setItem('losfelas_user', JSON.stringify(newEleitor));
+          localStorage.setItem('losfelas_role', 'voter');
         }
       }
     } catch (err: any) {
@@ -215,8 +216,9 @@ export function useAuth() {
       clearAttempts();
       setIsOrganizer(true);
       setUser(null);
-      localStorage.setItem('regional_role', 'organizer');
-      localStorage.setItem('regional_organizer_cpf', cleanCpf);
+      localStorage.setItem('losfelas_role', 'organizer');
+      localStorage.setItem('losfelas_organizer_cpf', cleanCpf);
+      localStorage.removeItem('losfelas_user');
       localStorage.removeItem('regional_user');
       localStorage.removeItem('garagemflow_user');
       setIsLoading(false);
@@ -232,10 +234,13 @@ export function useAuth() {
   const logout = () => {
     setUser(null);
     setIsOrganizer(false);
+    localStorage.removeItem('losfelas_user');
     localStorage.removeItem('regional_user');
     localStorage.removeItem('garagemflow_user');
+    localStorage.removeItem('losfelas_role');
     localStorage.removeItem('regional_role');
     localStorage.removeItem('garagemflow_role');
+    localStorage.removeItem('losfelas_organizer_cpf');
     localStorage.removeItem('regional_organizer_cpf');
   };
 
@@ -249,5 +254,3 @@ export function useAuth() {
     logout,
   };
 }
-
-

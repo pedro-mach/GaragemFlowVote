@@ -130,39 +130,38 @@ export function AuthView({ evento, login, loginAsOrganizer, isLoading, error }: 
                 style={{
                   width: 64,
                   height: 64,
-                  border: '1px solid rgba(255,192,0,0.3)',
-                  background: '#181818',
+                  border: '1px solid rgba(0, 153, 255, 0.4)',
+                  background: '#0D1117',
                 }}
               >
                 <img
-                  src="/Logo-evento.jpeg"
-                  alt="Logo Regional das Equipes em Valinhos - GaragemFlow, Los Felas, Low Mafia"
+                  src="/Logo-evento.jpeg?v=2"
+                  alt="Logo Los Felas"
                   style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                  onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
                 />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <h1 style={{
                   fontFamily: "'Barlow Condensed', sans-serif",
-                  fontSize: 18,
+                  fontSize: 22,
                   fontWeight: 800,
                   textTransform: 'uppercase',
                   letterSpacing: '0.12em',
-                  color: '#FFC000',
+                  color: '#0099FF',
                   margin: 0,
                   lineHeight: 1.1,
                 }}>
-                  {evento?.nome ? `${evento.nome} em Valinhos` : 'REGIONAL DAS EQUIPES EM VALINHOS'}
+                  {evento?.nome ? evento.nome : 'ENCONTRO LOS FELAS'}
                 </h1>
                 <span style={{
                   fontFamily: "'Barlow Condensed', sans-serif",
-                  fontSize: 11,
+                  fontSize: 12,
                   fontWeight: 600,
                   textTransform: 'uppercase',
-                  letterSpacing: '0.1em',
-                  color: '#A0A0A0',
+                  letterSpacing: '0.14em',
+                  color: '#94A3B8',
                 }}>
-                  GaragemFlow • Los Felas • Low Mafia
+                  Los Felas • Votação Oficial
                 </span>
               </div>
             </div>
@@ -173,27 +172,27 @@ export function AuthView({ evento, login, loginAsOrganizer, isLoading, error }: 
             <p style={{
               fontFamily: "'Barlow', sans-serif",
               fontSize: 15,
-              color: '#999999',
+              color: '#94A3B8',
               lineHeight: 1.6,
               maxWidth: 480,
               fontWeight: 400,
               marginBottom: 24,
             }}>
-              Votação oficial em tempo real do <strong>Regional das Equipes em Valinhos</strong>. Evento promovido por <strong>GaragemFlow</strong>, <strong>Los Felas</strong> e <strong>Low Mafia</strong>.
+              Votação oficial em tempo real do <strong>Encontro Los Felas</strong>. Escolha os melhores veículos nas categorias e acompanhe a apuração ao vivo.
             </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-px" style={{ background: '#202020' }}>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-px" style={{ background: '#1E293B' }}>
               {[
                 { label: 'Apuração ao Vivo', sub: 'Resultados imediatos' },
-                { label: 'Categorias Troféu', sub: 'Populares & técnicas' },
-                { label: 'Voto Auditado', sub: 'Por CPF' },
+                { label: '5 Categorias', sub: 'Populares & técnicas' },
+                { label: 'Voto Auditado', sub: '1 voto por CPF' },
               ].map((f) => (
                 <div
                   key={f.label}
                   style={{
-                    background: '#000000',
+                    background: '#0D1117',
                     padding: '16px 20px',
-                    borderTop: '2px solid #202020',
+                    borderTop: '2px solid #0099FF',
                   }}
                 >
                   <div style={{
@@ -209,7 +208,7 @@ export function AuthView({ evento, login, loginAsOrganizer, isLoading, error }: 
                   <div style={{
                     fontFamily: "'Barlow', sans-serif",
                     fontSize: 12,
-                    color: '#7D7D7D',
+                    color: '#94A3B8',
                     marginTop: 4,
                   }}>
                     {f.sub}
@@ -225,9 +224,9 @@ export function AuthView({ evento, login, loginAsOrganizer, isLoading, error }: 
         <div className="lg:col-span-5 w-full order-2">
           <div
             style={{
-              background: '#181818',
-              border: '1px solid #313131',
-              borderTop: '2px solid #FFC000',
+              background: '#0D1117',
+              border: '1px solid #1E293B',
+              borderTop: '3px solid #0099FF',
               padding: '32px',
               position: 'relative',
             }}
@@ -240,7 +239,7 @@ export function AuthView({ evento, login, loginAsOrganizer, isLoading, error }: 
                 justifyContent: 'space-between',
                 marginBottom: 28,
                 paddingBottom: 20,
-                borderBottom: '1px solid #202020',
+                borderBottom: '1px solid #1E293B',
               }}
             >
               <div>
@@ -258,13 +257,13 @@ export function AuthView({ evento, login, loginAsOrganizer, isLoading, error }: 
                 <p style={{
                   fontFamily: "'Barlow', sans-serif",
                   fontSize: 13,
-                  color: '#7D7D7D',
+                  color: '#94A3B8',
                   margin: '6px 0 0 0',
                 }}>
                   Informe seus dados para liberar o voto
                 </p>
               </div>
-              <Shield size={20} color="#FFC000" />
+              <Shield size={20} color="#0099FF" />
             </div>
 
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -306,7 +305,7 @@ export function AuthView({ evento, login, loginAsOrganizer, isLoading, error }: 
                   value={birthdate}
                   onChange={handleBirthdateChange}
                   disabled={isLoading}
-                  className="w-full h-12 bg-[#16161A] border border-white/10 focus:border-[#F5A623] focus:ring-1 focus:ring-[#F5A623] rounded-xl px-4 text-white placeholder-gray-500 outline-none text-sm transition-all font-mono tracking-wider"
+                  className="input-ds font-mono"
                 />
               </div>
 
@@ -323,7 +322,7 @@ export function AuthView({ evento, login, loginAsOrganizer, isLoading, error }: 
                   disabled={isLoading}
                   style={{
                     marginTop: 2,
-                    accentColor: '#FFC000',
+                    accentColor: '#0099FF',
                     width: 16,
                     height: 16,
                     flexShrink: 0,
@@ -335,7 +334,7 @@ export function AuthView({ evento, login, loginAsOrganizer, isLoading, error }: 
                   style={{
                     fontFamily: "'Barlow', sans-serif",
                     fontSize: 12,
-                    color: '#7D7D7D',
+                    color: '#94A3B8',
                     lineHeight: 1.5,
                     cursor: 'pointer',
                     userSelect: 'none',
@@ -349,16 +348,16 @@ export function AuthView({ evento, login, loginAsOrganizer, isLoading, error }: 
               {(error || formError) && (
                 <div
                   style={{
-                    background: 'rgba(180,0,0,0.15)',
-                    border: '1px solid rgba(220,50,50,0.4)',
+                    background: 'rgba(229, 25, 55, 0.12)',
+                    border: '1px solid rgba(229, 25, 55, 0.4)',
                     padding: '12px 16px',
                     display: 'flex',
                     alignItems: 'flex-start',
                     gap: 10,
                   }}
                 >
-                  <AlertTriangle size={16} color="#FFC000" style={{ flexShrink: 0, marginTop: 1 }} />
-                  <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: '#ffaaaa' }}>
+                  <AlertTriangle size={16} color="#E51937" style={{ flexShrink: 0, marginTop: 1 }} />
+                  <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: '#ff8a9a' }}>
                     {formError || error}
                   </span>
                 </div>
@@ -368,7 +367,7 @@ export function AuthView({ evento, login, loginAsOrganizer, isLoading, error }: 
               <button
                 type="submit"
                 disabled={isLoading}
-                className="btn-gold"
+                className="btn-bmw"
                 style={{ width: '100%', height: 52, fontSize: 15, gap: 10, marginTop: 4 }}
               >
                 {isLoading ? (
@@ -376,7 +375,7 @@ export function AuthView({ evento, login, loginAsOrganizer, isLoading, error }: 
                 ) : (
                   <>
                     <span>ENTRAR PARA VOTAR</span>
-                    <CheckCircle2 size={18} color="#000000" />
+                    <CheckCircle2 size={18} color="#FFFFFF" />
                   </>
                 )}
               </button>
@@ -387,7 +386,7 @@ export function AuthView({ evento, login, loginAsOrganizer, isLoading, error }: 
               style={{
                 marginTop: 24,
                 paddingTop: 20,
-                borderTop: '1px solid #202020',
+                borderTop: '1px solid #1E293B',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
@@ -412,12 +411,12 @@ export function AuthView({ evento, login, loginAsOrganizer, isLoading, error }: 
                   fontWeight: 600,
                   textTransform: 'uppercase',
                   letterSpacing: '0.08em',
-                  color: '#29ABE2',
+                  color: '#0099FF',
                   transition: 'color 0.15s',
                   padding: 0,
                 }}
-                onMouseEnter={e => (e.currentTarget.style.color = '#3860BE')}
-                onMouseLeave={e => (e.currentTarget.style.color = '#29ABE2')}
+                onMouseEnter={e => (e.currentTarget.style.color = '#38BDF8')}
+                onMouseLeave={e => (e.currentTarget.style.color = '#0099FF')}
               >
                 <KeyRound size={14} />
                 <span>Painel do Organizador (Restrito)</span>
@@ -428,7 +427,7 @@ export function AuthView({ evento, login, loginAsOrganizer, isLoading, error }: 
                 fontSize: 10,
                 textTransform: 'uppercase',
                 letterSpacing: '0.12em',
-                color: '#313131',
+                color: '#64748B',
               }}>
                 Votação Auditada
               </span>
@@ -443,19 +442,19 @@ export function AuthView({ evento, login, loginAsOrganizer, isLoading, error }: 
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
           <div
             style={{
-              background: '#181818',
-              border: '1px solid #313131',
-              borderTop: '2px solid #FFC000',
+              background: '#0D1117',
+              border: '1px solid #1E293B',
+              borderTop: '3px solid #0099FF',
               width: '100%',
               maxWidth: 420,
               padding: '28px',
               boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)',
             }}
           >
-            <div className="flex items-center justify-between pb-4 mb-5 border-b border-[#202020]">
+            <div className="flex items-center justify-between pb-4 mb-5 border-b border-[#1E293B]">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-[#FFC000]/10 border border-[#FFC000]/30 rounded">
-                  <Lock size={20} color="#FFC000" />
+                <div className="p-2 bg-[#0099FF]/10 border border-[#0099FF]/30">
+                  <Lock size={20} color="#0099FF" />
                 </div>
                 <div>
                   <h3 style={{
@@ -469,7 +468,7 @@ export function AuthView({ evento, login, loginAsOrganizer, isLoading, error }: 
                   }}>
                     Acesso do Organizador
                   </h3>
-                  <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#7D7D7D', margin: 0 }}>
+                  <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#94A3B8', margin: 0 }}>
                     Informe CPF e senha autorizados
                   </p>
                 </div>
@@ -508,29 +507,29 @@ export function AuthView({ evento, login, loginAsOrganizer, isLoading, error }: 
                     setOrgError(null);
                   }}
                   disabled={isLoading}
-                  className="w-full h-12 bg-[#16161A] border border-white/10 focus:border-[#F5A623] focus:ring-1 focus:ring-[#F5A623] rounded-xl px-4 text-white placeholder-gray-500 outline-none text-sm transition-all"
+                  className="input-ds"
                 />
               </div>
 
               {orgError && (
                 <div
                   style={{
-                    background: 'rgba(180,0,0,0.15)',
-                    border: '1px solid rgba(220,50,50,0.4)',
+                    background: 'rgba(229, 25, 55, 0.12)',
+                    border: '1px solid rgba(229, 25, 55, 0.4)',
                     padding: '10px 14px',
                     display: 'flex',
                     alignItems: 'center',
                     gap: 8,
                   }}
                 >
-                  <AlertTriangle size={15} color="#FFC000" style={{ flexShrink: 0 }} />
-                  <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#ffaaaa' }}>
+                  <AlertTriangle size={15} color="#E51937" style={{ flexShrink: 0 }} />
+                  <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#ff8a9a' }}>
                     {orgError}
                   </span>
                 </div>
               )}
 
-              <div className="flex items-center justify-end gap-3 mt-3 pt-3 border-t border-[#202020]">
+              <div className="flex items-center justify-end gap-3 mt-3 pt-3 border-t border-[#1E293B]">
                 <button
                   type="button"
                   onClick={() => {
@@ -541,10 +540,9 @@ export function AuthView({ evento, login, loginAsOrganizer, isLoading, error }: 
                   }}
                   style={{
                     background: 'transparent',
-                    border: '1px solid #313131',
-                    color: '#A0A0A0',
+                    border: '1px solid #1E293B',
+                    color: '#94A3B8',
                     padding: '10px 18px',
-                    borderRadius: '8px',
                     fontSize: 13,
                     fontFamily: "'Barlow Condensed', sans-serif",
                     fontWeight: 600,
@@ -557,12 +555,11 @@ export function AuthView({ evento, login, loginAsOrganizer, isLoading, error }: 
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="btn-gold"
+                  className="btn-bmw"
                   style={{
                     height: 42,
                     padding: '0 20px',
                     fontSize: 13,
-                    borderRadius: '8px',
                   }}
                 >
                   Acessar Painel

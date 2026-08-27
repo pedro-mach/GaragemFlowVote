@@ -58,8 +58,8 @@ function App() {
   const globalError = authError || dataError || votingError;
 
   useEffect(() => {
-    const nomeEvento = evento?.nome || 'Regional das Equipes em Valinhos';
-    document.title = `${nomeEvento} | GaragemFlow, Los Felas & Low Mafia`;
+    const nomeEvento = evento?.nome || 'Encontro Los Felas';
+    document.title = `${nomeEvento} | Los Felas`;
   }, [evento?.nome]);
 
   // Carregamento da sessão inicial
@@ -67,7 +67,7 @@ function App() {
   if (authLoading) {
     return (
       <Layout>
-        <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FFC000', fontFamily: "'Barlow Condensed', sans-serif", fontSize: 16, letterSpacing: '0.1em' }}>
+        <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0099FF', fontFamily: "'Barlow Condensed', sans-serif", fontSize: 16, letterSpacing: '0.1em' }}>
           CARREGANDO SESSÃO...
         </div>
       </Layout>

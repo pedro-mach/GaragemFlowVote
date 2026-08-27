@@ -1,5 +1,5 @@
 // Dados Simulados para Testes e Desenvolvimento Offline
-// Projeto: RegionalDasEquipesVote
+// Projeto: Los Felas Vote
 
 export interface Evento {
   id: string;
@@ -19,7 +19,6 @@ export interface Categoria {
 
 /** Campos de preenchimento que uma categoria pode exigir */
 export type CampoRequerido = 'genero' | 'foto' | 'altura_mm' | 'km_rodado' | 'equipe' | 'telefone';
-
 
 export interface Equipe {
   id: string;
@@ -65,30 +64,29 @@ export interface Eleitor {
 // Evento Padrão Ativo
 export const mockEvento: Evento = {
   id: '11111111-1111-1111-1111-111111111111',
-  nome: 'Regional das Equipes 2026',
+  nome: 'Encontro Los Felas',
   data: '2026-07-16',
   status: 'aberto',
 };
 
-// Categorias Padrão
+// Categorias Padrão Exclusivas Los Felas
 export const mockCategorias: Categoria[] = [
-  { id: 'cat-1', nome: 'Destaque Masculino', tipo: 'popular', oculta: false, campos_requeridos: ['genero', 'foto'] },
-  { id: 'cat-2', nome: 'Destaque Feminino', tipo: 'popular', oculta: false, campos_requeridos: ['genero', 'foto'] },
-  { id: 'cat-3', nome: 'Mais antigo', tipo: 'interna', oculta: false, campos_requeridos: [] },
-  { id: 'cat-4', nome: 'Maior equipe uniformizada', tipo: 'interna', oculta: false, campos_requeridos: ['equipe'] },
-  { id: 'cat-5', nome: 'Maior rodagem', tipo: 'interna', oculta: false, campos_requeridos: ['km_rodado'] },
+  { id: 'cat-1', nome: 'Carro mais antigo', tipo: 'interna', oculta: false, campos_requeridos: [] },
+  { id: 'cat-2', nome: 'Destaque masculino', tipo: 'popular', oculta: false, campos_requeridos: ['genero', 'foto'] },
+  { id: 'cat-3', nome: 'Destaque feminino', tipo: 'popular', oculta: false, campos_requeridos: ['genero', 'foto'] },
+  { id: 'cat-4', nome: 'Destaque Turbo', tipo: 'popular', oculta: false, campos_requeridos: ['foto'] },
+  { id: 'cat-5', nome: 'Destaque Jeep (Altura)', tipo: 'interna', oculta: false, campos_requeridos: ['altura_mm'] },
 ];
-
 
 // Equipes Padrão
 export const mockEquipes: Equipe[] = [];
 
 // Carros
-export const mockCarros: Carro[] = [];;
+export const mockCarros: Carro[] = [];
 
 // Carregados inicialmente do LocalStorage, caso existam, ou em branco para testes.
 const getStoredVotos = (): Voto[] => {
-  const stored = localStorage.getItem('regional_votos') || localStorage.getItem('garagemflow_votos');
+  const stored = localStorage.getItem('losfelas_votos') || localStorage.getItem('regional_votos') || localStorage.getItem('garagemflow_votos');
   if (stored) {
     try {
       return JSON.parse(stored);
@@ -112,7 +110,7 @@ export const saveMockVoto = (voto: Voto) => {
     throw new Error('Você já votou nesta categoria!');
   }
   votos.push(voto);
-  localStorage.setItem('regional_votos', JSON.stringify(votos));
+  localStorage.setItem('losfelas_votos', JSON.stringify(votos));
 };
 
 export const getMockVotos = (): Voto[] => {
@@ -120,6 +118,7 @@ export const getMockVotos = (): Voto[] => {
 };
 
 export const clearMockVotos = () => {
+  localStorage.removeItem('losfelas_votos');
   localStorage.removeItem('regional_votos');
   localStorage.removeItem('garagemflow_votos');
 };

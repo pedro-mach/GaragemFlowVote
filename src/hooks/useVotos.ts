@@ -84,7 +84,7 @@ export function useVotos(eleitorId?: string, eventoId?: string) {
         // Fluxo offline / Mock
         const allVotes = getMockVotos();
         const eventVotes = allVotes.filter((v) => v.evento_id === eventoId);
-        const localDb = JSON.parse(localStorage.getItem('regional_db_eleitores') || localStorage.getItem('garagemflow_db_eleitores') || '[]');
+        const localDb = JSON.parse(localStorage.getItem('losfelas_db_eleitores') || localStorage.getItem('regional_db_eleitores') || localStorage.getItem('garagemflow_db_eleitores') || '[]');
         const uniqueVoters = new Set(eventVotes.map((v) => v.eleitor_id)).size;
 
         setTotalUsuarios(Math.max(localDb.length, uniqueVoters));

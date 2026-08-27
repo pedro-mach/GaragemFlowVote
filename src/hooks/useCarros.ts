@@ -30,7 +30,7 @@ export function useCarros() {
         if (!activeEvent) {
           const { data: newEv, error: newEvError } = await supabase
             .from('eventos')
-            .insert({ nome: 'Regional das Equipes 2026', data: new Date().toISOString().split('T')[0], status: 'aberto' })
+            .insert({ nome: 'Encontro Los Felas', data: new Date().toISOString().split('T')[0], status: 'aberto' })
             .select()
             .single();
           if (newEvError) throw newEvError;
@@ -48,7 +48,7 @@ export function useCarros() {
         if (catError) throw catError;
 
         // Mesclar com estado de ocultação salvo localmente se necessário
-        const storedCatState = localStorage.getItem('regional_categorias_ocultas') || localStorage.getItem('garagemflow_categorias_ocultas');
+        const storedCatState = localStorage.getItem('losfelas_categorias_ocultas') || localStorage.getItem('regional_categorias_ocultas') || localStorage.getItem('garagemflow_categorias_ocultas');
         const ocultasMap: Record<string, boolean> = storedCatState ? JSON.parse(storedCatState) : {};
 
         const getCamposRequeridos = (cat: { nome?: string; campos_requeridos?: CampoRequerido[] }): CampoRequerido[] => {
@@ -56,8 +56,8 @@ export function useCarros() {
             return cat.campos_requeridos;
           }
           const name = (cat.nome || '').toLowerCase();
-          if (name.includes('equipe')) return ['equipe'];
-          if (name.includes('rodagem') || name.includes('km')) return ['km_rodado'];
+          if (name.includes('jeep') || name.includes('altura')) return ['altura_mm'];
+          if (name.includes('turbo')) return ['foto'];
           if (name.includes('masculino') || name.includes('feminino')) return ['genero', 'foto'];
           return mockCategorias.find(mc => mc.nome.toLowerCase() === name)?.campos_requeridos || [];
         };
@@ -120,11 +120,11 @@ export function useCarros() {
         }
       } else {
         // Fluxo offline / Mock
-        const localEvento = localStorage.getItem('regional_evento') || localStorage.getItem('garagemflow_evento');
+        const localEvento = localStorage.getItem('losfelas_evento') || localStorage.getItem('regional_evento') || localStorage.getItem('garagemflow_evento');
         if (localEvento) {
           setEvento(JSON.parse(localEvento));
         } else {
-          localStorage.setItem('regional_evento', JSON.stringify(mockEvento));
+          localStorage.setItem('losfelas_evento', JSON.stringify(mockEvento));
           setEvento(mockEvento);
         }
 
@@ -133,13 +133,13 @@ export function useCarros() {
             return cat.campos_requeridos;
           }
           const name = (cat.nome || '').toLowerCase();
-          if (name.includes('equipe')) return ['equipe'];
-          if (name.includes('rodagem') || name.includes('km')) return ['km_rodado'];
+          if (name.includes('jeep') || name.includes('altura')) return ['altura_mm'];
+          if (name.includes('turbo')) return ['foto'];
           if (name.includes('masculino') || name.includes('feminino')) return ['genero', 'foto'];
           return mockCategorias.find(mc => mc.nome.toLowerCase() === name)?.campos_requeridos || [];
         };
 
-        const localCategorias = localStorage.getItem('regional_categorias') || localStorage.getItem('garagemflow_categorias');
+        const localCategorias = localStorage.getItem('losfelas_categorias') || localStorage.getItem('regional_categorias') || localStorage.getItem('garagemflow_categorias');
         if (localCategorias) {
           const parsedCats = JSON.parse(localCategorias);
           const mergedCats = parsedCats.map((c: Categoria) => ({
@@ -147,25 +147,25 @@ export function useCarros() {
             campos_requeridos: getCamposRequeridos(c)
           }));
           setCategorias(mergedCats);
-          localStorage.setItem('regional_categorias', JSON.stringify(mergedCats));
+          localStorage.setItem('losfelas_categorias', JSON.stringify(mergedCats));
         } else {
-          localStorage.setItem('regional_categorias', JSON.stringify(mockCategorias));
+          localStorage.setItem('losfelas_categorias', JSON.stringify(mockCategorias));
           setCategorias(mockCategorias);
         }
 
-        const localEquipes = localStorage.getItem('regional_equipes') || localStorage.getItem('garagemflow_equipes');
+        const localEquipes = localStorage.getItem('losfelas_equipes') || localStorage.getItem('regional_equipes') || localStorage.getItem('garagemflow_equipes');
         if (localEquipes) {
           setEquipes(JSON.parse(localEquipes));
         } else {
-          localStorage.setItem('regional_equipes', JSON.stringify(mockEquipes));
+          localStorage.setItem('losfelas_equipes', JSON.stringify(mockEquipes));
           setEquipes(mockEquipes);
         }
 
-        const localCarros = localStorage.getItem('regional_db_carros') || localStorage.getItem('garagemflow_db_carros');
+        const localCarros = localStorage.getItem('losfelas_db_carros') || localStorage.getItem('regional_db_carros') || localStorage.getItem('garagemflow_db_carros');
         if (localCarros) {
           setCarros(JSON.parse(localCarros));
         } else {
-          localStorage.setItem('regional_db_carros', JSON.stringify(mockCarros));
+          localStorage.setItem('losfelas_db_carros', JSON.stringify(mockCarros));
           setCarros(mockCarros);
         }
       }
@@ -193,7 +193,7 @@ export function useCarros() {
         if (updateError) throw updateError;
       } else {
         const novoEvento = { ...evento, nome: novoNome.trim() };
-        localStorage.setItem('regional_evento', JSON.stringify(novoEvento));
+        localStorage.setItem('losfelas_evento', JSON.stringify(novoEvento));
       }
       await fetchDados();
     } catch (err: any) {
@@ -284,7 +284,7 @@ export function useCarros() {
           pessoas_equipe: pessoasEquipe || 0,
         };
         currentCarros.push(newCarro);
-        localStorage.setItem('regional_db_carros', JSON.stringify(currentCarros));
+        localStorage.setItem('losfelas_db_carros', JSON.stringify(currentCarros));
       }
       await fetchDados();
     } catch (err: any) {
@@ -306,7 +306,7 @@ export function useCarros() {
         if (deleteError) throw deleteError;
       } else {
         const currentCarros = carros.filter((c) => c.id !== id);
-        localStorage.setItem('regional_db_carros', JSON.stringify(currentCarros));
+        localStorage.setItem('losfelas_db_carros', JSON.stringify(currentCarros));
       }
       await fetchDados();
     } catch (err: any) {
@@ -401,7 +401,7 @@ export function useCarros() {
             pessoas_equipe: dados.pessoasEquipe ?? c.pessoas_equipe,
           } as Carro;
         });
-        localStorage.setItem('regional_db_carros', JSON.stringify(currentCarros));
+        localStorage.setItem('losfelas_db_carros', JSON.stringify(currentCarros));
       }
       await fetchDados();
     } catch (err: any) {
@@ -428,7 +428,7 @@ export function useCarros() {
           nome: nome.trim(),
         };
         currentEquipes.push(newEquipe);
-        localStorage.setItem('regional_equipes', JSON.stringify(currentEquipes));
+        localStorage.setItem('losfelas_equipes', JSON.stringify(currentEquipes));
       }
       await fetchDados();
     } catch (err: any) {
@@ -450,7 +450,7 @@ export function useCarros() {
         if (deleteError) throw deleteError;
       } else {
         const currentEquipes = equipes.filter((e) => e.id !== id);
-        localStorage.setItem('regional_equipes', JSON.stringify(currentEquipes));
+        localStorage.setItem('losfelas_equipes', JSON.stringify(currentEquipes));
       }
       await fetchDados();
     } catch (err: any) {
@@ -480,7 +480,7 @@ export function useCarros() {
           campos_requeridos: camposRequeridos,
         };
         currentCats.push(newCat);
-        localStorage.setItem('regional_categorias', JSON.stringify(currentCats));
+        localStorage.setItem('losfelas_categorias', JSON.stringify(currentCats));
       }
       await fetchDados();
     } catch (err: any) {
@@ -504,7 +504,7 @@ export function useCarros() {
         if (updateError) throw updateError;
       } else {
         const currentCats = categorias.map((c) => (c.id === id ? { ...c, nome: novoNome.trim() } : c));
-        localStorage.setItem('regional_categorias', JSON.stringify(currentCats));
+        localStorage.setItem('losfelas_categorias', JSON.stringify(currentCats));
       }
       await fetchDados();
     } catch (err: any) {
@@ -523,14 +523,14 @@ export function useCarros() {
       const novoOculta = !cat.oculta;
 
       // Salvar estado localmente para persistência
-      const storedCatState = localStorage.getItem('regional_categorias_ocultas') || localStorage.getItem('garagemflow_categorias_ocultas');
+      const storedCatState = localStorage.getItem('losfelas_categorias_ocultas') || localStorage.getItem('regional_categorias_ocultas') || localStorage.getItem('garagemflow_categorias_ocultas');
       const ocultasMap: Record<string, boolean> = storedCatState ? JSON.parse(storedCatState) : {};
       ocultasMap[id] = novoOculta;
-      localStorage.setItem('regional_categorias_ocultas', JSON.stringify(ocultasMap));
+      localStorage.setItem('losfelas_categorias_ocultas', JSON.stringify(ocultasMap));
 
       if (!isSupabaseConfigured || !supabase) {
         const currentCats = categorias.map((c) => (c.id === id ? { ...c, oculta: novoOculta } : c));
-        localStorage.setItem('regional_categorias', JSON.stringify(currentCats));
+        localStorage.setItem('losfelas_categorias', JSON.stringify(currentCats));
       }
       await fetchDados();
     } catch (err: any) {
@@ -551,7 +551,7 @@ export function useCarros() {
         if (deleteError) throw deleteError;
       } else {
         const currentCats = categorias.filter((c) => c.id !== id);
-        localStorage.setItem('regional_categorias', JSON.stringify(currentCats));
+        localStorage.setItem('losfelas_categorias', JSON.stringify(currentCats));
       }
       await fetchDados();
     } catch (err: any) {
@@ -575,7 +575,7 @@ export function useCarros() {
         if (updateError) throw updateError;
       } else {
         const novoEvento = { ...evento, status: novoStatus };
-        localStorage.setItem('regional_evento', JSON.stringify(novoEvento));
+        localStorage.setItem('losfelas_evento', JSON.stringify(novoEvento));
       }
       await fetchDados();
     } catch (err: any) {
@@ -589,7 +589,7 @@ export function useCarros() {
   // Busca a url_foto de um único carro (lazy — não vem no SELECT da lista)
   const fetchFotoCarro = async (id: string): Promise<string | null> => {
     if (!isSupabaseConfigured || !supabase) {
-      const stored = localStorage.getItem('regional_db_carros') || localStorage.getItem('garagemflow_db_carros');
+      const stored = localStorage.getItem('losfelas_db_carros') || localStorage.getItem('regional_db_carros') || localStorage.getItem('garagemflow_db_carros');
       if (stored) {
         const all = JSON.parse(stored) as Carro[];
         return all.find((c) => c.id === id)?.url_foto ?? null;

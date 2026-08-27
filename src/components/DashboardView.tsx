@@ -3,12 +3,11 @@ import { toPng } from 'html-to-image';
 import {
   ToggleLeft, ToggleRight, Car, BarChart3, ShieldCheck,
   Plus, LogOut, RefreshCw, Layers, Camera, Image as ImageIcon, Trash2, Trophy, Award,
-  Edit2, Eye, EyeOff, Check, Tag, X, Menu, Users, UserPlus, Gauge, Calendar,
+  Edit2, Eye, EyeOff, Check, Tag, X, Menu, Users, UserPlus, Calendar, Ruler,
   Share2, Download, Copy, Sparkles
 } from 'lucide-react';
 import type { Carro, Categoria, CampoRequerido, Equipe, Evento } from '../data/mockData';
 import { validateTeamName } from '../utils/teamValidation';
-
 
 interface DashboardViewProps {
   evento: Evento | null;
@@ -54,7 +53,6 @@ interface DashboardViewProps {
   ) => Promise<void>;
   deletarCarro: (id: string) => Promise<void>;
   cadastrarCategoria?: (nome: string, tipo: 'popular' | 'interna', camposRequeridos: CampoRequerido[]) => Promise<void>;
-
   editarCategoria?: (id: string, novoNome: string) => Promise<void>;
   toggleOcultarCategoria?: (id: string) => Promise<void>;
   deletarCategoria?: (id: string) => Promise<void>;
@@ -68,7 +66,7 @@ interface DashboardViewProps {
 
 type TabType = 'status' | 'resultados' | 'instagrammable' | 'carros' | 'validacao' | 'categorias';
 
-// ─── Style helpers ─────────────────────────────────────────────────
+// ─── Style helpers BMW Motorsport ─────────────────────────────────
 const S = {
   label: {
     fontFamily: "'Barlow Condensed', sans-serif",
@@ -76,14 +74,14 @@ const S = {
     fontWeight: 600,
     textTransform: 'uppercase' as const,
     letterSpacing: '0.16em',
-    color: '#7D7D7D',
+    color: '#94A3B8',
     display: 'block',
     marginBottom: 8,
   },
   input: {
     width: '100%',
-    background: '#000000',
-    border: '1px solid #313131',
+    background: '#0D1117',
+    border: '1px solid #1E293B',
     borderRadius: 0,
     color: '#FFFFFF',
     fontFamily: "'Barlow Condensed', sans-serif",
@@ -92,18 +90,19 @@ const S = {
     padding: '0 12px',
     height: 40,
     outline: 'none',
+    transition: 'border-color 0.15s ease',
   },
   metricCard: {
-    background: '#181818',
-    border: '1px solid #202020',
+    background: '#0D1117',
+    border: '1px solid #1E293B',
     padding: '20px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   navBtn: (active: boolean) => ({
-    background: active ? '#FFC000' : 'transparent',
-    color: active ? '#000000' : '#7D7D7D',
+    background: active ? '#0099FF' : 'transparent',
+    color: active ? '#FFFFFF' : '#94A3B8',
     border: 'none',
     padding: '10px 14px',
     cursor: 'pointer',
@@ -148,7 +147,7 @@ export function DashboardView({
   logout,
 }: DashboardViewProps) {
   const [activeTab, setActiveTab] = useState<TabType>('status');
-  const [valTab, setValTab] = useState<'ano' | 'rodagem' | 'equipes'>('ano');
+  const [valTab, setValTab] = useState<'ano' | 'altura'>('ano');
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => typeof window !== 'undefined' ? window.innerWidth >= 768 : false);
 
   // Estado edição do nome do evento
@@ -212,7 +211,6 @@ export function DashboardView({
   const [isExportingPng, setIsExportingPng] = useState(false);
   const cardPreviewRef = useRef<HTMLDivElement>(null);
 
-
   const getNextSuggestedInscricao = () => {
     const numbers = carros
       .map((c) => {
@@ -244,23 +242,15 @@ export function DashboardView({
         totalVotos: undefined,
       };
     }
-    if (catId === 'tech_equipe') {
-      const winner = carros.filter(c => c.pessoas_equipe && Number(c.pessoas_equipe) > 0).sort((a, b) => (Number(b.pessoas_equipe) || 0) - (Number(a.pessoas_equipe) || 0))[0];
+    if (catId === 'tech_jeep') {
+      const winner = carros
+        .filter(c => c && c.altura_mm !== undefined && c.altura_mm !== null && Number(c.altura_mm) > 0)
+        .sort((a, b) => Number(b.altura_mm) - Number(a.altura_mm))[0];
       return {
-        tituloCategoria: 'MAIOR EQUIPE UNIFORMIZADA',
+        tituloCategoria: 'DESTAQUE JEEP (ALTURA)',
         tipoBadge: 'DESTAQUE TÉCNICO',
         carro: winner || null,
-        metricaLabel: winner ? `${winner.pessoas_equipe} Integrantes` : 'Sem dados',
-        totalVotos: undefined,
-      };
-    }
-    if (catId === 'tech_rodagem') {
-      const winner = carros.filter(c => c.km_rodado !== undefined && c.km_rodado !== null && Number(c.km_rodado) > 0).sort((a, b) => Number(b.km_rodado) - Number(a.km_rodado))[0];
-      return {
-        tituloCategoria: 'MAIOR RODAGEM',
-        tipoBadge: 'DESTAQUE TÉCNICO',
-        carro: winner || null,
-        metricaLabel: winner ? `${Number(winner.km_rodado).toLocaleString('pt-BR')} KM Rodados` : 'Sem dados',
+        metricaLabel: winner ? `📏 ${winner.altura_mm} mm ALTURA` : 'Sem dados',
         totalVotos: undefined,
       };
     }
@@ -296,13 +286,13 @@ export function DashboardView({
       if (!isNaN(d.getTime())) {
         return d.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
       }
-    } catch (e) {
+    } catch {
       // fallback
     }
     return trimmed;
   };
 
-  // Helper para obter a lista com TODOS os vencedores de TODAS as categorias e destaques
+  // Helper para obter a lista com TODOS os vencedores
   const getAllCategoryWinners = () => {
     const list: { id: string; tituloCategoria: string; carro: Carro | null; metricaLabel: string; icone?: string }[] = [];
 
@@ -330,25 +320,14 @@ export function DashboardView({
       });
     }
 
-    const equipe = getWinnerData('tech_equipe');
-    if (equipe.carro) {
+    const jeep = getWinnerData('tech_jeep');
+    if (jeep.carro) {
       list.push({
-        id: 'tech_equipe',
-        tituloCategoria: equipe.tituloCategoria,
-        carro: equipe.carro,
-        metricaLabel: equipe.metricaLabel,
-        icone: '👥',
-      });
-    }
-
-    const rodagem = getWinnerData('tech_rodagem');
-    if (rodagem.carro) {
-      list.push({
-        id: 'tech_rodagem',
-        tituloCategoria: rodagem.tituloCategoria,
-        carro: rodagem.carro,
-        metricaLabel: rodagem.metricaLabel,
-        icone: '⚡',
+        id: 'tech_jeep',
+        tituloCategoria: jeep.tituloCategoria,
+        carro: jeep.carro,
+        metricaLabel: jeep.metricaLabel,
+        icone: '🚙',
       });
     }
 
@@ -356,7 +335,7 @@ export function DashboardView({
   };
 
   const handleCopyCaption = () => {
-    const eventName = evento?.nome || 'Garagem Flow Vote';
+    const eventName = evento?.nome || 'Encontro Los Felas';
     let caption = `🏆 RESULTADO OFICIAL - ${eventName.toUpperCase()} 🏆\n\n`;
 
     if (selectedInstaCatId === 'all') {
@@ -385,7 +364,7 @@ export function DashboardView({
       }
     }
 
-    caption += `\nParabéns aos vencedores e obrigado a todos pela presença! 🎉🚗💨\n\n#GaragemFlowVote #EncontroDeCarros #CarrosRebaixados #CarrosAntigos #Automotivo #Vencedores`;
+    caption += `\nParabéns aos vencedores e obrigado a todos pela presença! 🎉🚗💨\n\n#LosFelas #EncontroLosFelas #BMW #CarrosRebaixados #CarrosAntigos #Automotivo #Vencedores`;
 
     navigator.clipboard.writeText(caption);
     setCopiedCaptionToast(true);
@@ -396,9 +375,8 @@ export function DashboardView({
     if (!cardPreviewRef.current) return;
     setIsExportingPng(true);
     try {
-      // Capturar a div de pré-visualização EXATAMENTE como é exibida na tela
       const dataUrl = await toPng(cardPreviewRef.current, {
-        pixelRatio: 3, // Resolução ultra HD em alta definição (3x)
+        pixelRatio: 3,
         cacheBust: true,
       });
 
@@ -408,7 +386,7 @@ export function DashboardView({
       a.download = `resultado_instagram_${catSlug}_${instaFormat}.png`;
       a.click();
     } catch (err) {
-      console.error('Erro ao gerar PNG a partir da preview:', err);
+      console.error('Erro ao gerar PNG:', err);
     } finally {
       setIsExportingPng(false);
     }
@@ -428,7 +406,7 @@ export function DashboardView({
         const img = new Image();
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          const maxDim = 900; // Resolução ideal para celular (reduz drasticamente o peso do base64)
+          const maxDim = 900;
           let width = img.width;
           let height = img.height;
           if (width > height) {
@@ -436,12 +414,10 @@ export function DashboardView({
           } else {
             if (height > maxDim) { width = Math.round((width * maxDim) / height); height = maxDim; }
           }
-          canvas.width = width;
-          canvas.height = height;
+          canvas.width = width; canvas.height = height;
           const ctx = canvas.getContext('2d');
           if (ctx) {
             ctx.drawImage(img, 0, 0, width, height);
-            // Tenta gerar WebP 78% ou cai para JPEG 78% (super leve ~70-100KB em base64)
             const webpUrl = canvas.toDataURL('image/webp', 0.78);
             const finalUrl = webpUrl.startsWith('data:image/webp') ? webpUrl : canvas.toDataURL('image/jpeg', 0.78);
             setUrlFoto(finalUrl);
@@ -456,41 +432,48 @@ export function DashboardView({
 
   const handleCadastrarCarro = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitting(true);
     setCadastroMsg(null);
 
-    setSubmitting(true);
     try {
-      const finalInscricao = numeroInscricao.trim() || getNextSuggestedInscricao();
-      const finalModelo = modelo.trim() || 'Sem modelo';
-      const finalNomeDono = nomeDono.trim() || 'Não informado';
-      const parsedAno = ano.trim() ? parseInt(ano.trim(), 10) : new Date().getFullYear();
-      const finalAno = isNaN(parsedAno) ? new Date().getFullYear() : parsedAno;
-
-      // Resolver nome da equipe a partir do ID selecionado
+      const anoNum = ano.trim() ? parseInt(ano, 10) : 2000;
+      const alturaNum = alturaMm.trim() ? parseInt(alturaMm, 10) : undefined;
+      const kmNum = kmRodado.trim() ? parseFloat(kmRodado.replace(',', '.')) : undefined;
+      const pessoasNum = pessoasEquipe.trim() ? parseInt(pessoasEquipe, 10) : undefined;
       const equipeSelected = equipes.find((eq) => eq.id === equipeId);
       const equipeName = equipeSelected?.nome || undefined;
 
       await cadastrarCarro(
-        finalInscricao,
-        finalModelo,
-        finalAno,
-        alturaMm ? parseInt(alturaMm, 10) : undefined,
-        finalNomeDono,
+        numeroInscricao.trim() || getNextSuggestedInscricao(),
+        modelo.trim() || 'Veículo Inscrito',
+        anoNum,
+        alturaNum,
+        nomeDono.trim() || 'Participante',
         telefoneDono || undefined,
         urlFoto || undefined,
         equipeName,
-        kmRodado ? parseFloat(kmRodado.replace(',', '.')) : undefined,
+        kmNum,
         genero,
-        categoriasIds.length > 0 ? categoriasIds : undefined,
-        pessoasEquipe ? parseInt(pessoasEquipe, 10) : undefined
+        categoriasIds,
+        pessoasNum
       );
-      setCadastroMsg({ type: 'success', text: 'Carro cadastrado com sucesso!' });
-      setModelo(''); setAno(''); setAlturaMm(''); setNomeDono(''); setGenero('M');
-      setTelefoneDono(''); setUrlFoto(''); setEquipeId(''); setKmRodado('');
-      setPessoasEquipe(''); setCategoriasIds([]);
+
+      setCadastroMsg({ type: 'success', text: 'Veículo cadastrado com sucesso!' });
       setIsManualInscricao(false);
+      setModelo('');
+      setAno('');
+      setAlturaMm('');
+      setNomeDono('');
+      setGenero('M');
+      setTelefoneDono('');
+      setUrlFoto('');
+      setEquipeId('');
+      setKmRodado('');
+      setPessoasEquipe('');
+      setCategoriasIds([]);
+      setTimeout(() => setCadastroMsg(null), 3000);
     } catch (err: any) {
-      setCadastroMsg({ type: 'error', text: err.message || 'Erro ao cadastrar carro.' });
+      setCadastroMsg({ type: 'error', text: err.message || 'Erro ao cadastrar veículo.' });
     } finally {
       setSubmitting(false);
     }
@@ -534,7 +517,6 @@ export function DashboardView({
     setEditNomeDono(carro.nome_dono);
     setEditGenero(carro.genero || 'M');
     setEditTelefoneDono(carro.telefone_dono || '');
-    // url_foto não vem na lista principal — carrega lazy aqui
     setEditUrlFoto('');
     if (fetchFotoCarro) {
       fetchFotoCarro(carro.id).then((foto) => setEditUrlFoto(foto || ''));
@@ -544,7 +526,6 @@ export function DashboardView({
     setEditCategoriasIds(carro.categorias_ids || []);
     setEditMsg(null);
     setShowNovaEquipeEdit(false);
-    // Resolver equipe_id a partir do nome da equipe salvo
     if (carro.equipe) {
       const eq = equipes.find((e) => e.nome.toLowerCase() === carro.equipe!.toLowerCase());
       setEditEquipeId(eq?.id || '');
@@ -658,7 +639,6 @@ export function DashboardView({
     setNovaCatCampos([]);
   };
 
-
   const handleSaveCategoriaName = async (id: string) => {
     if (!catTempName.trim() || !editarCategoria) return;
     await editarCategoria(id, catTempName.trim());
@@ -697,8 +677,8 @@ export function DashboardView({
       {/* ===== SIDEBAR ===== */}
       <div
         style={{
-          background: '#181818',
-          borderRight: isSidebarOpen ? '1px solid #202020' : 'none',
+          background: '#0D1117',
+          borderRight: isSidebarOpen ? '1px solid #1E293B' : 'none',
           padding: '0',
           display: 'flex',
           flexDirection: 'column',
@@ -715,25 +695,25 @@ export function DashboardView({
       >
         {/* Logo e Cabeçalho do Menu */}
         <div>
-          <div style={{ padding: '16px 16px', borderBottom: '1px solid #202020', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ padding: '16px 16px', borderBottom: '1px solid #1E293B', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 32, height: 32, background: '#202020', border: '1px solid rgba(255,192,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Car size={16} color="#FFC000" />
+              <div style={{ width: 36, height: 36, background: '#141A24', border: '1px solid rgba(0,153,255,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
+                <img src="/Logo-evento.jpeg?v=2" alt="Los Felas" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
               <div>
-                <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#FFC000', lineHeight: 1.1 }}>
+                <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#0099FF', lineHeight: 1.1 }}>
                   Painel
                 </div>
-                <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, color: '#7D7D7D', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
+                <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
                   Organizador
                 </div>
               </div>
             </div>
             <button
               onClick={() => setIsSidebarOpen(false)}
-              style={{ background: 'transparent', border: 'none', color: '#7D7D7D', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              style={{ background: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               onMouseEnter={e => e.currentTarget.style.color = '#FFFFFF'}
-              onMouseLeave={e => e.currentTarget.style.color = '#7D7D7D'}
+              onMouseLeave={e => e.currentTarget.style.color = '#94A3B8'}
               title="Fechar Menu"
             >
               <X size={18} />
@@ -753,7 +733,7 @@ export function DashboardView({
                 }}
                 style={S.navBtn(activeTab === item.id)}
                 onMouseEnter={e => { if (activeTab !== item.id) e.currentTarget.style.color = '#FFFFFF'; }}
-                onMouseLeave={e => { if (activeTab !== item.id) e.currentTarget.style.color = '#7D7D7D'; }}
+                onMouseLeave={e => { if (activeTab !== item.id) e.currentTarget.style.color = '#94A3B8'; }}
               >
                 {item.icon}
                 <span>{item.label}</span>
@@ -767,12 +747,12 @@ export function DashboardView({
           onClick={logout}
           style={{
             ...S.navBtn(false),
-            borderTop: '1px solid #202020',
+            borderTop: '1px solid #1E293B',
             padding: '14px 16px',
-            color: '#7D7D7D',
+            color: '#94A3B8',
           }}
           onMouseEnter={e => { e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.background = 'rgba(180,0,0,0.1)'; }}
-          onMouseLeave={e => { e.currentTarget.style.color = '#7D7D7D'; e.currentTarget.style.background = 'transparent'; }}
+          onMouseLeave={e => { e.currentTarget.style.color = '#94A3B8'; e.currentTarget.style.background = 'transparent'; }}
         >
           <LogOut size={16} />
           <span>Encerrar Sessão</span>
@@ -786,7 +766,7 @@ export function DashboardView({
         <div style={{ flex: 1, background: '#000000' }}>
 
           {/* Header com Botão Sandwich + Nome do Evento */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-16" style={{ background: '#181818', borderBottom: '1px solid #202020', padding: '16px 24px' }}>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-16" style={{ background: '#0D1117', borderBottom: '1px solid #1E293B', padding: '16px 24px' }}>
 
             <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-16 w-full md:w-auto">
 
@@ -795,9 +775,9 @@ export function DashboardView({
                 <button
                   onClick={() => setIsSidebarOpen(!isSidebarOpen)}
                   style={{
-                    background: isSidebarOpen ? 'rgba(255,192,0,0.15)' : '#202020',
-                    border: '1px solid rgba(255,192,0,0.3)',
-                    color: '#FFC000',
+                    background: isSidebarOpen ? 'rgba(0,153,255,0.15)' : '#141A24',
+                    border: '1px solid rgba(0,153,255,0.4)',
+                    color: '#0099FF',
                     padding: '8px 12px',
                     cursor: 'pointer',
                     display: 'flex',
@@ -834,7 +814,7 @@ export function DashboardView({
                   </span>
                   <button
                     onClick={() => fetchResultados()}
-                    style={{ background: '#202020', border: '1px solid #313131', padding: '6px', cursor: 'pointer', display: 'flex', color: '#FFC000', flexShrink: 0 }}
+                    style={{ background: '#141A24', border: '1px solid #1E293B', padding: '6px', cursor: 'pointer', display: 'flex', color: '#0099FF', flexShrink: 0 }}
                     title="Atualizar Dados"
                   >
                     <RefreshCw size={16} />
@@ -850,15 +830,15 @@ export function DashboardView({
                     fontWeight: 600,
                     textTransform: 'uppercase',
                     letterSpacing: '0.16em',
-                    color: '#FFC000',
-                    background: 'rgba(255,192,0,0.08)',
-                    border: '1px solid rgba(255,192,0,0.2)',
+                    color: '#0099FF',
+                    background: 'rgba(0,153,255,0.1)',
+                    border: '1px solid rgba(0,153,255,0.3)',
                     padding: '3px 10px',
                     whiteSpace: 'nowrap',
                   }}>
                     Evento Ativo
                   </span>
-                  <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#7D7D7D', whiteSpace: 'nowrap' }}>
+                  <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#94A3B8', whiteSpace: 'nowrap' }}>
                     {formatarDataBR(evento?.data)}
                   </span>
                 </div>
@@ -875,13 +855,14 @@ export function DashboardView({
                     />
                     <button
                       onClick={handleSaveEventName}
-                      style={{ background: '#FFC000', color: '#000000', border: 'none', padding: '8px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700 }}
+                      className="btn-bmw"
+                      style={{ height: 36, padding: '0 12px', fontSize: 13 }}
                     >
                       <Check size={14} /> Salvar
                     </button>
                     <button
                       onClick={() => setIsEditingEventName(false)}
-                      style={{ background: '#202020', color: '#FFFFFF', border: '1px solid #313131', padding: '8px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontFamily: "'Barlow Condensed', sans-serif" }}
+                      style={{ background: '#141A24', color: '#FFFFFF', border: '1px solid #1E293B', padding: '8px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontFamily: "'Barlow Condensed', sans-serif" }}
                     >
                       <X size={14} /> Cancelar
                     </button>
@@ -897,10 +878,10 @@ export function DashboardView({
                           setEventTempName(evento?.nome || '');
                           setIsEditingEventName(true);
                         }}
-                        style={{ background: 'none', border: 'none', color: '#7D7D7D', cursor: 'pointer', padding: 4, display: 'flex', transition: 'color 0.12s', flexShrink: 0 }}
+                        style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: 4, display: 'flex', transition: 'color 0.12s', flexShrink: 0 }}
                         title="Editar Nome do Evento"
-                        onMouseEnter={e => e.currentTarget.style.color = '#FFC000'}
-                        onMouseLeave={e => e.currentTarget.style.color = '#7D7D7D'}
+                        onMouseEnter={e => e.currentTarget.style.color = '#0099FF'}
+                        onMouseLeave={e => e.currentTarget.style.color = '#94A3B8'}
                       >
                         <Edit2 size={15} />
                       </button>
@@ -927,7 +908,7 @@ export function DashboardView({
               </span>
               <button
                 onClick={() => fetchResultados()}
-                style={{ background: '#202020', border: '1px solid #313131', padding: '6px', cursor: 'pointer', display: 'flex', color: '#FFC000', flexShrink: 0 }}
+                style={{ background: '#141A24', border: '1px solid #1E293B', padding: '6px', cursor: 'pointer', display: 'flex', color: '#0099FF', flexShrink: 0 }}
                 title="Atualizar Dados"
               >
                 <RefreshCw size={16} />
@@ -948,18 +929,18 @@ export function DashboardView({
             {activeTab === 'status' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                 {/* Controle */}
-                <div style={{ background: '#181818', border: '1px solid #202020', borderLeft: '3px solid #FFC000', padding: '24px' }}>
+                <div style={{ background: '#0D1117', border: '1px solid #1E293B', borderLeft: '3px solid #0099FF', padding: '24px' }}>
                   <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 18, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#FFFFFF', margin: '0 0 8px 0' }}>
                     Controle Geral da Votação
                   </h3>
-                  <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: '#7D7D7D', margin: '0 0 20px 0', lineHeight: 1.6, maxWidth: 520 }}>
+                  <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: '#94A3B8', margin: '0 0 20px 0', lineHeight: 1.6, maxWidth: 520 }}>
                     Alterne o status em tempo real. Fechar a votação bloqueia instantaneamente novas interações pelo celular dos visitantes.
                   </p>
                   <button
                     onClick={toggleStatusVotacao}
                     style={{
-                      background: votacaoAberta ? '#b91c1c' : '#FFC000',
-                      color: votacaoAberta ? '#FFFFFF' : '#000000',
+                      background: votacaoAberta ? '#b91c1c' : '#0099FF',
+                      color: '#FFFFFF',
                       border: 'none',
                       padding: '0 24px',
                       height: 48,
@@ -974,8 +955,8 @@ export function DashboardView({
                       letterSpacing: '0.1em',
                       transition: 'background 0.15s',
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.background = votacaoAberta ? '#991b1b' : '#917300'; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = votacaoAberta ? '#b91c1c' : '#FFC000'; }}
+                    onMouseEnter={e => { e.currentTarget.style.background = votacaoAberta ? '#991b1b' : '#007acc'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = votacaoAberta ? '#b91c1c' : '#0099FF'; }}
                   >
                     {votacaoAberta ? (
                       <><ToggleRight size={20} /><span>Encerrar Votação Agora</span></>
@@ -988,22 +969,22 @@ export function DashboardView({
                 {/* Métricas */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
                   {[
-                    { label: 'Frota Inscrita', value: carros.length, icon: <Car size={24} color="#FFC000" /> },
-                    { label: 'Categorias', value: categorias.length, icon: <Trophy size={24} color="#FFC000" /> },
-                    { label: 'Usuários Cadastrados', value: totalUsuarios, icon: <Users size={24} color="#FFC000" /> },
-                    { label: 'Votos Computados', value: totalVotos, icon: <BarChart3 size={24} color="#FFC000" /> },
-                    { label: 'Status da Votação', value: votacaoAberta ? 'ABERTO' : 'FECHADO', icon: <Award size={24} color="#FFC000" /> },
+                    { label: 'Frota Inscrita', value: carros.length, icon: <Car size={24} color="#0099FF" /> },
+                    { label: 'Categorias', value: categorias.length, icon: <Trophy size={24} color="#0099FF" /> },
+                    { label: 'Usuários Cadastrados', value: totalUsuarios, icon: <Users size={24} color="#0099FF" /> },
+                    { label: 'Votos Computados', value: totalVotos, icon: <BarChart3 size={24} color="#0099FF" /> },
+                    { label: 'Status da Votação', value: votacaoAberta ? 'ABERTO' : 'FECHADO', icon: <Award size={24} color="#0099FF" /> },
                   ].map((m) => (
                     <div key={m.label} style={S.metricCard}>
                       <div>
-                        <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.16em', color: '#7D7D7D', marginBottom: 8 }}>
+                        <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.16em', color: '#94A3B8', marginBottom: 8 }}>
                           {m.label}
                         </div>
                         <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 32, fontWeight: 700, color: '#FFFFFF', lineHeight: 1 }}>
                           {m.value}
                         </div>
                       </div>
-                      <div style={{ background: '#202020', border: '1px solid #313131', padding: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{ background: '#141A24', border: '1px solid #1E293B', padding: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         {m.icon}
                       </div>
                     </div>
@@ -1019,25 +1000,25 @@ export function DashboardView({
                   Classificação por Votação Popular
                 </h3>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 2 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 12 }}>
                   {categorias.filter((c) => c.tipo === 'popular' && !c.oculta).map((cat) => {
                     const votosCat = resultados[cat.id] || [];
                     const totalVotosCat = votosCat.reduce((sum, item) => sum + item.votosCount, 0);
 
                     return (
-                      <div key={cat.id} style={{ background: '#181818', border: '1px solid #202020', padding: '20px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #202020', paddingBottom: 12, marginBottom: 16 }}>
-                          <h4 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#FFC000', margin: 0 }}>
+                      <div key={cat.id} style={{ background: '#0D1117', border: '1px solid #1E293B', padding: '20px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #1E293B', paddingBottom: 12, marginBottom: 16 }}>
+                          <h4 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#0099FF', margin: 0 }}>
                             {cat.nome}
                           </h4>
-                          <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, color: '#7D7D7D', background: '#202020', border: '1px solid #313131', padding: '4px 10px' }}>
+                          <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, color: '#94A3B8', background: '#141A24', border: '1px solid #1E293B', padding: '4px 10px' }}>
                             {totalVotosCat} votos
                           </span>
                         </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                           {votosCat.length === 0 ? (
-                            <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: '#7D7D7D', textAlign: 'center', padding: '24px 0' }}>
+                            <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: '#94A3B8', textAlign: 'center', padding: '24px 0' }}>
                               Nenhum voto registrado.
                             </div>
                           ) : (
@@ -1045,14 +1026,14 @@ export function DashboardView({
                               const carro = carros.find((c) => c.id === item.carroId);
                               const percent = totalVotosCat > 0 ? (item.votosCount / totalVotosCat) * 100 : 0;
                               const medalColors = [
-                                { bg: '#FFC000', text: '#000000', label: '1º' },
-                                { bg: '#969696', text: '#000000', label: '2º' },
-                                { bg: '#5a3e00', text: '#FFCE3E', label: '3º' },
+                                { bg: '#0099FF', text: '#FFFFFF', label: '1º' },
+                                { bg: '#64748B', text: '#FFFFFF', label: '2º' },
+                                { bg: '#E51937', text: '#FFFFFF', label: '3º' },
                               ];
                               const medal = medalColors[index];
 
                               return (
-                                <div key={item.carroId} style={{ background: '#000000', border: '1px solid #202020', padding: '12px 14px' }}>
+                                <div key={item.carroId} style={{ background: '#000000', border: '1px solid #1E293B', padding: '12px 14px' }}>
                                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                       <span style={{
@@ -1070,12 +1051,12 @@ export function DashboardView({
                                         {carro ? `${carro.modelo} (${carro.numero_inscricao})` : `ID: ${item.carroId}`}
                                       </span>
                                     </div>
-                                    <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, fontWeight: 700, color: '#FFC000' }}>
+                                    <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, fontWeight: 700, color: '#0099FF' }}>
                                       {item.votosCount} ({percent.toFixed(0)}%)
                                     </span>
                                   </div>
-                                  <div style={{ width: '100%', height: 3, background: '#202020', overflow: 'hidden' }}>
-                                    <div style={{ width: `${percent}%`, height: '100%', background: '#FFC000', transition: 'width 0.5s ease' }} />
+                                  <div style={{ width: '100%', height: 3, background: '#141A24', overflow: 'hidden' }}>
+                                    <div style={{ width: `${percent}%`, height: '100%', background: '#0099FF', transition: 'width 0.5s ease' }} />
                                   </div>
                                 </div>
                               );
@@ -1097,130 +1078,91 @@ export function DashboardView({
                   {(() => {
                     const antigo = carros.filter(c => c.ano && Number(c.ano) > 1900).sort((a, b) => Number(a.ano) - Number(b.ano))[0];
                     return (
-                      <div style={{ background: '#181818', border: '1px solid #202020', borderTop: '2px solid #3b82f6', padding: '20px' }}>
+                      <div style={{ background: '#0D1117', border: '1px solid #1E293B', borderTop: '2px solid #0099FF', padding: '20px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <Calendar size={16} color="#3b82f6" />
-                            <h4 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, textTransform: 'uppercase', color: '#3b82f6', margin: 0 }}>
+                            <Calendar size={16} color="#0099FF" />
+                            <h4 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, textTransform: 'uppercase', color: '#0099FF', margin: 0 }}>
                               Carro Mais Antigo
                             </h4>
                           </div>
-                          <span style={{ background: '#3b82f6', color: '#FFFFFF', padding: '2px 8px', fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, fontWeight: 700, textTransform: 'uppercase' }}>
+                          <span style={{ background: '#0099FF', color: '#FFFFFF', padding: '2px 8px', fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, fontWeight: 700, textTransform: 'uppercase' }}>
                             1º LUGAR
                           </span>
                         </div>
                         {antigo ? (
                           <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                            <div style={{ width: 56, height: 56, background: '#0a0a0a', border: '1px solid #313131', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
+                            <div style={{ width: 56, height: 56, background: '#000000', border: '1px solid #1E293B', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
                               {antigo.url_foto ? (
                                 <img src={antigo.url_foto} alt={antigo.modelo} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                               ) : (
-                                <Car size={24} color="#7D7D7D" />
+                                <Car size={24} color="#94A3B8" />
                               )}
                             </div>
                             <div>
                               <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, color: '#FFFFFF' }}>
                                 {antigo.modelo} ({antigo.numero_inscricao})
                               </div>
-                              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, color: '#3b82f6', fontWeight: 700 }}>
+                              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, color: '#38BDF8', fontWeight: 700 }}>
                                 Fabricado em {antigo.ano}
                               </div>
                               {antigo.nome_dono && antigo.nome_dono !== 'Não informado' && (
-                                <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#7D7D7D', marginTop: 2 }}>
+                                <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#94A3B8', marginTop: 2 }}>
                                   Dono: {antigo.nome_dono}
                                 </div>
                               )}
                             </div>
                           </div>
                         ) : (
-                          <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#7D7D7D' }}>Sem dados suficientes</div>
+                          <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#94A3B8' }}>Sem dados suficientes</div>
                         )}
                       </div>
                     );
                   })()}
 
-                  {/* Maior Equipe Uniformizada */}
+                  {/* Destaque Jeep (Altura) */}
                   {(() => {
-                    const equipeLider = carros.filter(c => c.pessoas_equipe && Number(c.pessoas_equipe) > 0).sort((a, b) => (Number(b.pessoas_equipe) || 0) - (Number(a.pessoas_equipe) || 0))[0];
+                    const jeepLider = carros
+                      .filter(c => c && c.altura_mm !== undefined && c.altura_mm !== null && Number(c.altura_mm) > 0)
+                      .sort((a, b) => Number(b.altura_mm) - Number(a.altura_mm))[0];
                     return (
-                      <div style={{ background: '#181818', border: '1px solid #202020', borderTop: '2px solid #22c55e', padding: '20px' }}>
+                      <div style={{ background: '#0D1117', border: '1px solid #1E293B', borderTop: '2px solid #0099FF', padding: '20px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <Users size={16} color="#22c55e" />
-                            <h4 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, textTransform: 'uppercase', color: '#22c55e', margin: 0 }}>
-                              Maior Equipe Uniformizada
+                            <Ruler size={16} color="#0099FF" />
+                            <h4 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, textTransform: 'uppercase', color: '#0099FF', margin: 0 }}>
+                              Destaque Jeep (Altura)
                             </h4>
                           </div>
-                          <span style={{ background: '#22c55e', color: '#000000', padding: '2px 8px', fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, fontWeight: 700, textTransform: 'uppercase' }}>
+                          <span style={{ background: '#0099FF', color: '#FFFFFF', padding: '2px 8px', fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, fontWeight: 700, textTransform: 'uppercase' }}>
                             1º LUGAR
                           </span>
                         </div>
-                        {equipeLider ? (
+                        {jeepLider ? (
                           <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                            <div style={{ width: 56, height: 56, background: '#0a0a0a', border: '1px solid rgba(34, 197, 94, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                              <Users size={24} color="#22c55e" />
-                            </div>
-                            <div>
-                              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, color: '#FFFFFF' }}>
-                                {equipeLider.equipe || 'Equipe Sem Nome'}
-                              </div>
-                              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, color: '#22c55e', fontWeight: 700 }}>
-                                {equipeLider.pessoas_equipe} Integrantes Uniformizados
-                              </div>
-                            </div>
-                          </div>
-                        ) : (
-                          <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#7D7D7D' }}>Sem dados suficientes</div>
-                        )}
-                      </div>
-                    );
-                  })()}
-
-                  {/* Maior Rodagem */}
-                  {(() => {
-                    const rodagemLider = carros.filter(c => c.km_rodado !== undefined && c.km_rodado !== null && Number(c.km_rodado) > 0).sort((a, b) => Number(b.km_rodado) - Number(a.km_rodado))[0];
-                    return (
-                      <div style={{ background: '#181818', border: '1px solid #202020', borderTop: '2px solid #eab308', padding: '20px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <Gauge size={16} color="#eab308" />
-                            <h4 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, textTransform: 'uppercase', color: '#eab308', margin: 0 }}>
-                              Maior Rodagem
-                            </h4>
-                          </div>
-                          <span style={{ background: '#eab308', color: '#000000', padding: '2px 8px', fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, fontWeight: 800, textTransform: 'uppercase' }}>
-                            1º LUGAR
-                          </span>
-                        </div>
-                        {rodagemLider ? (
-                          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                            <div style={{ width: 56, height: 56, background: '#0a0a0a', border: '1px solid #eab308', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
-                              {rodagemLider.url_foto ? (
-                                <img src={rodagemLider.url_foto} alt={rodagemLider.modelo} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <div style={{ width: 56, height: 56, background: '#000000', border: '1px solid #1E293B', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
+                              {jeepLider.url_foto ? (
+                                <img src={jeepLider.url_foto} alt={jeepLider.modelo} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                               ) : (
-                                <Car size={24} color="#eab308" />
+                                <Car size={24} color="#94A3B8" />
                               )}
                             </div>
                             <div>
                               <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, color: '#FFFFFF' }}>
-                                {rodagemLider.modelo} ({rodagemLider.numero_inscricao})
+                                {jeepLider.modelo} ({jeepLider.numero_inscricao})
                               </div>
-                              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, color: '#eab308', fontWeight: 700 }}>
-                                ⚡ {Number(rodagemLider.km_rodado).toLocaleString('pt-BR')} KM RODADOS
+                              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, color: '#38BDF8', fontWeight: 700 }}>
+                                📏 {jeepLider.altura_mm} mm ALTURA
                               </div>
-                              {rodagemLider.nome_dono && rodagemLider.nome_dono !== 'Não informado' && (
-                                <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#7D7D7D', marginTop: 2 }}>
-                                  Dono: {rodagemLider.nome_dono}
+                              {jeepLider.nome_dono && jeepLider.nome_dono !== 'Não informado' && (
+                                <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#94A3B8', marginTop: 2 }}>
+                                  Dono: {jeepLider.nome_dono}
                                 </div>
                               )}
                             </div>
                           </div>
                         ) : (
-                          <div style={{ background: '#0a0a0a', border: '1px dashed #313131', padding: '10px', textAlign: 'center' }}>
-                            <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#7D7D7D' }}>
-                              Nenhum veículo com KM rodado cadastrado (maior que 0).
-                            </span>
-                          </div>
+                          <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#94A3B8' }}>Sem dados suficientes</div>
                         )}
                       </div>
                     );
@@ -1234,14 +1176,14 @@ export function DashboardView({
               <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
                 {/* Cabeçalho e Controles */}
-                <div style={{ background: '#181818', border: '1px solid #202020', borderLeft: '3px solid #FFC000', padding: '24px' }}>
+                <div style={{ background: '#0D1117', border: '1px solid #1E293B', borderLeft: '3px solid #0099FF', padding: '24px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, marginBottom: 16 }}>
                     <div>
                       <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 22, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#FFFFFF', margin: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <Share2 size={22} color="#FFC000" />
+                        <Share2 size={22} color="#0099FF" />
                         Gerador de Cards Instagramáveis
                       </h3>
-                      <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: '#7D7D7D', margin: '4px 0 0 0' }}>
+                      <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: '#94A3B8', margin: '4px 0 0 0' }}>
                         Gere layouts visuais dos campeões em alta resolução prontos para divulgar no Feed ou Stories.
                       </p>
                     </div>
@@ -1251,9 +1193,9 @@ export function DashboardView({
                       <button
                         onClick={handleCopyCaption}
                         style={{
-                          background: '#202020',
+                          background: '#141A24',
                           color: '#FFFFFF',
-                          border: '1px solid #313131',
+                          border: '1px solid #1E293B',
                           padding: '0 16px',
                           height: 44,
                           cursor: 'pointer',
@@ -1262,41 +1204,28 @@ export function DashboardView({
                           gap: 8,
                           fontFamily: "'Barlow Condensed', sans-serif",
                           fontWeight: 700,
-                          fontSize: 14,
+                          fontSize: 13,
                           textTransform: 'uppercase',
-                          letterSpacing: '0.06em',
-                          transition: 'all 0.15s ease',
+                          letterSpacing: '0.08em',
+                          transition: 'border-color 0.15s ease, color 0.15s ease',
                         }}
-                        onMouseEnter={e => { e.currentTarget.style.borderColor = '#FFC000'; e.currentTarget.style.color = '#FFC000'; }}
-                        onMouseLeave={e => { e.currentTarget.style.borderColor = '#313131'; e.currentTarget.style.color = '#FFFFFF'; }}
+                        onMouseEnter={e => { e.currentTarget.style.borderColor = '#0099FF'; e.currentTarget.style.color = '#0099FF'; }}
+                        onMouseLeave={e => { e.currentTarget.style.borderColor = '#1E293B'; e.currentTarget.style.color = '#FFFFFF'; }}
                       >
                         <Copy size={16} />
-                        <span>Copiar Legenda</span>
+                        <span>Copiar Legenda Pronta</span>
                       </button>
 
                       <button
                         onClick={handleDownloadInstaCard}
                         disabled={isExportingPng}
+                        className="btn-bmw"
                         style={{
-                          background: '#FFC000',
-                          color: '#000000',
-                          border: 'none',
-                          padding: '0 20px',
                           height: 44,
-                          cursor: isExportingPng ? 'wait' : 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 8,
-                          fontFamily: "'Barlow Condensed', sans-serif",
-                          fontWeight: 700,
+                          padding: '0 20px',
                           fontSize: 14,
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.08em',
                           opacity: isExportingPng ? 0.7 : 1,
-                          transition: 'background 0.15s ease',
                         }}
-                        onMouseEnter={e => { if (!isExportingPng) e.currentTarget.style.background = '#e6ad00'; }}
-                        onMouseLeave={e => { if (!isExportingPng) e.currentTarget.style.background = '#FFC000'; }}
                       >
                         <Download size={16} />
                         <span>{isExportingPng ? 'Gerando PNG...' : 'Baixar Imagem PNG'}</span>
@@ -1315,7 +1244,7 @@ export function DashboardView({
                   )}
 
                   {/* Barra de Seleção de Formato, Tema e Categoria */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, borderTop: '1px solid #202020', paddingTop: 16 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, borderTop: '1px solid #1E293B', paddingTop: 16 }}>
 
                     {/* Seleção de Categoria */}
                     <div>
@@ -1333,8 +1262,7 @@ export function DashboardView({
                         </optgroup>
                         <optgroup label="Destaques Técnicos">
                           <option value="tech_antigo">👴 CARRO MAIS ANTIGO</option>
-                          <option value="tech_equipe">👥 MAIOR EQUIPE UNIFORMIZADA</option>
-                          <option value="tech_rodagem">⚡ MAIOR RODAGEM</option>
+                          <option value="tech_jeep">🚙 DESTAQUE JEEP (ALTURA)</option>
                         </optgroup>
                       </select>
                     </div>
@@ -1348,9 +1276,9 @@ export function DashboardView({
                           style={{
                             flex: 1,
                             height: 40,
-                            background: instaFormat === 'story' ? '#FFC000' : '#000000',
-                            color: instaFormat === 'story' ? '#000000' : '#7D7D7D',
-                            border: '1px solid #313131',
+                            background: instaFormat === 'story' ? '#0099FF' : '#000000',
+                            color: instaFormat === 'story' ? '#FFFFFF' : '#94A3B8',
+                            border: '1px solid #1E293B',
                             fontFamily: "'Barlow Condensed', sans-serif",
                             fontWeight: 700,
                             fontSize: 13,
@@ -1365,9 +1293,9 @@ export function DashboardView({
                           style={{
                             flex: 1,
                             height: 40,
-                            background: instaFormat === 'feed' ? '#FFC000' : '#000000',
-                            color: instaFormat === 'feed' ? '#000000' : '#7D7D7D',
-                            border: '1px solid #313131',
+                            background: instaFormat === 'feed' ? '#0099FF' : '#000000',
+                            color: instaFormat === 'feed' ? '#FFFFFF' : '#94A3B8',
+                            border: '1px solid #1E293B',
                             fontFamily: "'Barlow Condensed', sans-serif",
                             fontWeight: 700,
                             fontSize: 13,
@@ -1385,9 +1313,9 @@ export function DashboardView({
                       <label style={S.label}>Tema Visual</label>
                       <div style={{ display: 'flex', gap: 8 }}>
                         {[
-                          { id: 'gold', label: '🏆 Ouro', color: '#FFC000' },
+                          { id: 'gold', label: '🔵 Yas Marina', color: '#0099FF' },
                           { id: 'dark', label: '⬛ Carbon', color: '#FFFFFF' },
-                          { id: 'red', label: '🏎️ Red', color: '#ef4444' },
+                          { id: 'red', label: '🔴 M Crimson', color: '#E51937' },
                         ].map((t) => (
                           <button
                             key={t.id}
@@ -1396,8 +1324,8 @@ export function DashboardView({
                               flex: 1,
                               height: 40,
                               background: instaTheme === t.id ? t.color : '#000000',
-                              color: instaTheme === t.id ? '#000000' : '#7D7D7D',
-                              border: `1px solid ${instaTheme === t.id ? t.color : '#313131'}`,
+                              color: instaTheme === t.id ? (t.id === 'dark' ? '#000000' : '#FFFFFF') : '#94A3B8',
+                              border: `1px solid ${instaTheme === t.id ? t.color : '#1E293B'}`,
                               fontFamily: "'Barlow Condensed', sans-serif",
                               fontWeight: 700,
                               fontSize: 12,
@@ -1416,8 +1344,8 @@ export function DashboardView({
 
                 {/* ===== PRÉ-VISUALIZAÇÃO DO CARD INSTAGRAMÁVEL ===== */}
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-                  <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, color: '#7D7D7D', textTransform: 'uppercase', letterSpacing: '0.12em', display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <Sparkles size={14} color="#FFC000" />
+                  <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.12em', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Sparkles size={14} color="#0099FF" />
                     <span>Pré-Visualização em Tempo Real ({instaFormat === 'story' ? 'Story 9:16' : 'Feed 1:1'})</span>
                   </div>
 
@@ -1429,11 +1357,11 @@ export function DashboardView({
                       maxWidth: instaFormat === 'story' ? 380 : 460,
                       aspectRatio: instaFormat === 'story' ? '9/16' : '1/1',
                       background: instaTheme === 'gold'
-                        ? 'linear-gradient(180deg, #1e1800 0%, #050505 100%)'
+                        ? 'linear-gradient(180deg, #0C2340 0%, #050505 100%)'
                         : instaTheme === 'dark'
                           ? 'linear-gradient(180deg, #262626 0%, #090909 100%)'
                           : 'linear-gradient(180deg, #3b0a0a 0%, #050505 100%)',
-                      border: `2px solid ${instaTheme === 'gold' ? '#FFC000' : instaTheme === 'red' ? '#ef4444' : '#FFFFFF'}`,
+                      border: `2px solid ${instaTheme === 'gold' ? '#0099FF' : instaTheme === 'red' ? '#E51937' : '#FFFFFF'}`,
                       borderRadius: 4,
                       boxShadow: '0 20px 40px rgba(0,0,0,0.8)',
                       padding: instaFormat === 'story' ? '24px 20px' : '20px',
@@ -1449,7 +1377,7 @@ export function DashboardView({
                     <div style={{
                       position: 'absolute',
                       inset: 8,
-                      border: `1px solid ${instaTheme === 'gold' ? 'rgba(255,192,0,0.3)' : instaTheme === 'red' ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.2)'}`,
+                      border: `1px solid ${instaTheme === 'gold' ? 'rgba(0,153,255,0.3)' : instaTheme === 'red' ? 'rgba(229,25,55,0.3)' : 'rgba(255,255,255,0.2)'}`,
                       pointerEvents: 'none',
                     }} />
 
@@ -1460,7 +1388,7 @@ export function DashboardView({
                         fontSize: 11,
                         fontWeight: 700,
                         letterSpacing: '0.16em',
-                        color: instaTheme === 'gold' ? '#FFC000' : instaTheme === 'red' ? '#ef4444' : '#FFFFFF',
+                        color: instaTheme === 'gold' ? '#0099FF' : instaTheme === 'red' ? '#E51937' : '#FFFFFF',
                         marginBottom: 4,
                       }}>
                         🏆 RESULTADO OFICIAL 🏆
@@ -1475,17 +1403,17 @@ export function DashboardView({
                         margin: 0,
                         lineHeight: 1.1,
                       }}>
-                        {evento?.nome || 'GARAGEM FLOW VOTE'}
+                        {evento?.nome || 'ENCONTRO LOS FELAS'}
                       </h2>
 
                       {evento?.data && (
-                        <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, color: '#7D7D7D', letterSpacing: '0.12em', marginTop: 4 }}>
+                        <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, color: '#94A3B8', letterSpacing: '0.12em', marginTop: 4 }}>
                           {formatarDataBR(evento.data)}
                         </div>
                       )}
 
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 6 }}>
-                        <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, fontWeight: 700, color: '#FFC000', letterSpacing: '0.08em', background: 'rgba(255,192,0,0.12)', border: '1px solid rgba(255,192,0,0.3)', padding: '2px 8px', borderRadius: 2, whiteSpace: 'nowrap' }}>
+                        <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, fontWeight: 700, color: '#0099FF', letterSpacing: '0.08em', background: 'rgba(0,153,255,0.12)', border: '1px solid rgba(0,153,255,0.3)', padding: '2px 8px', borderRadius: 2, whiteSpace: 'nowrap' }}>
                           🚗 {carros.length} VEÍCULOS
                         </span>
                         {totalUsuarios > 0 && (
@@ -1500,7 +1428,6 @@ export function DashboardView({
 
                     {/* Conteúdo Central */}
                     {selectedInstaCatId === 'all' ? (
-                      /* QUADRO GERAL DE CAMPEÕES (TODAS AS CATEGORIAS E DESTAQUES COM FOTO E DETALHES) */
                       (() => {
                         const winners = getAllCategoryWinners();
                         const isFew = winners.length <= 4;
@@ -1511,73 +1438,66 @@ export function DashboardView({
                             gap: isFew ? 12 : 8,
                             zIndex: 2,
                             flex: 1,
-                            justifyContent: isFew ? 'center' : 'flex-start',
-                            overflowY: 'auto',
-                            maxHeight: '75%',
-                            paddingRight: 2,
+                            justifyContent: 'center',
+                            overflowY: 'hidden',
                           }}>
-                            <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, fontWeight: 700, textAlign: 'center', color: '#FFC000', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 2 }}>
-                              Quadro Geral de Premiações
-                            </div>
-
                             {winners.map((item) => (
                               <div
                                 key={item.id}
                                 style={{
-                                  background: 'rgba(0,0,0,0.65)',
-                                  border: '1px solid rgba(255,192,0,0.35)',
-                                  padding: isFew ? '8px 10px' : '6px 8px',
+                                  background: 'rgba(255,255,255,0.05)',
+                                  border: '1px solid rgba(255,255,255,0.1)',
+                                  padding: isFew ? '8px 12px' : '6px 10px',
+                                  borderRadius: 2,
                                   display: 'flex',
                                   alignItems: 'center',
                                   gap: 10,
-                                  borderRadius: 3,
-                                  flexShrink: 0,
                                 }}
                               >
-                                {/* Foto / Miniatura do Veículo */}
                                 <div style={{
-                                  width: isFew ? 48 : 40,
-                                  height: isFew ? 48 : 40,
-                                  background: '#0a0a0a',
-                                  border: '1px solid rgba(255,192,0,0.4)',
-                                  borderRadius: 3,
-                                  overflow: 'hidden',
+                                  width: isFew ? 44 : 36,
+                                  height: isFew ? 44 : 36,
+                                  background: '#000000',
+                                  border: `1px solid ${instaTheme === 'gold' ? '#0099FF' : '#475569'}`,
                                   display: 'flex',
                                   alignItems: 'center',
                                   justifyContent: 'center',
                                   flexShrink: 0,
+                                  overflow: 'hidden',
                                 }}>
                                   {item.carro?.url_foto ? (
-                                    <img src={item.carro.url_foto} alt={item.carro.modelo} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    <img
+                                      src={item.carro.url_foto}
+                                      alt={item.carro.modelo}
+                                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                    />
                                   ) : (
-                                    <Car size={18} color="#FFC000" />
+                                    <span style={{ fontSize: isFew ? 20 : 16 }}>{item.icone || '🥇'}</span>
                                   )}
                                 </div>
 
-                                {/* Dados da Categoria + Veículo + Piloto */}
-                                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                  <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, color: '#FFC000', fontWeight: 700, textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                                  <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, color: '#0099FF', fontWeight: 700, textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                     {item.icone || '🥇'} {item.tituloCategoria}
                                   </div>
                                   <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, color: '#FFFFFF', fontWeight: 800, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                     {item.carro ? `${item.carro.modelo} (${item.carro.numero_inscricao || `#${item.carro.ano}`})` : 'Sem vencedor registrado'}
                                   </div>
                                   {item.carro?.nome_dono && item.carro.nome_dono !== 'Não informado' && (
-                                    <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 10, color: '#A0A0A0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 10, color: '#94A3B8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                       Dono: {item.carro.nome_dono} {item.carro.equipe ? `• ${item.carro.equipe}` : ''}
                                     </div>
                                   )}
                                 </div>
 
-                                {/* Métrica / Votos Badge */}
                                 <div style={{
-                                  background: 'rgba(255,192,0,0.12)',
-                                  border: '1px solid rgba(255,192,0,0.3)',
+                                  background: 'rgba(0,153,255,0.12)',
+                                  border: '1px solid rgba(0,153,255,0.3)',
                                   padding: '3px 8px',
                                   borderRadius: 2,
                                   fontFamily: "'Barlow Condensed', sans-serif",
                                   fontSize: 11,
-                                  color: '#FFC000',
+                                  color: '#0099FF',
                                   fontWeight: 700,
                                   whiteSpace: 'nowrap',
                                   flexShrink: 0,
@@ -1590,14 +1510,12 @@ export function DashboardView({
                         );
                       })()
                     ) : (
-                      /* CARD CATEGORIA ESPECÍFICA */
                       (() => {
                         const data = getWinnerData(selectedInstaCatId);
                         return (
                           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: instaFormat === 'story' ? 12 : 8, zIndex: 2, flex: 1, justifyContent: 'center' }}>
-                            {/* Nome da Categoria */}
                             <div style={{ textAlign: 'center' }}>
-                              <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 9, color: instaTheme === 'gold' ? '#FFC000' : '#CCCCCC', letterSpacing: '0.14em', fontWeight: 700 }}>
+                              <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 9, color: instaTheme === 'gold' ? '#0099FF' : '#CCCCCC', letterSpacing: '0.14em', fontWeight: 700 }}>
                                 [{data.tipoBadge}]
                               </span>
                               <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900, fontSize: instaFormat === 'story' ? 24 : 20, color: '#FFFFFF', textTransform: 'uppercase', margin: '2px 0 0 0', lineHeight: 1.1 }}>
@@ -1605,12 +1523,11 @@ export function DashboardView({
                               </h3>
                             </div>
 
-                            {/* Foto em Destaque do Veículo */}
                             <div style={{
                               width: '100%',
                               height: instaFormat === 'story' ? 200 : 130,
-                              background: '#0a0a0a',
-                              border: `2px solid ${instaTheme === 'gold' ? '#FFC000' : instaTheme === 'red' ? '#ef4444' : '#FFFFFF'}`,
+                              background: '#0D1117',
+                              border: `2px solid ${instaTheme === 'gold' ? '#0099FF' : instaTheme === 'red' ? '#E51937' : '#FFFFFF'}`,
                               position: 'relative',
                               overflow: 'hidden',
                               display: 'flex',
@@ -1624,19 +1541,18 @@ export function DashboardView({
                                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                 />
                               ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, color: '#7D7D7D' }}>
-                                  <Car size={36} color="#FFC000" />
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, color: '#94A3B8' }}>
+                                  <Car size={36} color="#0099FF" />
                                   <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, letterSpacing: '0.1em' }}>FOTO DO VEÍCULO</span>
                                 </div>
                               )}
 
-                              {/* Stamp 1º Lugar */}
                               <div style={{
                                 position: 'absolute',
                                 top: 8,
                                 left: 8,
-                                background: '#FFC000',
-                                color: '#000000',
+                                background: '#0099FF',
+                                color: '#FFFFFF',
                                 padding: '3px 8px',
                                 fontFamily: "'Barlow Condensed', sans-serif",
                                 fontWeight: 900,
@@ -1647,7 +1563,6 @@ export function DashboardView({
                               </div>
                             </div>
 
-                            {/* Informações do Campeão */}
                             <div style={{ textAlign: 'center', width: '100%' }}>
                               <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900, fontSize: instaFormat === 'story' ? 20 : 17, color: '#FFFFFF', textTransform: 'uppercase', lineHeight: 1.1 }}>
                                 {data.carro ? `${data.carro.modelo} (${data.carro.numero_inscricao})` : 'Sem vencedor registrado'}
@@ -1660,21 +1575,21 @@ export function DashboardView({
                               )}
 
                               {data.carro?.equipe && (
-                                <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, color: '#7D7D7D' }}>
+                                <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, color: '#94A3B8' }}>
                                   Equipe: {data.carro.equipe}
                                 </div>
                               )}
 
                               <div style={{
                                 marginTop: 6,
-                                background: 'rgba(255,192,0,0.1)',
-                                border: '1px solid rgba(255,192,0,0.3)',
+                                background: 'rgba(0,153,255,0.1)',
+                                border: '1px solid rgba(0,153,255,0.3)',
                                 padding: '4px 10px',
                                 display: 'inline-block',
                                 fontFamily: "'Barlow Condensed', sans-serif",
                                 fontWeight: 800,
                                 fontSize: 13,
-                                color: '#FFC000',
+                                color: '#0099FF',
                                 letterSpacing: '0.06em',
                               }}>
                                 ⚡ {data.metricaLabel}
@@ -1687,14 +1602,9 @@ export function DashboardView({
 
                     {/* Rodapé do Card */}
                     <div style={{ textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 8, zIndex: 2 }}>
-                      <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 9, color: '#7D7D7D', letterSpacing: '0.14em', textTransform: 'uppercase', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                      <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 9, color: '#94A3B8', letterSpacing: '0.14em', textTransform: 'uppercase', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
                         <span>Desenvolvido por</span>
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FFC000" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block' }}>
-                          <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
-                          <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-                          <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
-                        </svg>
-                        <span style={{ color: '#FFC000', fontWeight: 700 }}>pedromachado.dev</span>
+                        <span style={{ color: '#0099FF', fontWeight: 700 }}>pedromachado.dev</span>
                       </span>
                     </div>
 
@@ -1703,8 +1613,9 @@ export function DashboardView({
 
               </div>
             )}
+
+            {/* ══════ TAB: GERENCIAR VEÍCULOS ══════ */}
             {activeTab === 'carros' && (() => {
-              // Computar quais campos extras são exigidos pelas categorias atualmente marcadas
               const camposNecessarios = new Set<CampoRequerido>();
               categoriasIds.forEach((id) => {
                 const cat = categorias.find((c) => c.id === id);
@@ -1726,19 +1637,19 @@ export function DashboardView({
               return (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
                   {/* Form Cadastro */}
-                  <div style={{ background: '#181818', border: '1px solid #202020', borderTop: '2px solid #FFC000', padding: '20px' }}>
-                    <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#FFFFFF', margin: '0 0 20px 0', display: 'flex', alignItems: 'center', gap: 8, paddingBottom: 16, borderBottom: '1px solid #202020' }}>
-                      <Plus size={16} color="#FFC000" />
+                  <div style={{ background: '#0D1117', border: '1px solid #1E293B', borderTop: '2px solid #0099FF', padding: '20px' }}>
+                    <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#FFFFFF', margin: '0 0 20px 0', display: 'flex', alignItems: 'center', gap: 8, paddingBottom: 16, borderBottom: '1px solid #1E293B' }}>
+                      <Plus size={16} color="#0099FF" />
                       Novo Veículo Inscrito
                     </h3>
 
                     <form onSubmit={handleCadastrarCarro} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-                      {/* ── ETAPA 1: campos essenciais (sempre visíveis) ── */}
+                      {/* Inscrição */}
                       <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                           <label style={S.label}>Inscrição (opcional)</label>
-                          <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, color: '#FFC000', letterSpacing: '0.1em' }}>
+                          <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, color: '#0099FF', letterSpacing: '0.1em' }}>
                             {isManualInscricao ? 'MANUAL' : 'AUTO'}
                           </span>
                         </div>
@@ -1748,8 +1659,8 @@ export function DashboardView({
                           value={numeroInscricao}
                           onChange={(e) => { setNumeroInscricao(e.target.value); setIsManualInscricao(true); }}
                           style={S.input}
-                          onFocus={e => { e.target.style.borderColor = '#FFC000'; }}
-                          onBlur={e => { e.target.style.borderColor = '#313131'; }}
+                          onFocus={e => { e.target.style.borderColor = '#0099FF'; }}
+                          onBlur={e => { e.target.style.borderColor = '#1E293B'; }}
                         />
                       </div>
 
@@ -1757,25 +1668,25 @@ export function DashboardView({
                         <label style={S.label}>Modelo (opcional)</label>
                         <input
                           type="text"
-                          placeholder="Ex: VW Gol 1.8 (opcional)"
+                          placeholder="Ex: BMW 320i M Sport (opcional)"
                           value={modelo}
                           onChange={(e) => setModelo(e.target.value)}
                           style={S.input}
-                          onFocus={e => { e.target.style.borderColor = '#FFC000'; }}
-                          onBlur={e => { e.target.style.borderColor = '#313131'; }}
+                          onFocus={e => { e.target.style.borderColor = '#0099FF'; }}
+                          onBlur={e => { e.target.style.borderColor = '#1E293B'; }}
                         />
                       </div>
 
                       <div>
-                        <label style={S.label}>Ano do Carro(opcional)</label>
+                        <label style={S.label}>Ano do Carro (opcional)</label>
                         <input
                           type="text"
-                          placeholder="Ex: 1994 (opcional)"
+                          placeholder="Ex: 2015 (opcional)"
                           value={ano}
                           onChange={(e) => setAno(e.target.value)}
                           style={S.input}
-                          onFocus={e => { e.target.style.borderColor = '#FFC000'; }}
-                          onBlur={e => { e.target.style.borderColor = '#313131'; }}
+                          onFocus={e => { e.target.style.borderColor = '#0099FF'; }}
+                          onBlur={e => { e.target.style.borderColor = '#1E293B'; }}
                         />
                       </div>
 
@@ -1787,12 +1698,12 @@ export function DashboardView({
                           value={nomeDono}
                           onChange={(e) => setNomeDono(e.target.value)}
                           style={S.input}
-                          onFocus={e => { e.target.style.borderColor = '#FFC000'; }}
-                          onBlur={e => { e.target.style.borderColor = '#313131'; }}
+                          onFocus={e => { e.target.style.borderColor = '#0099FF'; }}
+                          onBlur={e => { e.target.style.borderColor = '#1E293B'; }}
                         />
                       </div>
 
-                      {/* Foto - Sempre visível */}
+                      {/* Foto */}
                       <div>
                         <label style={S.label}>Foto do Veículo (opcional)</label>
                         {urlFoto && (
@@ -1801,7 +1712,7 @@ export function DashboardView({
                             <button
                               type="button"
                               onClick={() => setUrlFoto('')}
-                              style={{ position: 'absolute', top: 6, right: 6, background: 'rgba(0,0,0,0.85)', border: '1px solid #313131', color: '#FFFFFF', padding: '3px 8px', cursor: 'pointer', fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif" }}
+                              style={{ position: 'absolute', top: 6, right: 6, background: 'rgba(0,0,0,0.85)', border: '1px solid #1E293B', color: '#FFFFFF', padding: '3px 8px', cursor: 'pointer', fontSize: 11, fontFamily: "'Barlow Condensed', sans-serif" }}
                             >
                               Remover
                             </button>
@@ -1811,9 +1722,9 @@ export function DashboardView({
                           <button
                             type="button"
                             onClick={() => document.getElementById('camera-file-input')?.click()}
-                            style={{ ...S.input, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer', background: '#202020', borderColor: '#313131' }}
+                            style={{ ...S.input, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer', background: '#141A24', borderColor: '#1E293B' }}
                           >
-                            <Camera size={15} color="#FFC000" />
+                            <Camera size={15} color="#0099FF" />
                             <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                               Tirar Foto
                             </span>
@@ -1821,9 +1732,9 @@ export function DashboardView({
                           <button
                             type="button"
                             onClick={() => document.getElementById('gallery-file-input')?.click()}
-                            style={{ ...S.input, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer', background: '#202020', borderColor: '#313131' }}
+                            style={{ ...S.input, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer', background: '#141A24', borderColor: '#1E293B' }}
                           >
-                            <ImageIcon size={15} color="#FFC000" />
+                            <ImageIcon size={15} color="#0099FF" />
                             <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                               Galeria
                             </span>
@@ -1837,22 +1748,22 @@ export function DashboardView({
                           value={urlFoto.startsWith('data:image') ? '' : urlFoto}
                           onChange={(e) => setUrlFoto(e.target.value)}
                           style={{ ...S.input, height: 36 }}
-                          onFocus={e => { e.target.style.borderColor = '#FFC000'; }}
-                          onBlur={e => { e.target.style.borderColor = '#313131'; }}
+                          onFocus={e => { e.target.style.borderColor = '#0099FF'; }}
+                          onBlur={e => { e.target.style.borderColor = '#1E293B'; }}
                         />
                       </div>
 
-                      {/* Categorias — parte do passo 1, desbloqueiam o passo 2 */}
+                      {/* Categorias */}
                       <div>
                         <label style={{ ...S.label, marginBottom: 10 }}>Categorias que este veículo concorre</label>
                         {categorias.length === 0 ? (
-                          <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#7D7D7D' }}>Nenhuma categoria cadastrada.</span>
+                          <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#94A3B8' }}>Nenhuma categoria cadastrada.</span>
                         ) : (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                             {categorias.map((cat) => (
                               <label
                                 key={cat.id}
-                                style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '8px 10px', background: categoriasIds.includes(cat.id) ? 'rgba(255,192,0,0.07)' : '#000000', border: `1px solid ${categoriasIds.includes(cat.id) ? 'rgba(255,192,0,0.4)' : '#202020'}`, transition: 'background 0.12s, border-color 0.12s' }}
+                                style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '8px 10px', background: categoriasIds.includes(cat.id) ? 'rgba(0,153,255,0.08)' : '#000000', border: `1px solid ${categoriasIds.includes(cat.id) ? 'rgba(0,153,255,0.4)' : '#1E293B'}`, transition: 'background 0.12s, border-color 0.12s' }}
                               >
                                 <input
                                   type="checkbox"
@@ -1864,12 +1775,12 @@ export function DashboardView({
                                       setCategoriasIds((prev) => prev.filter((id) => id !== cat.id));
                                     }
                                   }}
-                                  style={{ accentColor: '#FFC000', width: 15, height: 15, flexShrink: 0 }}
+                                  style={{ accentColor: '#0099FF', width: 15, height: 15, flexShrink: 0 }}
                                 />
-                                <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, fontWeight: 600, color: categoriasIds.includes(cat.id) ? '#FFC000' : '#FFFFFF', flex: 1 }}>
+                                <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, fontWeight: 600, color: categoriasIds.includes(cat.id) ? '#0099FF' : '#FFFFFF', flex: 1 }}>
                                   {cat.nome}
                                 </span>
-                                <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: cat.tipo === 'popular' ? '#FFC000' : '#29ABE2', background: cat.tipo === 'popular' ? 'rgba(255,192,0,0.08)' : 'rgba(41,171,226,0.08)', padding: '2px 6px', border: `1px solid ${cat.tipo === 'popular' ? 'rgba(255,192,0,0.2)' : 'rgba(41,171,226,0.2)'}`, flexShrink: 0 }}>
+                                <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: cat.tipo === 'popular' ? '#0099FF' : '#38BDF8', background: cat.tipo === 'popular' ? 'rgba(0,153,255,0.1)' : 'rgba(56,189,248,0.1)', padding: '2px 6px', border: `1px solid ${cat.tipo === 'popular' ? 'rgba(0,153,255,0.3)' : 'rgba(56,189,248,0.3)'}`, flexShrink: 0 }}>
                                   {cat.tipo === 'popular' ? 'Popular' : 'Interna'}
                                 </span>
                               </label>
@@ -1878,22 +1789,22 @@ export function DashboardView({
                         )}
                       </div>
 
-                      {/* ── ETAPA 2: campos complementares (liberados dinamicamente baseados na categoria) ── */}
+                      {/* Campos Complementares */}
                       {temCamposComplementares && (
                         <div
                           style={{
                             display: 'flex',
                             flexDirection: 'column',
                             gap: 14,
-                            borderTop: '1px solid rgba(255,192,0,0.25)',
+                            borderTop: '1px solid rgba(0,153,255,0.25)',
                             paddingTop: 16,
                             animation: 'fadeSlideIn 0.3s ease',
                           }}
                         >
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                            <div style={{ flex: 1, height: 1, background: 'rgba(255,192,0,0.15)' }} />
-                            <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.16em', color: '#FFC000' }}>Dados Complementares</span>
-                            <div style={{ flex: 1, height: 1, background: 'rgba(255,192,0,0.15)' }} />
+                            <div style={{ flex: 1, height: 1, background: 'rgba(0,153,255,0.2)' }} />
+                            <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.16em', color: '#0099FF' }}>Dados Complementares</span>
+                            <div style={{ flex: 1, height: 1, background: 'rgba(0,153,255,0.2)' }} />
                           </div>
 
                           {/* Gênero */}
@@ -1909,7 +1820,7 @@ export function DashboardView({
                                       value={opt.value}
                                       checked={genero === opt.value}
                                       onChange={(e) => setGenero(e.target.value as 'M' | 'F')}
-                                      style={{ accentColor: '#FFC000', width: '16px', height: '16px' }}
+                                      style={{ accentColor: '#0099FF', width: '16px', height: '16px' }}
                                     />
                                     {opt.label}
                                   </label>
@@ -1928,8 +1839,8 @@ export function DashboardView({
                                 value={telefoneDono}
                                 onChange={(e) => setTelefoneDono(e.target.value)}
                                 style={S.input}
-                                onFocus={e => { e.target.style.borderColor = '#FFC000'; }}
-                                onBlur={e => { e.target.style.borderColor = '#313131'; }}
+                                onFocus={e => { e.target.style.borderColor = '#0099FF'; }}
+                                onBlur={e => { e.target.style.borderColor = '#1E293B'; }}
                               />
                             </div>
                           )}
@@ -1946,8 +1857,8 @@ export function DashboardView({
                                     value={alturaMm}
                                     onChange={(e) => setAlturaMm(e.target.value)}
                                     style={{ ...S.input, height: 36 }}
-                                    onFocus={e => { e.target.style.borderColor = '#FFC000'; }}
-                                    onBlur={e => { e.target.style.borderColor = '#313131'; }}
+                                    onFocus={e => { e.target.style.borderColor = '#0099FF'; }}
+                                    onBlur={e => { e.target.style.borderColor = '#1E293B'; }}
                                   />
                                 </div>
                               )}
@@ -1960,8 +1871,8 @@ export function DashboardView({
                                     value={kmRodado}
                                     onChange={(e) => setKmRodado(e.target.value)}
                                     style={{ ...S.input, height: 36 }}
-                                    onFocus={e => { e.target.style.borderColor = '#FFC000'; }}
-                                    onBlur={e => { e.target.style.borderColor = '#313131'; }}
+                                    onFocus={e => { e.target.style.borderColor = '#0099FF'; }}
+                                    onBlur={e => { e.target.style.borderColor = '#1E293B'; }}
                                   />
                                 </div>
                               )}
@@ -1977,7 +1888,7 @@ export function DashboardView({
                                   <button
                                     type="button"
                                     onClick={() => setShowNovaEquipe(!showNovaEquipe)}
-                                    style={{ background: 'transparent', border: 'none', color: '#FFC000', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}
+                                    style={{ background: 'transparent', border: 'none', color: '#0099FF', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}
                                   >
                                     <UserPlus size={13} />
                                     {showNovaEquipe ? 'Cancelar' : 'Nova Equipe'}
@@ -1986,22 +1897,23 @@ export function DashboardView({
                               </div>
 
                               {showNovaEquipe && (
-                                <div style={{ background: '#000000', border: '1px solid rgba(255,192,0,0.25)', padding: '10px 12px', marginBottom: 8, display: 'flex', gap: 6, alignItems: 'center' }}>
+                                <div style={{ background: '#000000', border: '1px solid rgba(0,153,255,0.3)', padding: '10px 12px', marginBottom: 8, display: 'flex', gap: 6, alignItems: 'center' }}>
                                   <input
                                     type="text"
                                     placeholder="Nome da equipe..."
                                     value={novaEquipeNome}
                                     onChange={(e) => setNovaEquipeNome(e.target.value)}
                                     style={{ ...S.input, height: 34, fontSize: 13, flex: 1 }}
-                                    onFocus={e => { e.target.style.borderColor = '#FFC000'; }}
-                                    onBlur={e => { e.target.style.borderColor = '#313131'; }}
+                                    onFocus={e => { e.target.style.borderColor = '#0099FF'; }}
+                                    onBlur={e => { e.target.style.borderColor = '#1E293B'; }}
                                     onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleCadastrarEquipe(); } }}
                                   />
                                   <button
                                     type="button"
                                     onClick={handleCadastrarEquipe}
                                     disabled={submittingEquipe || !novaEquipeNome.trim()}
-                                    style={{ background: '#FFC000', color: '#000000', border: 'none', padding: '0 12px', height: 34, cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 12, textTransform: 'uppercase', flexShrink: 0, opacity: submittingEquipe || !novaEquipeNome.trim() ? 0.5 : 1 }}
+                                    className="btn-bmw"
+                                    style={{ padding: '0 12px', height: 34, fontSize: 12, flexShrink: 0, opacity: submittingEquipe || !novaEquipeNome.trim() ? 0.5 : 1 }}
                                   >
                                     {submittingEquipe ? '...' : 'Salvar'}
                                   </button>
@@ -2012,8 +1924,8 @@ export function DashboardView({
                                 value={equipeId}
                                 onChange={(e) => setEquipeId(e.target.value)}
                                 style={{ ...S.input, colorScheme: 'dark' }}
-                                onFocus={e => { e.target.style.borderColor = '#FFC000'; }}
-                                onBlur={e => { e.target.style.borderColor = '#313131'; }}
+                                onFocus={e => { e.target.style.borderColor = '#0099FF'; }}
+                                onBlur={e => { e.target.style.borderColor = '#1E293B'; }}
                               >
                                 <option value="">— Sem equipe —</option>
                                 {equipes.map((eq) => (
@@ -2034,12 +1946,9 @@ export function DashboardView({
                                 value={pessoasEquipe}
                                 onChange={(e) => setPessoasEquipe(e.target.value)}
                                 style={{ ...S.input, height: 36 }}
-                                onFocus={e => { e.target.style.borderColor = '#FFC000'; }}
-                                onBlur={e => { e.target.style.borderColor = '#313131'; }}
+                                onFocus={e => { e.target.style.borderColor = '#0099FF'; }}
+                                onBlur={e => { e.target.style.borderColor = '#1E293B'; }}
                               />
-                              <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#7D7D7D', marginTop: 4, display: 'block' }}>
-                                Quantas pessoas uniformizadas da equipe vieram com este veículo
-                              </span>
                             </div>
                           )}
 
@@ -2062,7 +1971,7 @@ export function DashboardView({
                       <button
                         type="submit"
                         disabled={submitting}
-                        className="btn-gold"
+                        className="btn-bmw"
                         style={{ width: '100%', height: 44, fontSize: 14, marginTop: 4 }}
                       >
                         {submitting ? 'Adicionando...' : 'Cadastrar Veículo'}
@@ -2071,41 +1980,41 @@ export function DashboardView({
                   </div>
 
                   {/* Lista / Contador */}
-                  <div style={{ background: '#181818', border: '1px solid #202020', padding: '20px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 14, marginBottom: 16, borderBottom: '1px solid #202020' }}>
+                  <div style={{ background: '#0D1117', border: '1px solid #1E293B', padding: '20px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 14, marginBottom: 16, borderBottom: '1px solid #1E293B' }}>
                       <div>
                         <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#FFFFFF', margin: 0 }}>
                           Veículos Cadastrados
                         </h3>
-                        <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#7D7D7D' }}>
+                        <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#94A3B8' }}>
                           Imagens desativadas para economizar dados
                         </span>
                       </div>
-                      <div style={{ background: '#FFC000', color: '#000000', padding: '6px 14px', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 18, borderRadius: 0 }}>
+                      <div style={{ background: '#0099FF', color: '#FFFFFF', padding: '6px 14px', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 18, borderRadius: 0 }}>
                         {carros.length} {carros.length === 1 ? 'Inscrito' : 'Inscritos'}
                       </div>
                     </div>
 
                     <div style={{ maxHeight: 500, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }} className="no-scrollbar">
                       {carros.length === 0 ? (
-                        <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: '#7D7D7D', textAlign: 'center', padding: '32px 0', margin: 0 }}>
+                        <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: '#94A3B8', textAlign: 'center', padding: '32px 0', margin: 0 }}>
                           Nenhum veículo cadastrado ainda.
                         </p>
                       ) : (
                         carros.map((carro) => (
                           <div
                             key={carro.id}
-                            style={{ background: '#000000', border: '1px solid #202020', padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}
+                            style={{ background: '#000000', border: '1px solid #1E293B', padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}
                           >
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                              <span style={{ background: '#FFC000', color: '#000000', padding: '2px 8px', fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
+                              <span style={{ background: '#0099FF', color: '#FFFFFF', padding: '2px 8px', fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
                                 {carro.numero_inscricao}
                               </span>
                               <div style={{ minWidth: 0 }}>
                                 <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#FFFFFF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                   {carro.modelo || 'Sem modelo informado'}
                                 </div>
-                                <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#7D7D7D' }}>
+                                <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#94A3B8' }}>
                                   {carro.nome_dono}{carro.equipe ? ` · ${carro.equipe}` : ''}
                                 </div>
                               </div>
@@ -2115,10 +2024,10 @@ export function DashboardView({
                               {editarCarro && (
                                 <button
                                   onClick={() => openEditModal(carro)}
-                                  style={{ background: 'rgba(255,192,0,0.1)', border: '1px solid rgba(255,192,0,0.3)', color: '#FFC000', padding: '6px 8px', cursor: 'pointer', display: 'flex', transition: 'background 0.12s' }}
+                                  style={{ background: 'rgba(0,153,255,0.1)', border: '1px solid rgba(0,153,255,0.3)', color: '#0099FF', padding: '6px 8px', cursor: 'pointer', display: 'flex', transition: 'background 0.12s' }}
                                   title="Editar"
-                                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,192,0,0.25)'; }}
-                                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,192,0,0.1)'; }}
+                                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,153,255,0.25)'; }}
+                                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(0,153,255,0.1)'; }}
                                 >
                                   <Edit2 size={14} />
                                 </button>
@@ -2150,23 +2059,23 @@ export function DashboardView({
             {activeTab === 'categorias' && (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
                 {/* Form Adicionar Categoria */}
-                <div style={{ background: '#181818', border: '1px solid #202020', borderTop: '2px solid #FFC000', padding: '20px', height: 'fit-content' }}>
-                  <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#FFFFFF', margin: '0 0 20px 0', display: 'flex', alignItems: 'center', gap: 8, paddingBottom: 16, borderBottom: '1px solid #202020' }}>
-                    <Tag size={16} color="#FFC000" />
+                <div style={{ background: '#0D1117', border: '1px solid #1E293B', borderTop: '2px solid #0099FF', padding: '20px', height: 'fit-content' }}>
+                  <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#FFFFFF', margin: '0 0 20px 0', display: 'flex', alignItems: 'center', gap: 8, paddingBottom: 16, borderBottom: '1px solid #1E293B' }}>
+                    <Tag size={16} color="#0099FF" />
                     Nova Categoria
                   </h3>
 
                   <form onSubmit={handleAddCategoria} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                     <div>
-                      <label style={S.label}>Nome da Categoria (opcional)</label>
+                      <label style={S.label}>Nome da Categoria</label>
                       <input
                         type="text"
                         placeholder="Ex: Melhor Som, Destaque da Noite..."
                         value={novaCatNome}
                         onChange={(e) => setNovaCatNome(e.target.value)}
                         style={S.input}
-                        onFocus={e => { e.target.style.borderColor = '#FFC000'; }}
-                        onBlur={e => { e.target.style.borderColor = '#313131'; }}
+                        onFocus={e => { e.target.style.borderColor = '#0099FF'; }}
+                        onBlur={e => { e.target.style.borderColor = '#1E293B'; }}
                       />
                     </div>
 
@@ -2182,7 +2091,7 @@ export function DashboardView({
                       </select>
                     </div>
 
-                    {/* Campos que esta categoria exige ao inscrever um carro */}
+                    {/* Campos que esta categoria exige */}
                     <div>
                       <label style={{ ...S.label, marginBottom: 10 }}>Dados que esta categoria exige</label>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -2200,7 +2109,7 @@ export function DashboardView({
                           return (
                             <label
                               key={opt.value}
-                              style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '7px 10px', background: ativo ? 'rgba(255,192,0,0.07)' : '#000000', border: `1px solid ${ativo ? 'rgba(255,192,0,0.35)' : '#202020'}`, transition: 'background 0.12s, border-color 0.12s' }}
+                              style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '7px 10px', background: ativo ? 'rgba(0,153,255,0.08)' : '#000000', border: `1px solid ${ativo ? 'rgba(0,153,255,0.35)' : '#1E293B'}`, transition: 'background 0.12s, border-color 0.12s' }}
                             >
                               <input
                                 type="checkbox"
@@ -2209,9 +2118,9 @@ export function DashboardView({
                                   if (e.target.checked) setNovaCatCampos((p) => [...p, opt.value]);
                                   else setNovaCatCampos((p) => p.filter((c) => c !== opt.value));
                                 }}
-                                style={{ accentColor: '#FFC000', width: 14, height: 14, flexShrink: 0 }}
+                                style={{ accentColor: '#0099FF', width: 14, height: 14, flexShrink: 0 }}
                               />
-                              <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, fontWeight: 600, color: ativo ? '#FFC000' : '#FFFFFF' }}>
+                              <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, fontWeight: 600, color: ativo ? '#0099FF' : '#FFFFFF' }}>
                                 {opt.label}
                               </span>
                             </label>
@@ -2223,7 +2132,7 @@ export function DashboardView({
                     <button
                       type="submit"
                       disabled={!novaCatNome.trim()}
-                      className="btn-gold"
+                      className="btn-bmw"
                       style={{ width: '100%', height: 44, fontSize: 14, marginTop: 4 }}
                     >
                       Cadastrar Categoria
@@ -2232,14 +2141,14 @@ export function DashboardView({
                 </div>
 
                 {/* Lista de Categorias */}
-                <div style={{ background: '#181818', border: '1px solid #202020', padding: '20px' }}>
-                  <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#FFFFFF', margin: '0 0 16px 0', paddingBottom: 14, borderBottom: '1px solid #202020' }}>
+                <div style={{ background: '#0D1117', border: '1px solid #1E293B', padding: '20px' }}>
+                  <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#FFFFFF', margin: '0 0 16px 0', paddingBottom: 14, borderBottom: '1px solid #1E293B' }}>
                     Categorias Cadastradas ({categorias.length})
                   </h3>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {categorias.length === 0 ? (
-                      <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: '#7D7D7D', textAlign: 'center', padding: '32px 0', margin: 0 }}>
+                      <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: '#94A3B8', textAlign: 'center', padding: '32px 0', margin: 0 }}>
                         Nenhuma categoria cadastrada.
                       </p>
                     ) : (
@@ -2251,7 +2160,7 @@ export function DashboardView({
                             key={cat.id}
                             style={{
                               background: '#000000',
-                              border: `1px solid ${cat.oculta ? '#313131' : '#202020'}`,
+                              border: `1px solid ${cat.oculta ? '#334155' : '#1E293B'}`,
                               padding: '14px 16px',
                               display: 'flex',
                               alignItems: 'center',
@@ -2272,13 +2181,14 @@ export function DashboardView({
                                   />
                                   <button
                                     onClick={() => handleSaveCategoriaName(cat.id)}
-                                    style={{ background: '#FFC000', color: '#000000', border: 'none', padding: '6px 10px', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 12 }}
+                                    className="btn-bmw"
+                                    style={{ height: 32, padding: '0 10px', fontSize: 12 }}
                                   >
                                     Salvar
                                   </button>
                                   <button
                                     onClick={() => setCatEditingId(null)}
-                                    style={{ background: '#202020', color: '#FFFFFF', border: '1px solid #313131', padding: '6px 10px', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12 }}
+                                    style={{ background: '#141A24', color: '#FFFFFF', border: '1px solid #1E293B', padding: '6px 10px', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12 }}
                                   >
                                     Cancelar
                                   </button>
@@ -2286,7 +2196,7 @@ export function DashboardView({
                               ) : (
                                 <div>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, textTransform: 'uppercase', color: cat.oculta ? '#7D7D7D' : '#FFFFFF' }}>
+                                    <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, textTransform: 'uppercase', color: cat.oculta ? '#94A3B8' : '#FFFFFF' }}>
                                       {cat.nome}
                                     </span>
                                     {editarCategoria && (
@@ -2295,10 +2205,10 @@ export function DashboardView({
                                           setCatEditingId(cat.id);
                                           setCatTempName(cat.nome);
                                         }}
-                                        style={{ background: 'none', border: 'none', color: '#7D7D7D', cursor: 'pointer', padding: 2, display: 'flex' }}
+                                        style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: 2, display: 'flex' }}
                                         title="Renomear Categoria"
-                                        onMouseEnter={e => e.currentTarget.style.color = '#FFC000'}
-                                        onMouseLeave={e => e.currentTarget.style.color = '#7D7D7D'}
+                                        onMouseEnter={e => e.currentTarget.style.color = '#0099FF'}
+                                        onMouseLeave={e => e.currentTarget.style.color = '#94A3B8'}
                                       >
                                         <Edit2 size={13} />
                                       </button>
@@ -2311,10 +2221,10 @@ export function DashboardView({
                                       fontWeight: 600,
                                       textTransform: 'uppercase',
                                       letterSpacing: '0.1em',
-                                      color: cat.tipo === 'popular' ? '#FFC000' : '#29ABE2',
-                                      background: cat.tipo === 'popular' ? 'rgba(255,192,0,0.08)' : 'rgba(41,171,226,0.08)',
+                                      color: cat.tipo === 'popular' ? '#0099FF' : '#38BDF8',
+                                      background: cat.tipo === 'popular' ? 'rgba(0,153,255,0.1)' : 'rgba(56,189,248,0.1)',
                                       padding: '2px 6px',
-                                      border: `1px solid ${cat.tipo === 'popular' ? 'rgba(255,192,0,0.2)' : 'rgba(41,171,226,0.2)'}`,
+                                      border: `1px solid ${cat.tipo === 'popular' ? 'rgba(0,153,255,0.3)' : 'rgba(56,189,248,0.3)'}`,
                                     }}>
                                       {cat.tipo === 'popular' ? 'Votação Popular' : 'Interna / Técnica'}
                                     </span>
@@ -2328,15 +2238,15 @@ export function DashboardView({
                               )}
                             </div>
 
-                            {/* Ações: Ocultar/Exibir e Remover */}
+                            {/* Ações */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
                               {toggleOcultarCategoria && (
                                 <button
                                   onClick={() => toggleOcultarCategoria(cat.id)}
                                   style={{
-                                    background: cat.oculta ? 'rgba(255,192,0,0.1)' : '#202020',
-                                    border: `1px solid ${cat.oculta ? 'rgba(255,192,0,0.3)' : '#313131'}`,
-                                    color: cat.oculta ? '#FFC000' : '#7D7D7D',
+                                    background: cat.oculta ? 'rgba(0,153,255,0.1)' : '#141A24',
+                                    border: `1px solid ${cat.oculta ? 'rgba(0,153,255,0.3)' : '#1E293B'}`,
+                                    color: cat.oculta ? '#0099FF' : '#94A3B8',
                                     padding: '6px 10px',
                                     cursor: 'pointer',
                                     display: 'flex',
@@ -2381,22 +2291,21 @@ export function DashboardView({
 
             {/* ══════ TAB: VALIDAÇÃO ══════ */}
             {activeTab === 'validacao' && (
-              <div style={{ background: '#181818', border: '1px solid #202020', padding: '24px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+              <div style={{ background: '#0D1117', border: '1px solid #1E293B', padding: '24px', display: 'flex', flexDirection: 'column', gap: 20 }}>
                 <div>
                   <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 20, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#FFFFFF', margin: '0 0 6px 0' }}>
                     Validação Interna da Frota
                   </h3>
-                  <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: '#7D7D7D', margin: 0 }}>
-                    Apurador automático para troféus de veículos antigos, maior rodagem e maiores equipes.
+                  <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: '#94A3B8', margin: 0 }}>
+                    Apurador automático para troféus de Carro mais antigo e Destaque Jeep (Altura).
                   </p>
                 </div>
 
                 {/* Sub-tabs */}
-                <div style={{ display: 'flex', borderBottom: '1px solid #202020', gap: 0 }}>
+                <div style={{ display: 'flex', borderBottom: '1px solid #1E293B', gap: 0 }}>
                   {[
-                    { id: 'ano' as const, label: 'Mais Antigos' },
-                    { id: 'rodagem' as const, label: 'Maior Rodagem' },
-                    { id: 'equipes' as const, label: 'Maior Equipe' },
+                    { id: 'ano' as const, label: 'Carro mais antigo' },
+                    { id: 'altura' as const, label: 'Destaque Jeep (Altura)' },
                   ].map((t) => (
                     <button
                       key={t.id}
@@ -2404,8 +2313,8 @@ export function DashboardView({
                       style={{
                         background: 'none',
                         border: 'none',
-                        borderBottom: valTab === t.id ? '2px solid #FFC000' : '2px solid transparent',
-                        color: valTab === t.id ? '#FFC000' : '#7D7D7D',
+                        borderBottom: valTab === t.id ? '2px solid #0099FF' : '2px solid transparent',
+                        color: valTab === t.id ? '#0099FF' : '#94A3B8',
                         padding: '10px 18px',
                         cursor: 'pointer',
                         fontFamily: "'Barlow Condensed', sans-serif",
@@ -2416,7 +2325,7 @@ export function DashboardView({
                         transition: 'color 0.12s, border-color 0.12s',
                       }}
                       onMouseEnter={e => { if (valTab !== t.id) e.currentTarget.style.color = '#FFFFFF'; }}
-                      onMouseLeave={e => { if (valTab !== t.id) e.currentTarget.style.color = '#7D7D7D'; }}
+                      onMouseLeave={e => { if (valTab !== t.id) e.currentTarget.style.color = '#94A3B8'; }}
                     >
                       {t.label}
                     </button>
@@ -2427,10 +2336,10 @@ export function DashboardView({
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: "'Barlow Condensed', sans-serif", fontSize: 14 }}>
                     <thead>
-                      <tr style={{ borderBottom: '1px solid #202020' }}>
+                      <tr style={{ borderBottom: '1px solid #1E293B' }}>
                         {['Posição', 'Inscrição', 'Modelo', 'Dono(a)',
-                          valTab === 'ano' ? 'Ano' : valTab === 'rodagem' ? 'KM Rodado' : 'Pessoas'].map((h) => (
-                            <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#7D7D7D', fontSize: 11 }}>
+                          valTab === 'ano' ? 'Ano' : 'Altura (mm)'].map((h) => (
+                            <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#94A3B8', fontSize: 11 }}>
                               {h}
                             </th>
                           ))}
@@ -2438,55 +2347,31 @@ export function DashboardView({
                     </thead>
                     <tbody>
                       {valTab === 'ano' && carrosValidadosAntigos.map((carro, index) => (
-                        <tr key={carro.id} style={{ borderBottom: '1px solid #181818', background: index === 0 ? 'rgba(255,192,0,0.06)' : 'transparent' }}>
-                          <td style={{ padding: '12px 16px', color: index === 0 ? '#FFC000' : '#7D7D7D', fontWeight: 700 }}>
+                        <tr key={carro.id} style={{ borderBottom: '1px solid #141A24', background: index === 0 ? 'rgba(0,153,255,0.08)' : 'transparent' }}>
+                          <td style={{ padding: '12px 16px', color: index === 0 ? '#0099FF' : '#94A3B8', fontWeight: 700 }}>
                             {index === 0 ? '🏆 1º' : `${index + 1}º`}
                           </td>
-                          <td style={{ padding: '12px 16px', color: '#FFC000', fontWeight: 700 }}>{carro.numero_inscricao}</td>
+                          <td style={{ padding: '12px 16px', color: '#0099FF', fontWeight: 700 }}>{carro.numero_inscricao}</td>
                           <td style={{ padding: '12px 16px', color: '#FFFFFF' }}>{carro.modelo}</td>
-                          <td style={{ padding: '12px 16px', color: '#969696' }}>{carro.nome_dono}</td>
-                          <td style={{ padding: '12px 16px', color: index === 0 ? '#FFC000' : '#FFFFFF', fontWeight: 700 }}>{carro.ano}</td>
+                          <td style={{ padding: '12px 16px', color: '#94A3B8' }}>{carro.nome_dono}</td>
+                          <td style={{ padding: '12px 16px', color: index === 0 ? '#0099FF' : '#FFFFFF', fontWeight: 700 }}>{carro.ano}</td>
                         </tr>
                       ))}
 
-                      {valTab === 'rodagem' && [...carros].sort((a, b) => (b.km_rodado || 0) - (a.km_rodado || 0)).map((carro, index) => {
-                        const isFirst = index === 0 && (carro.km_rodado || 0) > 0;
+                      {valTab === 'altura' && [...carros].sort((a, b) => (Number(b.altura_mm) || 0) - (Number(a.altura_mm) || 0)).map((carro, index) => {
+                        const isFirst = index === 0 && (carro.altura_mm || 0) > 0;
                         return (
-                          <tr key={carro.id} style={{ borderBottom: '1px solid #181818', background: isFirst ? 'rgba(255,192,0,0.06)' : 'transparent' }}>
-                            <td style={{ padding: '12px 16px', color: isFirst ? '#FFC000' : '#7D7D7D', fontWeight: 700 }}>
+                          <tr key={carro.id} style={{ borderBottom: '1px solid #141A24', background: isFirst ? 'rgba(0,153,255,0.08)' : 'transparent' }}>
+                            <td style={{ padding: '12px 16px', color: isFirst ? '#0099FF' : '#94A3B8', fontWeight: 700 }}>
                               {isFirst ? '🏆 1º' : `${index + 1}º`}
                             </td>
-                            <td style={{ padding: '12px 16px', color: '#FFC000', fontWeight: 700 }}>{carro.numero_inscricao}</td>
+                            <td style={{ padding: '12px 16px', color: '#0099FF', fontWeight: 700 }}>{carro.numero_inscricao}</td>
                             <td style={{ padding: '12px 16px', color: '#FFFFFF' }}>{carro.modelo}</td>
-                            <td style={{ padding: '12px 16px', color: '#969696' }}>{carro.nome_dono}</td>
-                            <td style={{ padding: '12px 16px', color: isFirst ? '#FFC000' : '#FFFFFF', fontWeight: 700 }}>{carro.km_rodado || 0} km</td>
+                            <td style={{ padding: '12px 16px', color: '#94A3B8' }}>{carro.nome_dono}</td>
+                            <td style={{ padding: '12px 16px', color: isFirst ? '#0099FF' : '#FFFFFF', fontWeight: 700 }}>{carro.altura_mm || 0} mm</td>
                           </tr>
                         );
                       })}
-
-                      {valTab === 'equipes' && (() => {
-                        // Agrupa por equipe e SOMA o número de pessoas (não conta carros)
-                        const teamPeople: Record<string, number> = {};
-                        const teamCarros: Record<string, number> = {};
-                        carros.forEach((c) => {
-                          if (c.equipe?.trim()) {
-                            const t = c.equipe.trim();
-                            teamPeople[t] = (teamPeople[t] || 0) + (c.pessoas_equipe || 0);
-                            teamCarros[t] = (teamCarros[t] || 0) + 1;
-                          }
-                        });
-                        return Object.entries(teamPeople).sort(([, a], [, b]) => b - a).map(([teamName, pessoasTotal], index) => (
-                          <tr key={teamName} style={{ borderBottom: '1px solid #181818', background: index === 0 ? 'rgba(255,192,0,0.06)' : 'transparent' }}>
-                            <td style={{ padding: '12px 16px', color: index === 0 ? '#FFC000' : '#7D7D7D', fontWeight: 700 }}>
-                              {index === 0 ? '🏆 1ª' : `${index + 1}ª`}
-                            </td>
-                            <td style={{ padding: '12px 16px', color: '#FFC000', fontWeight: 700 }}>—</td>
-                            <td style={{ padding: '12px 16px', color: '#FFFFFF' }}>{teamName}</td>
-                            <td style={{ padding: '12px 16px', color: '#969696' }}>{teamCarros[teamName]} carro(s)</td>
-                            <td style={{ padding: '12px 16px', color: index === 0 ? '#FFC000' : '#FFFFFF', fontWeight: 700 }}>{pessoasTotal} pessoas</td>
-                          </tr>
-                        ));
-                      })()}
                     </tbody>
                   </table>
                 </div>
@@ -2507,29 +2392,29 @@ export function DashboardView({
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.75)' }} onClick={closeEditModal} />
 
           {/* Painel lateral */}
-          <div style={{ position: 'relative', zIndex: 1, background: '#0a0a0a', borderLeft: '1px solid #202020', width: '100%', maxWidth: 520, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+          <div style={{ position: 'relative', zIndex: 1, background: '#0D1117', borderLeft: '1px solid #1E293B', width: '100%', maxWidth: 520, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
             {/* Header */}
-            <div style={{ background: '#181818', borderBottom: '2px solid #FFC000', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 10 }}>
+            <div style={{ background: '#0D1117', borderBottom: '2px solid #0099FF', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 10 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <Edit2 size={16} color="#FFC000" />
+                <Edit2 size={16} color="#0099FF" />
                 <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 16, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#FFFFFF' }}>
                   Editar Veículo
                 </span>
-                <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, color: '#FFC000', background: 'rgba(255,192,0,0.1)', border: '1px solid rgba(255,192,0,0.3)', padding: '2px 10px' }}>
+                <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, color: '#0099FF', background: 'rgba(0,153,255,0.1)', border: '1px solid rgba(0,153,255,0.3)', padding: '2px 10px' }}>
                   {editingCarro.numero_inscricao}
                 </span>
               </div>
-              <button onClick={closeEditModal} style={{ background: '#202020', border: '1px solid #313131', color: '#7D7D7D', padding: 6, cursor: 'pointer', display: 'flex' }}
-                onMouseEnter={e => e.currentTarget.style.color = '#FFFFFF'} onMouseLeave={e => e.currentTarget.style.color = '#7D7D7D'}>
+              <button onClick={closeEditModal} style={{ background: '#141A24', border: '1px solid #1E293B', color: '#94A3B8', padding: 6, cursor: 'pointer', display: 'flex' }}
+                onMouseEnter={e => e.currentTarget.style.color = '#FFFFFF'} onMouseLeave={e => e.currentTarget.style.color = '#94A3B8'}>
                 <X size={18} />
               </button>
             </div>
 
-            {/* Foto preview no topo */}
+            {/* Foto preview */}
             {editUrlFoto && (
               <div style={{ position: 'relative', width: '100%', height: 160, overflow: 'hidden', background: '#000', flexShrink: 0 }}>
                 <img src={editUrlFoto} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', opacity: 0.85 }} />
-                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(10,10,10,0.8) 0%, transparent 60%)' }} />
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(13,17,23,0.8) 0%, transparent 60%)' }} />
               </div>
             )}
 
@@ -2540,7 +2425,7 @@ export function DashboardView({
               <div>
                 <label style={S.label}>Inscrição</label>
                 <input type="text" value={editNumeroInscricao} onChange={e => setEditNumeroInscricao(e.target.value)}
-                  style={S.input} onFocus={e => { e.target.style.borderColor = '#FFC000'; }} onBlur={e => { e.target.style.borderColor = '#313131'; }} />
+                  style={S.input} onFocus={e => { e.target.style.borderColor = '#0099FF'; }} onBlur={e => { e.target.style.borderColor = '#1E293B'; }} />
               </div>
 
               {/* Modelo + Ano */}
@@ -2548,12 +2433,12 @@ export function DashboardView({
                 <div>
                   <label style={S.label}>Modelo</label>
                   <input type="text" value={editModelo} onChange={e => setEditModelo(e.target.value)}
-                    style={{ ...S.input, height: 36 }} onFocus={e => { e.target.style.borderColor = '#FFC000'; }} onBlur={e => { e.target.style.borderColor = '#313131'; }} />
+                    style={{ ...S.input, height: 36 }} onFocus={e => { e.target.style.borderColor = '#0099FF'; }} onBlur={e => { e.target.style.borderColor = '#1E293B'; }} />
                 </div>
                 <div>
                   <label style={S.label}>Ano</label>
                   <input type="text" value={editAno} onChange={e => setEditAno(e.target.value)}
-                    style={{ ...S.input, height: 36 }} onFocus={e => { e.target.style.borderColor = '#FFC000'; }} onBlur={e => { e.target.style.borderColor = '#313131'; }} />
+                    style={{ ...S.input, height: 36 }} onFocus={e => { e.target.style.borderColor = '#0099FF'; }} onBlur={e => { e.target.style.borderColor = '#1E293B'; }} />
                 </div>
               </div>
 
@@ -2561,7 +2446,7 @@ export function DashboardView({
               <div>
                 <label style={S.label}>Nome do Dono(a)</label>
                 <input type="text" value={editNomeDono} onChange={e => setEditNomeDono(e.target.value)}
-                  style={S.input} onFocus={e => { e.target.style.borderColor = '#FFC000'; }} onBlur={e => { e.target.style.borderColor = '#313131'; }} />
+                  style={S.input} onFocus={e => { e.target.style.borderColor = '#0099FF'; }} onBlur={e => { e.target.style.borderColor = '#1E293B'; }} />
               </div>
               <div>
                 <label style={S.label}>Gênero do Dono(a)</label>
@@ -2569,7 +2454,7 @@ export function DashboardView({
                   {[{ label: 'Masculino', value: 'M' }, { label: 'Feminino', value: 'F' }].map(opt => (
                     <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#FFF', fontSize: 14, cursor: 'pointer' }}>
                       <input type="radio" name="editGenero" value={opt.value} checked={editGenero === opt.value}
-                        onChange={e => setEditGenero(e.target.value as 'M' | 'F')} style={{ accentColor: '#FFC000', width: 16, height: 16 }} />
+                        onChange={e => setEditGenero(e.target.value as 'M' | 'F')} style={{ accentColor: '#0099FF', width: 16, height: 16 }} />
                       {opt.label}
                     </label>
                   ))}
@@ -2581,17 +2466,17 @@ export function DashboardView({
                 <div>
                   <label style={S.label}>Telefone</label>
                   <input type="text" value={editTelefoneDono} onChange={e => setEditTelefoneDono(e.target.value)} placeholder="(11) 99999-9999"
-                    style={{ ...S.input, height: 36 }} onFocus={e => { e.target.style.borderColor = '#FFC000'; }} onBlur={e => { e.target.style.borderColor = '#313131'; }} />
+                    style={{ ...S.input, height: 36 }} onFocus={e => { e.target.style.borderColor = '#0099FF'; }} onBlur={e => { e.target.style.borderColor = '#1E293B'; }} />
                 </div>
                 <div>
                   <label style={S.label}>Altura mm</label>
                   <input type="text" value={editAlturaMm} onChange={e => setEditAlturaMm(e.target.value)} placeholder="Ex: 50"
-                    style={{ ...S.input, height: 36 }} onFocus={e => { e.target.style.borderColor = '#FFC000'; }} onBlur={e => { e.target.style.borderColor = '#313131'; }} />
+                    style={{ ...S.input, height: 36 }} onFocus={e => { e.target.style.borderColor = '#0099FF'; }} onBlur={e => { e.target.style.borderColor = '#1E293B'; }} />
                 </div>
                 <div>
                   <label style={S.label}>Km Rodados</label>
                   <input type="text" value={editKmRodado} onChange={e => setEditKmRodado(e.target.value)} placeholder="Ex: 150"
-                    style={{ ...S.input, height: 36 }} onFocus={e => { e.target.style.borderColor = '#FFC000'; }} onBlur={e => { e.target.style.borderColor = '#313131'; }} />
+                    style={{ ...S.input, height: 36 }} onFocus={e => { e.target.style.borderColor = '#0099FF'; }} onBlur={e => { e.target.style.borderColor = '#1E293B'; }} />
                 </div>
               </div>
 
@@ -2601,26 +2486,27 @@ export function DashboardView({
                   <label style={S.label}>Equipe</label>
                   {cadastrarEquipe && (
                     <button type="button" onClick={() => setShowNovaEquipeEdit(!showNovaEquipeEdit)}
-                      style={{ background: 'transparent', border: 'none', color: '#FFC000', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                      style={{ background: 'transparent', border: 'none', color: '#0099FF', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                       <UserPlus size={13} />{showNovaEquipeEdit ? 'Cancelar' : 'Nova Equipe'}
                     </button>
                   )}
                 </div>
                 {showNovaEquipeEdit && (
-                  <div style={{ background: '#000000', border: '1px solid rgba(255,192,0,0.25)', padding: '10px 12px', marginBottom: 8, display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <div style={{ background: '#000000', border: '1px solid rgba(0,153,255,0.3)', padding: '10px 12px', marginBottom: 8, display: 'flex', gap: 6, alignItems: 'center' }}>
                     <input type="text" placeholder="Nome da equipe..." value={novaEquipeNomeEdit} onChange={e => setNovaEquipeNomeEdit(e.target.value)}
                       style={{ ...S.input, height: 34, fontSize: 13, flex: 1 }}
-                      onFocus={e => { e.target.style.borderColor = '#FFC000'; }} onBlur={e => { e.target.style.borderColor = '#313131'; }}
+                      onFocus={e => { e.target.style.borderColor = '#0099FF'; }} onBlur={e => { e.target.style.borderColor = '#1E293B'; }}
                       onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleCadastrarEquipeEdit(); } }} />
                     <button type="button" onClick={handleCadastrarEquipeEdit} disabled={submittingEquipeEdit || !novaEquipeNomeEdit.trim()}
-                      style={{ background: '#FFC000', color: '#000', border: 'none', padding: '0 12px', height: 34, cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 12, textTransform: 'uppercase', flexShrink: 0, opacity: submittingEquipeEdit || !novaEquipeNomeEdit.trim() ? 0.5 : 1 }}>
+                      className="btn-bmw"
+                      style={{ padding: '0 12px', height: 34, fontSize: 12, flexShrink: 0, opacity: submittingEquipeEdit || !novaEquipeNomeEdit.trim() ? 0.5 : 1 }}>
                       {submittingEquipeEdit ? '...' : 'Salvar'}
                     </button>
                   </div>
                 )}
                 <select value={editEquipeId} onChange={e => setEditEquipeId(e.target.value)}
                   style={{ ...S.input, colorScheme: 'dark' }}
-                  onFocus={e => { e.target.style.borderColor = '#FFC000'; }} onBlur={e => { e.target.style.borderColor = '#313131'; }}>
+                  onFocus={e => { e.target.style.borderColor = '#0099FF'; }} onBlur={e => { e.target.style.borderColor = '#1E293B'; }}>
                   <option value="">— Sem equipe —</option>
                   {equipes.map(eq => <option key={eq.id} value={eq.id}>{eq.nome}</option>)}
                 </select>
@@ -2631,7 +2517,7 @@ export function DashboardView({
                 <div>
                   <label style={S.label}>Pessoas uniformizadas na equipe (neste carro)</label>
                   <input type="number" min="0" placeholder="Ex: 5" value={editPessoasEquipe} onChange={e => setEditPessoasEquipe(e.target.value)}
-                    style={{ ...S.input, height: 36 }} onFocus={e => { e.target.style.borderColor = '#FFC000'; }} onBlur={e => { e.target.style.borderColor = '#313131'; }} />
+                    style={{ ...S.input, height: 36 }} onFocus={e => { e.target.style.borderColor = '#0099FF'; }} onBlur={e => { e.target.style.borderColor = '#1E293B'; }} />
                 </div>
               )}
 
@@ -2640,13 +2526,13 @@ export function DashboardView({
                 <label style={S.label}>Foto do Veículo</label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 6 }}>
                   <button type="button" onClick={() => document.getElementById('camera-edit-input')?.click()}
-                    style={{ ...S.input, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer', background: '#202020', borderColor: '#313131' }}>
-                    <Camera size={15} color="#FFC000" />
+                    style={{ ...S.input, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer', background: '#141A24', borderColor: '#1E293B' }}>
+                    <Camera size={15} color="#0099FF" />
                     <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tirar Foto</span>
                   </button>
                   <button type="button" onClick={() => document.getElementById('gallery-edit-input')?.click()}
-                    style={{ ...S.input, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer', background: '#202020', borderColor: '#313131' }}>
-                    <ImageIcon size={15} color="#FFC000" />
+                    style={{ ...S.input, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer', background: '#141A24', borderColor: '#1E293B' }}>
+                    <ImageIcon size={15} color="#0099FF" />
                     <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Galeria</span>
                   </button>
                 </div>
@@ -2654,7 +2540,7 @@ export function DashboardView({
                 <input id="gallery-edit-input" type="file" accept="image/*" style={{ display: 'none' }} onChange={handleCameraEditCapture} />
                 <input type="text" placeholder="Ou cole uma URL..." value={editUrlFoto.startsWith('data:image') ? '' : editUrlFoto}
                   onChange={e => setEditUrlFoto(e.target.value)} style={{ ...S.input, height: 36 }}
-                  onFocus={e => { e.target.style.borderColor = '#FFC000'; }} onBlur={e => { e.target.style.borderColor = '#313131'; }} />
+                  onFocus={e => { e.target.style.borderColor = '#0099FF'; }} onBlur={e => { e.target.style.borderColor = '#1E293B'; }} />
               </div>
 
               {/* Categorias */}
@@ -2662,15 +2548,15 @@ export function DashboardView({
                 <label style={{ ...S.label, marginBottom: 10 }}>Categorias que este veículo concorre</label>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {categorias.map(cat => (
-                    <label key={cat.id} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '8px 10px', background: editCategoriasIds.includes(cat.id) ? 'rgba(255,192,0,0.07)' : '#000000', border: `1px solid ${editCategoriasIds.includes(cat.id) ? 'rgba(255,192,0,0.4)' : '#202020'}`, transition: 'background 0.12s, border-color 0.12s' }}>
+                    <label key={cat.id} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '8px 10px', background: editCategoriasIds.includes(cat.id) ? 'rgba(0,153,255,0.08)' : '#000000', border: `1px solid ${editCategoriasIds.includes(cat.id) ? 'rgba(0,153,255,0.4)' : '#1E293B'}`, transition: 'background 0.12s, border-color 0.12s' }}>
                       <input type="checkbox" checked={editCategoriasIds.includes(cat.id)}
                         onChange={e => {
                           if (e.target.checked) setEditCategoriasIds(prev => [...prev, cat.id]);
                           else setEditCategoriasIds(prev => prev.filter(id => id !== cat.id));
                         }}
-                        style={{ accentColor: '#FFC000', width: 15, height: 15, flexShrink: 0 }} />
-                      <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, fontWeight: 600, color: editCategoriasIds.includes(cat.id) ? '#FFC000' : '#FFFFFF', flex: 1 }}>{cat.nome}</span>
-                      <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: cat.tipo === 'popular' ? '#FFC000' : '#29ABE2', background: cat.tipo === 'popular' ? 'rgba(255,192,0,0.08)' : 'rgba(41,171,226,0.08)', padding: '2px 6px', border: `1px solid ${cat.tipo === 'popular' ? 'rgba(255,192,0,0.2)' : 'rgba(41,171,226,0.2)'}`, flexShrink: 0 }}>
+                        style={{ accentColor: '#0099FF', width: 15, height: 15, flexShrink: 0 }} />
+                      <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, fontWeight: 600, color: editCategoriasIds.includes(cat.id) ? '#0099FF' : '#FFFFFF', flex: 1 }}>{cat.nome}</span>
+                      <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: cat.tipo === 'popular' ? '#0099FF' : '#38BDF8', background: cat.tipo === 'popular' ? 'rgba(0,153,255,0.1)' : 'rgba(56,189,248,0.1)', padding: '2px 6px', border: `1px solid ${cat.tipo === 'popular' ? 'rgba(0,153,255,0.3)' : 'rgba(56,189,248,0.3)'}`, flexShrink: 0 }}>
                         {cat.tipo === 'popular' ? 'Popular' : 'Interna'}
                       </span>
                     </label>
@@ -2687,11 +2573,11 @@ export function DashboardView({
 
               {/* Botões */}
               <div style={{ display: 'flex', gap: 8, paddingTop: 4 }}>
-                <button type="submit" disabled={submittingEdit} className="btn-gold" style={{ flex: 1, height: 44, fontSize: 14 }}>
+                <button type="submit" disabled={submittingEdit} className="btn-bmw" style={{ flex: 1, height: 44, fontSize: 14 }}>
                   {submittingEdit ? 'Salvando...' : 'Salvar Alterações'}
                 </button>
                 <button type="button" onClick={closeEditModal}
-                  style={{ background: '#202020', border: '1px solid #313131', color: '#FFFFFF', padding: '0 16px', height: 44, cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 13, textTransform: 'uppercase' }}>
+                  style={{ background: '#141A24', border: '1px solid #1E293B', color: '#FFFFFF', padding: '0 16px', height: 44, cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 13, textTransform: 'uppercase' }}>
                   Cancelar
                 </button>
               </div>
