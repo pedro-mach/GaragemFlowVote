@@ -232,30 +232,42 @@ export function DashboardView({
 
   // Helper para obter dados do vencedor de cada categoria ou destaque técnico
   const getWinnerData = (catId: string) => {
-    if (catId === 'tech_antigo') {
+    const cat = categorias.find(c => c.id === catId);
+    const catNameLower = (cat?.nome || catId).toLowerCase();
+
+    if (catId === 'tech_antigo' || catNameLower.includes('antigo') || (cat?.tipo === 'interna' && catNameLower.includes('ano'))) {
       const winner = carros.filter(c => c.ano && Number(c.ano) > 1900).sort((a, b) => Number(a.ano) - Number(b.ano))[0];
       return {
-        tituloCategoria: 'CARRO MAIS ANTIGO',
+        tituloCategoria: cat ? cat.nome.toUpperCase() : 'CARRO MAIS ANTIGO',
         tipoBadge: 'DESTAQUE TÉCNICO',
         carro: winner || null,
-        metricaLabel: winner ? `Fabricado em ${winner.ano}` : 'Sem dados',
+        metricaLabel: winner ? `Fabricado em ${winner.ano}` : 'Sem dados registrados',
         totalVotos: undefined,
       };
     }
-    if (catId === 'tech_jeep') {
+    if (catId === 'tech_jeep' || catNameLower.includes('jeep') || catNameLower.includes('altura') || (cat?.tipo === 'interna' && catNameLower.includes('altura'))) {
       const winner = carros
         .filter(c => c && c.altura_mm !== undefined && c.altura_mm !== null && Number(c.altura_mm) > 0)
         .sort((a, b) => Number(b.altura_mm) - Number(a.altura_mm))[0];
       return {
-        tituloCategoria: 'DESTAQUE JEEP (ALTURA)',
+        tituloCategoria: cat ? cat.nome.toUpperCase() : 'DESTAQUE JEEP (ALTURA)',
         tipoBadge: 'DESTAQUE TÉCNICO',
         carro: winner || null,
-        metricaLabel: winner ? `📏 ${winner.altura_mm} mm ALTURA` : 'Sem dados',
+        metricaLabel: winner ? `📏 ${winner.altura_mm} mm ALTURA` : 'Sem dados registrados',
         totalVotos: undefined,
       };
     }
 
-    const cat = categorias.find(c => c.id === catId);
+    if (cat && cat.tipo === 'interna') {
+      return {
+        tituloCategoria: cat.nome.toUpperCase(),
+        tipoBadge: 'DESTAQUE TÉCNICO',
+        carro: null,
+        metricaLabel: 'Avaliação Interna',
+        totalVotos: undefined,
+      };
+    }
+
     const votosCat = resultados[catId] || [];
     const topItem = votosCat[0];
     const winnerCar = topItem ? carros.find(c => c.id === topItem.carroId) : null;
@@ -263,7 +275,7 @@ export function DashboardView({
     const percent = totalVotosCat > 0 && topItem ? ((topItem.votosCount / totalVotosCat) * 100).toFixed(0) : '0';
 
     return {
-      tituloCategoria: cat ? cat.nome.toUpperCase() : 'CATEGORIA POPULAR',
+      tituloCategoria: cat ? cat.nome.toUpperCase() : (catId.replace(/_/g, ' ').toUpperCase()),
       tipoBadge: 'VOTAÇÃO POPULAR',
       carro: winnerCar || null,
       metricaLabel: topItem ? `${topItem.votosCount} VOTOS (${percent}%)` : 'Nenhum voto registrado',
@@ -292,42 +304,49 @@ export function DashboardView({
     return trimmed;
   };
 
-  // Helper para obter a lista com TODOS os vencedores
+  // Helper para obter a lista com TODOS os vencedores (populares e técnicos)
   const getAllCategoryWinners = () => {
     const list: { id: string; tituloCategoria: string; carro: Carro | null; metricaLabel: string; icone?: string }[] = [];
 
-    // Categorias populares
-    categorias.filter(c => c.tipo === 'popular' && !c.oculta).forEach((cat) => {
-      const data = getWinnerData(cat.id);
-      list.push({
-        id: cat.id,
-        tituloCategoria: data.tituloCategoria,
-        carro: data.carro,
-        metricaLabel: data.metricaLabel,
-        icone: '🥇',
-      });
-    });
+    // Se temos categorias cadastradas, percorremos todas (técnicas e populares)
+    if (categorias.length > 0) {
+      categorias.filter(c => !c.oculta).forEach((cat) => {
+        const data = getWinnerData(cat.id);
+        const nameLower = cat.nome.toLowerCase();
+        let icone = '🥇';
+        if (nameLower.includes('antigo')) icone = '👴';
+        else if (nameLower.includes('jeep') || nameLower.includes('altura')) icone = '🚙';
+        else if (nameLower.includes('turbo')) icone = '🔥';
+        else if (nameLower.includes('feminino')) icone = '👩';
+        else if (nameLower.includes('masculino')) icone = '👨';
+        else if (cat.tipo === 'interna') icone = '🏆';
 
-    // Destaques técnicos
-    const antigo = getWinnerData('tech_antigo');
-    if (antigo.carro) {
-      list.push({
-        id: 'tech_antigo',
-        tituloCategoria: antigo.tituloCategoria,
-        carro: antigo.carro,
-        metricaLabel: antigo.metricaLabel,
-        icone: '👴',
+        list.push({
+          id: cat.id,
+          tituloCategoria: data.tituloCategoria,
+          carro: data.carro,
+          metricaLabel: data.metricaLabel,
+          icone,
+        });
       });
-    }
-
-    const jeep = getWinnerData('tech_jeep');
-    if (jeep.carro) {
-      list.push({
-        id: 'tech_jeep',
-        tituloCategoria: jeep.tituloCategoria,
-        carro: jeep.carro,
-        metricaLabel: jeep.metricaLabel,
-        icone: '🚙',
+    } else {
+      // Fallback padrão com as 5 categorias oficiais
+      const fallbackCats = [
+        { id: 'tech_antigo', titulo: 'CARRO MAIS ANTIGO', icone: '👴' },
+        { id: 'destaque_masc', titulo: 'DESTAQUE MASCULINO', icone: '👨' },
+        { id: 'destaque_fem', titulo: 'DESTAQUE FEMININO', icone: '👩' },
+        { id: 'destaque_turbo', titulo: 'DESTAQUE TURBO', icone: '🔥' },
+        { id: 'tech_jeep', titulo: 'DESTAQUE JEEP (ALTURA)', icone: '🚙' },
+      ];
+      fallbackCats.forEach((c) => {
+        const data = getWinnerData(c.id);
+        list.push({
+          id: c.id,
+          tituloCategoria: data.tituloCategoria,
+          carro: data.carro,
+          metricaLabel: data.metricaLabel,
+          icone: c.icone,
+        });
       });
     }
 
@@ -1254,15 +1273,26 @@ export function DashboardView({
                         onChange={(e) => setSelectedInstaCatId(e.target.value)}
                         style={{ ...S.input, cursor: 'pointer' }}
                       >
-                        <option value="all">🏆 QUADRO GERAL (TODOS OS CAMPEÕES)</option>
+                        <option value="all">🏆 QUADRO GERAL (TODAS AS CATEGORIAS)</option>
                         <optgroup label="Votação Popular">
                           {categorias.filter(c => c.tipo === 'popular' && !c.oculta).map(cat => (
-                            <option key={cat.id} value={cat.id}>🥇 {cat.nome.toUpperCase()}</option>
+                            <option key={cat.id} value={cat.id}>
+                              {cat.nome.toLowerCase().includes('turbo') ? '🔥' : cat.nome.toLowerCase().includes('feminino') ? '👩' : cat.nome.toLowerCase().includes('masculino') ? '👨' : '🥇'} {cat.nome.toUpperCase()}
+                            </option>
                           ))}
                         </optgroup>
-                        <optgroup label="Destaques Técnicos">
-                          <option value="tech_antigo">👴 CARRO MAIS ANTIGO</option>
-                          <option value="tech_jeep">🚙 DESTAQUE JEEP (ALTURA)</option>
+                        <optgroup label="Destaques Técnicos / Interna">
+                          {categorias.filter(c => c.tipo === 'interna' && !c.oculta).map(cat => (
+                            <option key={cat.id} value={cat.id}>
+                              {cat.nome.toLowerCase().includes('antigo') ? '👴' : '🚙'} {cat.nome.toUpperCase()}
+                            </option>
+                          ))}
+                          {!categorias.some(c => c.tipo === 'interna' && c.nome.toLowerCase().includes('antigo')) && (
+                            <option value="tech_antigo">👴 CARRO MAIS ANTIGO</option>
+                          )}
+                          {!categorias.some(c => c.tipo === 'interna' && (c.nome.toLowerCase().includes('jeep') || c.nome.toLowerCase().includes('altura'))) && (
+                            <option value="tech_jeep">🚙 DESTAQUE JEEP (ALTURA)</option>
+                          )}
                         </optgroup>
                       </select>
                     </div>
