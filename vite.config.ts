@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
+  envPrefix: ['VITE_', 'SUPABASE_', 'ORGANIZER_', 'MAINTENANCE_'],
   plugins: [react(), tailwindcss()],
   build: {
     chunkSizeWarningLimit: 1600,

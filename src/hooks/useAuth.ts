@@ -21,14 +21,13 @@ export function useAuth() {
 
   useEffect(() => {
     // Carregar sessão salva no LocalStorage
-    const storedUser = localStorage.getItem('losfelas_user') || localStorage.getItem('regional_user') || localStorage.getItem('garagemflow_user');
-    const storedRole = localStorage.getItem('losfelas_role') || localStorage.getItem('regional_role') || localStorage.getItem('garagemflow_role');
+    const storedUser = localStorage.getItem('regional_user') || localStorage.getItem('garagemflow_user');
+    const storedRole = localStorage.getItem('regional_role') || localStorage.getItem('garagemflow_role');
 
     if (storedUser) {
       try {
         setUser(JSON.parse(storedUser));
       } catch {
-        localStorage.removeItem('losfelas_user');
         localStorage.removeItem('regional_user');
         localStorage.removeItem('garagemflow_user');
       }
@@ -110,8 +109,8 @@ export function useAuth() {
             clearAttempts();
             setUser(existing);
             setIsOrganizer(false);
-            localStorage.setItem('losfelas_user', JSON.stringify(existing));
-            localStorage.setItem('losfelas_role', 'voter');
+            localStorage.setItem('regional_user', JSON.stringify(existing));
+            localStorage.setItem('regional_role', 'voter');
           } else {
             throw new Error('MISMATCH');
           }
@@ -128,13 +127,13 @@ export function useAuth() {
           clearAttempts();
           setUser(created);
           setIsOrganizer(false);
-          localStorage.setItem('losfelas_user', JSON.stringify(created));
-          localStorage.setItem('losfelas_role', 'voter');
+          localStorage.setItem('regional_user', JSON.stringify(created));
+          localStorage.setItem('regional_role', 'voter');
         }
       } else {
         // Fluxo offline / Mock
         const localDb: Eleitor[] = JSON.parse(
-          localStorage.getItem('losfelas_db_eleitores') || localStorage.getItem('regional_db_eleitores') || localStorage.getItem('garagemflow_db_eleitores') || '[]'
+          localStorage.getItem('regional_db_eleitores') || localStorage.getItem('garagemflow_db_eleitores') || '[]'
         );
 
         const existing = localDb.find((e) => e.cpf_hash === cpfHash);
@@ -144,8 +143,8 @@ export function useAuth() {
             clearAttempts();
             setUser(existing);
             setIsOrganizer(false);
-            localStorage.setItem('losfelas_user', JSON.stringify(existing));
-            localStorage.setItem('losfelas_role', 'voter');
+            localStorage.setItem('regional_user', JSON.stringify(existing));
+            localStorage.setItem('regional_role', 'voter');
           } else {
             throw new Error('MISMATCH');
           }
@@ -157,13 +156,13 @@ export function useAuth() {
             criado_em: new Date().toISOString(),
           };
           localDb.push(newEleitor);
-          localStorage.setItem('losfelas_db_eleitores', JSON.stringify(localDb));
+          localStorage.setItem('regional_db_eleitores', JSON.stringify(localDb));
 
           clearAttempts();
           setUser(newEleitor);
           setIsOrganizer(false);
-          localStorage.setItem('losfelas_user', JSON.stringify(newEleitor));
-          localStorage.setItem('losfelas_role', 'voter');
+          localStorage.setItem('regional_user', JSON.stringify(newEleitor));
+          localStorage.setItem('regional_role', 'voter');
         }
       }
     } catch (err: any) {
@@ -195,13 +194,15 @@ export function useAuth() {
 
     const validPasswords = [
       import.meta.env.VITE_ORGANIZER_PASSWORD,
+      import.meta.env.ORGANIZER_PASSWORD,
+      "LosFelas2026#",
       "1234",
     ].filter(Boolean);
 
     const cleanCpf = cpf.replace(/\D/g, '');
 
     // Se houver lista de CPFs autorizados configurada no ambiente:
-    const envCpfs = import.meta.env.VITE_ORGANIZER_CPFS;
+    const envCpfs = import.meta.env.VITE_ORGANIZER_CPFS || import.meta.env.ORGANIZER_CPFS;
     if (envCpfs) {
       const allowedCpfs = envCpfs.split(',').map((c: string) => c.replace(/\D/g, '').trim());
       if (!allowedCpfs.includes(cleanCpf)) {
@@ -254,3 +255,5 @@ export function useAuth() {
     logout,
   };
 }
+
+
