@@ -424,8 +424,7 @@ export function DashboardView({
       reader.onload = (event) => {
         const img = new Image();
         img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const maxDim = 900;
+          const maxDim = 800;
           let width = img.width;
           let height = img.height;
           if (width > height) {
@@ -437,8 +436,8 @@ export function DashboardView({
           const ctx = canvas.getContext('2d');
           if (ctx) {
             ctx.drawImage(img, 0, 0, width, height);
-            const webpUrl = canvas.toDataURL('image/webp', 0.78);
-            const finalUrl = webpUrl.startsWith('data:image/webp') ? webpUrl : canvas.toDataURL('image/jpeg', 0.78);
+            const webpUrl = canvas.toDataURL('image/webp', 0.70);
+            const finalUrl = webpUrl.startsWith('data:image/webp') ? webpUrl : canvas.toDataURL('image/jpeg', 0.70);
             setUrlFoto(finalUrl);
           }
         };
@@ -596,8 +595,7 @@ export function DashboardView({
       reader.onload = (event) => {
         const img = new Image();
         img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const maxDim = 900;
+          const maxDim = 800;
           let width = img.width;
           let height = img.height;
           if (width > height) {
@@ -609,8 +607,8 @@ export function DashboardView({
           const ctx = canvas.getContext('2d');
           if (ctx) {
             ctx.drawImage(img, 0, 0, width, height);
-            const webpUrl = canvas.toDataURL('image/webp', 0.78);
-            const finalUrl = webpUrl.startsWith('data:image/webp') ? webpUrl : canvas.toDataURL('image/jpeg', 0.78);
+            const webpUrl = canvas.toDataURL('image/webp', 0.70);
+            const finalUrl = webpUrl.startsWith('data:image/webp') ? webpUrl : canvas.toDataURL('image/jpeg', 0.70);
             setEditUrlFoto(finalUrl);
           }
         };
