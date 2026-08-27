@@ -111,6 +111,7 @@ export function useCarros() {
 
           const formattedCarros = (carsData || []).map((c) => ({
             ...c,
+            url_foto: getCachedFoto(c.id) || undefined,
             categorias_ids: categoriasMap[c.id] || [],
           }));
 
@@ -586,13 +587,46 @@ export function useCarros() {
     }
   };
 
+// Cache em memória e sessionStorage para eliminar Egress redundante do Supabase
+const photoMemoryCache = new Map<string, string>();
+
+const getCachedFoto = (id: string): string | null => {
+  if (photoMemoryCache.has(id)) return photoMemoryCache.get(id)!;
+  try {
+    const val = sessionStorage.getItem(`losfelas_foto_${id}`);
+    if (val) {
+      photoMemoryCache.set(id, val);
+      return val;
+    }
+  } catch {
+    // sessionStorage indisponível ou desabilitado
+  }
+  return null;
+};
+
+const saveCachedFoto = (id: string, foto: string) => {
+  if (!id || !foto) return;
+  photoMemoryCache.set(id, foto);
+  try {
+    sessionStorage.setItem(`losfelas_foto_${id}`, foto);
+  } catch {
+    // sessionStorage cheio ou desabilitado
+  }
+};
+
   // Busca a url_foto de um único carro (lazy — não vem no SELECT da lista)
   const fetchFotoCarro = async (id: string): Promise<string | null> => {
+    // 1. Verifica no cache local (0 bytes de egress)
+    const cached = getCachedFoto(id);
+    if (cached) return cached;
+
     if (!isSupabaseConfigured || !supabase) {
       const stored = localStorage.getItem('losfelas_db_carros') || localStorage.getItem('regional_db_carros') || localStorage.getItem('garagemflow_db_carros');
       if (stored) {
         const all = JSON.parse(stored) as Carro[];
-        return all.find((c) => c.id === id)?.url_foto ?? null;
+        const foto = all.find((c) => c.id === id)?.url_foto ?? null;
+        if (foto) saveCachedFoto(id, foto);
+        return foto;
       }
       return null;
     }
@@ -603,7 +637,9 @@ export function useCarros() {
         .eq('id', id)
         .single();
       if (error) throw error;
-      return data?.url_foto ?? null;
+      const foto = data?.url_foto ?? null;
+      if (foto) saveCachedFoto(id, foto);
+      return foto;
     } catch (err) {
       console.error('Erro ao buscar foto do carro:', err);
       return null;
@@ -611,21 +647,38 @@ export function useCarros() {
   };
 
   // Busca a url_foto sob demanda para uma lista específica de IDs de carros (ex: carros visíveis na tela)
-  // Usa busca individual sequencial por Primary Key (.eq('id', carroId).single()), evitando estouro do TOAST do Postgres por requisições concorrentes
+  // Usa cache local primeiro (0 egress) e busca sequencial apenas para fotos inéditas
   const fetchFotosParaCarros = async (carroIds: string[]) => {
-    if (!isSupabaseConfigured || !supabase || !carroIds || carroIds.length === 0) return;
+    if (!carroIds || carroIds.length === 0) return;
 
-    // Filtra apenas IDs que ainda não possuem foto carregada no estado
-    const idsSemFoto = carroIds.filter((id) => {
+    // 1. Resolver fotos que já estão no cache local
+    const idsPrecisamBuscar: string[] = [];
+    const fotosResolvidasDoCache: Record<string, string> = {};
+
+    carroIds.forEach((id) => {
       const c = carros.find((item) => item.id === id);
-      return c && (!c.url_foto || c.url_foto.trim() === '');
+      if (c && c.url_foto && c.url_foto.trim() !== '') return;
+
+      const cached = getCachedFoto(id);
+      if (cached) {
+        fotosResolvidasDoCache[id] = cached;
+      } else {
+        idsPrecisamBuscar.push(id);
+      }
     });
 
-    if (idsSemFoto.length === 0) return;
+    // Se encontramos fotos no cache, atualiza o estado imediatamente sem tocar na rede
+    if (Object.keys(fotosResolvidasDoCache).length > 0) {
+      setCarros((prev) =>
+        prev.map((c) => (fotosResolvidasDoCache[c.id] ? { ...c, url_foto: fotosResolvidasDoCache[c.id] } : c))
+      );
+    }
 
-    console.log(`📸 [fetchFotosParaCarros] Carregando fotos sob demanda sequencialmente para ${idsSemFoto.length} carros...`);
+    if (idsPrecisamBuscar.length === 0 || !isSupabaseConfigured || !supabase) return;
 
-    for (const carroId of idsSemFoto) {
+    console.log(`📸 [fetchFotosParaCarros] Baixando ${idsPrecisamBuscar.length} fotos inéditas do Supabase...`);
+
+    for (const carroId of idsPrecisamBuscar) {
       try {
         let res = await supabase!
           .from('carros')
@@ -650,7 +703,7 @@ export function useCarros() {
 
         if (res.data && res.data.url_foto && res.data.url_foto.trim() !== '') {
           const foto = res.data.url_foto;
-          console.log(`✨ [fetchFotosParaCarros] Foto recebida com sucesso para o carro ${carroId}`);
+          saveCachedFoto(carroId, foto);
           setCarros((prev) =>
             prev.map((c) => (c.id === carroId ? { ...c, url_foto: foto } : c))
           );
