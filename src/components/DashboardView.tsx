@@ -432,6 +432,7 @@ export function DashboardView({
           } else {
             if (height > maxDim) { width = Math.round((width * maxDim) / height); height = maxDim; }
           }
+          const canvas = document.createElement('canvas');
           canvas.width = width; canvas.height = height;
           const ctx = canvas.getContext('2d');
           if (ctx) {
@@ -603,6 +604,7 @@ export function DashboardView({
           } else {
             if (height > maxDim) { width = Math.round((width * maxDim) / height); height = maxDim; }
           }
+          const canvas = document.createElement('canvas');
           canvas.width = width; canvas.height = height;
           const ctx = canvas.getContext('2d');
           if (ctx) {

@@ -346,22 +346,28 @@ export function useCarros() {
           if (eq) equipeId = eq.id;
         }
 
+        const updatePayload: Record<string, unknown> = {
+          numero_inscricao: dados.numeroInscricao,
+          modelo: dados.modelo,
+          ano: dados.ano,
+          altura_mm: dados.alturaMm ?? 0,
+          nome_dono: dados.nomeDono || 'Não informado',
+          telefone_dono: dados.telefoneDono || null,
+          equipe: dados.equipe || null,
+          equipe_id: equipeId,
+          km_rodado: dados.kmRodado ?? 0,
+          genero: dados.genero || null,
+          pessoas_equipe: dados.pessoasEquipe ?? 0,
+        };
+        // Só inclui url_foto no update se foi explicitamente fornecida
+        // (evita sobrescrever foto existente com null quando usuário não muda a foto)
+        if (dados.urlFoto !== undefined) {
+          updatePayload.url_foto = dados.urlFoto.trim() || null;
+        }
+
         const { error: updateError } = await supabase
           .from('carros')
-          .update({
-            numero_inscricao: dados.numeroInscricao,
-            modelo: dados.modelo,
-            ano: dados.ano,
-            altura_mm: dados.alturaMm ?? 0,
-            nome_dono: dados.nomeDono || 'Não informado',
-            telefone_dono: dados.telefoneDono || null,
-            url_foto: dados.urlFoto,
-            equipe: dados.equipe || null,
-            equipe_id: equipeId,
-            km_rodado: dados.kmRodado ?? 0,
-            genero: dados.genero || null,
-            pessoas_equipe: dados.pessoasEquipe ?? 0,
-          })
+          .update(updatePayload)
           .eq('id', id);
         if (updateError) throw updateError;
 
